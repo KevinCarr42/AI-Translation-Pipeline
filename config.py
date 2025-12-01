@@ -1,0 +1,98 @@
+import os
+
+DATA_DIR = os.environ.get("DATA_DIR", "./Data")
+MODEL_OUTPUT_DIR = os.environ.get("MODEL_OUTPUT_DIR", "./outputs")
+PARSED_DOCS_DIR = os.environ.get("PARSED_DOCS_DIR", "../ParsedPublications")
+CORRELATION_CSV_PATH = os.path.join(DATA_DIR, "fr_eng_correlation_data.csv")
+TRANSLATIONS_JSON_PATH = os.path.join(DATA_DIR, "all_translations.json")
+
+TRAINING_DATA_INPUT = os.path.join(DATA_DIR, "matched_data_wo_linebreaks.pickle")
+TRAINING_DATA_OUTPUT = os.path.join(DATA_DIR, "pipeline_training_data.jsonl")
+EVAL_DATA_OUTPUT = os.path.join(DATA_DIR, "pipeline_eval_data.jsonl")
+
+FEATURED_DATA_OUTPUT = os.path.join(DATA_DIR, "pipeline_df_with_features.pickle")
+TRAIN_TEST_DATA_OUTPUT = os.path.join(DATA_DIR, "pipeline_train_test_split.pickle")
+
+EVALUATION_RESULTS_OUTPUT = os.path.join(DATA_DIR, "pipeline_evaluation_results.json")
+
+MODELS = {
+    "m2m100_418m": {
+        "model_id": "facebook/m2m100_418M",
+        "type": "seq2seq",
+        "language_map": {"en": "en", "fr": "fr"}
+    },
+    "mbart50_mmt_fr": {
+        "model_id": "facebook/mbart-large-50-many-to-many-mmt",
+        "type": "seq2seq",
+        "language_map": {"en": "en_XX", "fr": "fr_XX"},
+        "restrict_source_language": "en"
+    },
+    "mbart50_mmt_en": {
+        "model_id": "facebook/mbart-large-50-many-to-many-mmt",
+        "type": "seq2seq",
+        "language_map": {"en": "en_XX", "fr": "fr_XX"},
+        "restrict_source_language": "fr"
+    },
+    "opus_mt_en_fr": {
+        "model_id": "Helsinki-NLP/opus-mt-tc-big-en-fr",
+        "type": "seq2seq",
+        "language_map": {"en": "en", "fr": "fr"},
+        "restrict_source_language": "en"
+    },
+    "opus_mt_fr_en": {
+        "model_id": "Helsinki-NLP/opus-mt-tc-big-fr-en",
+        "type": "seq2seq",
+        "language_map": {"en": "en", "fr": "fr"},
+        "restrict_source_language": "fr"
+    },
+}
+
+TRAINING_HYPERPARAMS = {
+    "learning_rate": 2e-4,
+    "batch_size": 8,
+    "gradient_accumulation": 2,
+    "epochs": 2.0,
+    "lora_r": 16,
+    "lora_alpha": 32,
+    "lora_dropout": 0.05,
+    "max_source_length": 512,
+    "max_target_length": 512,
+    "validation_ratio": 0.05,
+    "warmup_ratio": 0.03,
+    "seed": 42,
+    "weight_decay": 0.01,
+    "label_smoothing": 0.1,
+}
+
+QUANTIZATION_CONFIG = {
+    "use_quantization": False,
+    "use_qlora": True,
+    "use_bfloat16": False,
+    "use_fp16": True,
+}
+
+DEVICE_CONFIG = {
+    "device_map": "auto",
+    "offload_folder": "./offload",
+}
+
+DATA_CLEANING_CONFIG = {
+    "skip_cleaning": False,
+    "linebreaks": True,
+    "add_features": True,
+    "skip_abstracts": False,
+}
+
+EVALUATION_CONFIG = {
+    "use_similarity": True,
+    "use_quality": True,
+    "use_comparison": True,
+}
+
+PREFERENTIAL_TRANSLATION_CONFIG = {
+    "use_replacements": True,
+    "validate_tokens": True,
+}
+
+os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(MODEL_OUTPUT_DIR, exist_ok=True)
