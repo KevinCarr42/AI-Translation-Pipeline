@@ -1,4 +1,3 @@
-import json
 import os
 import time
 import torch
@@ -8,7 +7,6 @@ import pandas as pd
 from sentence_transformers import SentenceTransformer
 
 from .text_processing import (
-    extract_text_from_single_file,
     extract_both_languages_from_two_files,
     extract_both_languages_from_single_file,
 )
@@ -34,14 +32,14 @@ def process_row(row_tuple, device, language_classifier, sentence_encoder, skip_a
     index, row = row_tuple
     pub_number = row['pub_number']
     filename_fr, filename_en = row['filename_fr'], row['filename_en']
-
+    
     if filename_fr == "WITHDRAWN" and filename_en == "WITHDRAWN":
         return None
-
+    
     fr_link = get_json_file_link(parsed_docs_folder, filename_fr)
     if fr_link is None:
         return None
-
+    
     if filename_fr == filename_en:
         text_fr, text_en = extract_both_languages_from_single_file(fr_link, language_classifier, linebreaks)
     else:
@@ -49,11 +47,11 @@ def process_row(row_tuple, device, language_classifier, sentence_encoder, skip_a
         if en_link is None:
             return None
         text_fr, text_en = extract_both_languages_from_two_files(fr_link, en_link, language_classifier, linebreaks)
-
+    
     max_ratio = 2
     min_char = 1000
     len_fr, len_en = len(text_fr), len(text_en)
-
+    
     if len_fr == 0 or len_en == 0:
         return None
     elif skip_abstracts:
@@ -61,7 +59,7 @@ def process_row(row_tuple, device, language_classifier, sentence_encoder, skip_a
             return None
     elif len(text_fr) < min_char or len(text_en) < min_char:
         return None
-
+    
     return correlate_and_clean_text(text_fr, text_en, pub_number, sentence_encoder, device, linebreaks)
 
 
@@ -74,20 +72,20 @@ def print_time_estimate(start_time, processed_count, total_count):
     if processed_count == 0:
         print(f"\n{processed_count}/{total_count} complete.", end="... ")
         return
-
+    
     time_elapsed = int(time.time() - start_time)
     time_remaining = int((time_elapsed / processed_count) * (total_count - processed_count))
-
+    
     time_elapsed_text = f"{time_elapsed // 3600}h:{(time_elapsed % 3600) // 60:02d}m"
     time_remaining_text = f"{time_remaining // 3600}h:{(time_remaining % 3600) // 60:02d}m"
-
+    
     print(f"\n{processed_count}/{total_count} complete at {time_elapsed_text}. Estimated {time_remaining_text} remaining.", end="... ")
 
 
 def print_status(start_time, processed_count, total_count):
     small_update = 50
     large_update = 500
-
+    
     if processed_count % small_update == 0:
         if processed_count % large_update == 0:
             print_time_estimate(start_time, processed_count, total_count)
@@ -97,49 +95,49 @@ def print_status(start_time, processed_count, total_count):
 
 def create_dataframe(num_workers, total_rows, rows, device, language_classifier, sentence_encoder, skip_abstracts, linebreaks, parsed_docs_folder, output_filename):
     start_time = time.time()
-
+    
     args_list = [(row, device, language_classifier, sentence_encoder, skip_abstracts, linebreaks, parsed_docs_folder) for row in rows]
-
+    
     print(f"\n=========== PROCESSING {output_filename} ===========")
-
+    
     with mp.Pool(num_workers) as pool:
         results = []
         for i, result in enumerate(pool.imap_unordered(process_row_wrapper, args_list)):
             if result:
                 results.extend(result)
-
+            
             print_status(start_time, i, len(rows))
-
+    
     dataframe = pd.DataFrame(results, columns=['pub_number', 'fr', 'en', 'similarity'])
     dataframe.to_pickle(output_filename)
     print(f"\nProcessing {output_filename} complete!\n")
-
+    
     return dataframe
 
 
-def prepare_training_data(correlation_csv_path, parsed_docs_folder, skip_cleaning=False, linebreaks=True, add_features_flag=True, skip_abstracts=False):
+def prepare_training_data(correlation_csv_path, parsed_docs_folder, linebreaks=True, add_features_flag=True):
     correlation_dataframe = pd.read_csv(correlation_csv_path)
     correlation_dataframe = correlation_dataframe[['pub_number', 'filename_fr', 'filename_en']]
     rows = list(correlation_dataframe.iterrows())
     total_rows = len(rows)
-
+    
     device = "cuda" if torch.cuda.is_available() else "cpu"
     num_workers = max(1, os.cpu_count() // 2)
-
+    
     language_classifier = LanguageClassifier()
     sentence_encoder = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2').to(device)
-
+    
     print(f'\nUsing device: {device}')
     print(f"Using {num_workers} CPU cores.\n")
-
+    
     import config
-
+    
     matched_data = create_dataframe(
         num_workers, total_rows, rows, device, language_classifier, sentence_encoder,
         False, linebreaks, parsed_docs_folder,
         os.path.join(config.DATA_DIR, "pipeline_matched_data.pickle")
     )
-
+    
     if add_features_flag:
         print("Adding linguistic features...")
         featured_data = add_features(matched_data)

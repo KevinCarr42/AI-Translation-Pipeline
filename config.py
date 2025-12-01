@@ -1,9 +1,9 @@
 import os
 
-DATA_DIR = os.environ.get("DATA_DIR", "./Data")
+DATA_DIR = os.environ.get("DATA_DIR", "./Data")  # FIXME
 MODEL_OUTPUT_DIR = os.environ.get("MODEL_OUTPUT_DIR", "./outputs")
 PARSED_DOCS_DIR = os.environ.get("PARSED_DOCS_DIR", "../ParsedPublications")
-CORRELATION_CSV_PATH = os.path.join(DATA_DIR, "fr_eng_correlation_data.csv")
+CORRELATION_CSV_PATH = os.path.join(DATA_DIR, "fr_eng_correlation_data.csv")  # FIXME
 TRANSLATIONS_JSON_PATH = os.path.join(DATA_DIR, "all_translations.json")
 
 TRAINING_DATA_INPUT = os.path.join(DATA_DIR, "matched_data_wo_linebreaks.pickle")

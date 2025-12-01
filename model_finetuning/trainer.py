@@ -9,15 +9,15 @@ def is_distributed():
     return int(os.environ.get("WORLD_SIZE", 1)) > 1
 
 
-def build_trainer(model_name, tokenizer, model, dataset_processed, output_directory, learning_rate, batch_size, gradient_accumulation, epochs, max_steps, eval_steps, logging_steps, save_steps, use_bfloat16, use_fp16, seed, warmup_ratio, disable_tqdm, use_qlora):
-
+def build_trainer(model_name, tokenizer, model, dataset_processed, output_directory, learning_rate, batch_size, gradient_accumulation, epochs, max_steps, eval_steps, logging_steps, save_steps,
+                  use_bfloat16, use_fp16, seed, warmup_ratio, disable_tqdm, use_qlora):
     if model_name == "m2m100_418m":
         data_collator = M2MDataCollator(tokenizer, model)
     else:
         data_collator = DataCollatorForSeq2Seq(tokenizer, model=model)
-
+    
     use_gradient_checkpointing = use_qlora
-
+    
     training_args = Seq2SeqTrainingArguments(
         output_dir=output_directory,
         per_device_train_batch_size=batch_size,
@@ -46,7 +46,7 @@ def build_trainer(model_name, tokenizer, model, dataset_processed, output_direct
         ddp_find_unused_parameters=False if is_distributed() else None,
         label_names=["labels"],
     )
-
+    
     try:
         trainer = Seq2SeqTrainer(
             model=model,
@@ -65,5 +65,5 @@ def build_trainer(model_name, tokenizer, model, dataset_processed, output_direct
             tokenizer=tokenizer,
             data_collator=data_collator,
         )
-
+    
     return trainer
