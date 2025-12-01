@@ -12,7 +12,7 @@ from .replacements import (
     postprocess_translation,
 )
 
-from .pipeline import apply_preferential_translations
+from .pipeline import apply_preferential_translations, reverse_preferential_translations
 
 __all__ = [
     'create_replacement_token',
@@ -24,4 +24,5 @@ __all__ = [
     'preprocess_for_translation',
     'postprocess_translation',
     'apply_preferential_translations',
+    'reverse_preferential_translations',
 ]

@@ -1,9 +1,11 @@
+import config
 import os
 import json
 import logging
 import math
 from datasets import load_dataset
 
+from peft import LoraConfig, get_peft_model
 from .model_loading import load_tokenizer_and_model
 from .preprocessing import Preprocessor
 from .trainer import build_trainer
@@ -24,47 +26,48 @@ def filter_dataset_by_model(dataset, model_config):
     return dataset.filter(lambda x: x["source_lang"] == allowed_lang)
 
 
-def finetune_model(model_name, data_path, output_directory, learning_rate=2e-4, batch_size=8, gradient_accumulation=2, epochs=2.0, eval_steps=1000, logging_steps=50, save_steps=1000, seed=42,
-                   warmup_ratio=0.03, validation_ratio=0.05, max_source_length=512, max_target_length=512, use_bfloat16=False, use_fp16=True, use_qlora=True, device_map="auto", disable_tqdm=True,
-                   lora_r=16, lora_alpha=32, lora_dropout=0.05, max_steps=None):
-    import config
-    from peft import LoraConfig, get_peft_model
-    import torch
-    
-    model_info = config.MODELS.get(model_name)
+def finetune_model(which, data_path, output_directory, learning_rate=2e-4, batch_size=8, grad_accum=2, epochs=1.0, eval_steps=1000, logging_steps=50, save_steps=1000, seed=42,
+                   warmup_ratio=0.03, val_ratio=0.05, max_source_len=512, max_target_len=512, bf16=False, fp16=False, no_qlora=False, device_map="auto", disable_tqdm=True,
+                   lora_r=32, lora_alpha=64, lora_dropout=0.05, max_steps=None):
+    model_info = config.MODELS.get(which)
     if not model_info:
-        raise ValueError(f"Model '{model_name}' not found in config.MODELS")
+        raise ValueError(f"Model '{which}' not found in config.MODELS")
     
     raw_dataset = load_dataset("json", data_files=data_path, split="train")
     raw_dataset = filter_dataset_by_model(raw_dataset, model_info)
     
     if len(raw_dataset) == 0:
-        raise ValueError(f"No data remaining after filtering for model {model_name}")
+        raise ValueError(f"No data remaining after filtering for model {which}")
     
-    split_dataset = raw_dataset.train_test_split(test_size=validation_ratio, seed=seed)
+    split_dataset = raw_dataset.train_test_split(test_size=val_ratio, seed=seed)
     train_dataset = split_dataset["train"].shuffle(seed=seed)
     eval_dataset = split_dataset["test"].shuffle(seed=seed)
     
-    is_opus_model = "opus_mt" in model_name
-    if use_qlora:
+    is_opus_model = "opus_mt" in which
+    if not no_qlora:
         resolved_device_map = None if is_opus_model else device_map
     else:
-        resolved_device_map = None if is_opus_model else device_map
+        if int(os.environ.get("WORLD_SIZE", 1)) > 1:
+            resolved_device_map = None
+        elif is_opus_model:
+            resolved_device_map = None
+        else:
+            resolved_device_map = device_map
     
     tokenizer, _ = load_tokenizer_and_model(
         model_info["model_id"],
-        use_qlora=use_qlora,
-        use_bfloat16=use_bfloat16,
+        use_qlora=not no_qlora,
+        use_bfloat16=bf16,
         device_map=resolved_device_map
     )
     
     def preprocess(dataset):
         preprocessor = Preprocessor(
-            model_name=model_name,
+            model_name=which,
             tokenizer=tokenizer,
             language_map=model_info["language_map"],
-            max_source_length=max_source_length,
-            max_target_length=max_target_length,
+            max_source_length=max_source_len,
+            max_target_length=max_target_len,
             restrict_source_language=model_info.get("restrict_source_language")
         )
         processed = dataset.map(preprocessor, remove_columns=dataset.column_names, load_from_cache_file=False)
@@ -80,16 +83,16 @@ def finetune_model(model_name, data_path, output_directory, learning_rate=2e-4, 
     }
     
     if len(dataset_processed["train"]) == 0:
-        raise ValueError(f"No training examples remaining after preprocessing for model {model_name}")
+        raise ValueError(f"No training examples remaining after preprocessing for model {which}")
     if len(dataset_processed["eval"]) == 0:
-        raise ValueError(f"No evaluation examples remaining after preprocessing for model {model_name}")
+        raise ValueError(f"No evaluation examples remaining after preprocessing for model {which}")
     
     setup_logging(output_directory)
     
     _, base_model = load_tokenizer_and_model(
         model_info["model_id"],
-        use_qlora=use_qlora,
-        use_bfloat16=use_bfloat16,
+        use_qlora=not no_qlora,
+        use_bfloat16=bf16,
         device_map=resolved_device_map
     )
     
@@ -109,31 +112,31 @@ def finetune_model(model_name, data_path, output_directory, learning_rate=2e-4, 
     peft_model.train()
     peft_model.print_trainable_parameters()
     
-    steps_per_epoch = math.ceil(len(dataset_processed["train"]) / (batch_size * gradient_accumulation))
+    steps_per_epoch = math.ceil(len(dataset_processed["train"]) / (batch_size * grad_accum))
     logging.info(
         f"sizes | train={len(dataset_processed['train'])} eval={len(dataset_processed['eval'])} steps/epoch≈{steps_per_epoch}"
     )
     
     trainer = build_trainer(
-        model_name=model_name,
+        model_name=which,
         tokenizer=tokenizer,
         model=peft_model,
         dataset_processed=dataset_processed,
         output_directory=output_directory,
         learning_rate=learning_rate,
         batch_size=batch_size,
-        gradient_accumulation=gradient_accumulation,
+        gradient_accumulation=grad_accum,
         epochs=epochs,
         max_steps=max_steps,
         eval_steps=eval_steps,
         logging_steps=logging_steps,
         save_steps=save_steps,
-        use_bfloat16=use_bfloat16,
-        use_fp16=use_fp16,
+        use_bfloat16=bf16,
+        use_fp16=fp16,
         seed=seed,
         warmup_ratio=warmup_ratio,
         disable_tqdm=disable_tqdm,
-        use_qlora=use_qlora
+        use_qlora=not no_qlora
     )
     
     train_result = trainer.train()
@@ -150,8 +153,6 @@ def finetune_model(model_name, data_path, output_directory, learning_rate=2e-4, 
 
 
 def finetuning_pipeline(data_path=None, model_names=None, **kwargs):
-    import config
-    
     if data_path is None:
         data_path = config.TRAINING_DATA_OUTPUT
     if model_names is None:
@@ -176,19 +177,31 @@ def finetuning_pipeline(data_path=None, model_names=None, **kwargs):
         training_params = {
             'learning_rate': config.TRAINING_HYPERPARAMS.get('learning_rate', 2e-4),
             'batch_size': config.TRAINING_HYPERPARAMS.get('batch_size', 8),
-            'gradient_accumulation': config.TRAINING_HYPERPARAMS.get('gradient_accumulation', 2),
-            'epochs': config.TRAINING_HYPERPARAMS.get('epochs', 2.0),
-            'lora_r': config.TRAINING_HYPERPARAMS.get('lora_r', 16),
-            'lora_alpha': config.TRAINING_HYPERPARAMS.get('lora_alpha', 32),
+            'grad_accum': config.TRAINING_HYPERPARAMS.get('gradient_accumulation', 2),
+            'epochs': config.TRAINING_HYPERPARAMS.get('epochs', 1.0),
+            'lora_r': config.TRAINING_HYPERPARAMS.get('lora_r', 32),
+            'lora_alpha': config.TRAINING_HYPERPARAMS.get('lora_alpha', 64),
             'lora_dropout': config.TRAINING_HYPERPARAMS.get('lora_dropout', 0.05),
-            'use_qlora': config.QUANTIZATION_CONFIG.get('use_qlora', True),
-            'use_bfloat16': config.QUANTIZATION_CONFIG.get('use_bfloat16', False),
+            'no_qlora': not config.QUANTIZATION_CONFIG.get('use_qlora', True),
+            'bf16': config.QUANTIZATION_CONFIG.get('use_bfloat16', False),
+            'fp16': config.QUANTIZATION_CONFIG.get('use_fp16', True),
         }
+        
+        if model_name in config.MODEL_SPECIFIC_HYPERPARAMS:
+            model_params = config.MODEL_SPECIFIC_HYPERPARAMS[model_name]
+            if 'batch_size' in model_params:
+                training_params['batch_size'] = model_params['batch_size']
+            if 'learning_rate' in model_params:
+                training_params['learning_rate'] = model_params['learning_rate']
+            if 'lora_r' in model_params:
+                training_params['lora_r'] = model_params['lora_r']
+            if 'lora_alpha' in model_params:
+                training_params['lora_alpha'] = model_params['lora_alpha']
         
         training_params.update(kwargs)
         
         trainer, result = finetune_model(
-            model_name=model_name,
+            which=model_name,
             data_path=data_path,
             output_directory=output_directory,
             **training_params

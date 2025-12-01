@@ -51,9 +51,9 @@ TRAINING_HYPERPARAMS = {
     "learning_rate": 2e-4,
     "batch_size": 8,
     "gradient_accumulation": 2,
-    "epochs": 2.0,
-    "lora_r": 16,
-    "lora_alpha": 32,
+    "epochs": 1.0,
+    "lora_r": 32,
+    "lora_alpha": 64,
     "lora_dropout": 0.05,
     "max_source_length": 512,
     "max_target_length": 512,
@@ -62,13 +62,49 @@ TRAINING_HYPERPARAMS = {
     "seed": 42,
     "weight_decay": 0.01,
     "label_smoothing": 0.1,
+    "eval_steps": 1000,
+    "logging_steps": 50,
+    "save_steps": 1000,
+}
+
+MODEL_SPECIFIC_HYPERPARAMS = {
+    "m2m100_418m": {
+        "batch_size": 12,
+        "learning_rate": 2e-4,
+        "lora_r": 32,
+        "lora_alpha": 64,
+    },
+    "mbart50_mmt_fr": {
+        "batch_size": 8,
+        "learning_rate": 1.5e-4,
+        "lora_r": 32,
+        "lora_alpha": 64,
+    },
+    "mbart50_mmt_en": {
+        "batch_size": 8,
+        "learning_rate": 1.5e-4,
+        "lora_r": 32,
+        "lora_alpha": 64,
+    },
+    "opus_mt_en_fr": {
+        "batch_size": 16,
+        "learning_rate": 3e-4,
+        "lora_r": 32,
+        "lora_alpha": 64,
+    },
+    "opus_mt_fr_en": {
+        "batch_size": 16,
+        "learning_rate": 3e-4,
+        "lora_r": 32,
+        "lora_alpha": 64,
+    },
 }
 
 QUANTIZATION_CONFIG = {
     "use_quantization": False,
-    "use_qlora": True,
-    "use_bfloat16": False,
-    "use_fp16": True,
+    "use_qlora": False,
+    "use_bfloat16": True,
+    "use_fp16": False,
 }
 
 DEVICE_CONFIG = {
