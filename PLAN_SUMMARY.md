@@ -114,6 +114,7 @@ A comprehensive implementation plan has been developed to consolidate 5 source r
 | **Copy code as-is, don't refactor** | Preserve source functionality & behavior | Lower risk of introducing bugs |
 | **Minimize cross-module dependencies** | Loose coupling via config.py | Enables independent testing & reuse |
 | **Boolean flags for features** | Easy enable/disable without code changes | Simplifies different use cases |
+| **Prepend `pipeline_` to all outputs** | Preserve source data, avoid overwrites | Enables safe re-runs & parallel work |
 
 ---
 

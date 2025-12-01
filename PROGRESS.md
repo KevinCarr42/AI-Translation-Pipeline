@@ -103,6 +103,10 @@
 2. **Hyperparameters**: Use final chosen values directly (no sweeping code)
 3. **Token Naming**: Follow existing conventions (SITE, NOMENCLATURE, TAXON, ACRONYM)
 4. **Code Style**: No docstrings/type hints; preserve variable names; clean readable code within Pipeline
+5. **Data Storage**: All Pipeline outputs prepended with `pipeline_` to avoid overwriting source data
+   - Example: `pipeline_matched_data.pickle`, `pipeline_training_data.jsonl`
+   - Location: Data/ folder (configured in config.py)
+   - Rationale: Preserves source repos, enables safe re-runs, supports parallel work
 
 ---
 

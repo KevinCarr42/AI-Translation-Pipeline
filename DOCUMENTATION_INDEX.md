@@ -11,11 +11,16 @@ Complete reference guide for all planning and implementation documentation.
 2. Read `PLAN_SUMMARY.md` (10 min) - Executive summary
 3. Read `PLAN.md` (detailed) - Full technical specification
 
+**Before writing ANY code**:
+1. **Read `DATA_STORAGE_GUIDE.md` (15 min)** - File naming & storage conventions
+2. This prevents accidental data overwrites!
+
 **Ready to implement?** Use this order:
-1. Review `STYLE.md` - Code conventions
-2. Check `Cleanup.md` - Dead code to avoid
-3. Follow `PLAN.md` Phase-by-phase
-4. Update `PROGRESS.md` as you go
+1. Review `DATA_STORAGE_GUIDE.md` - File naming (CRITICAL!)
+2. Review `STYLE.md` - Code conventions
+3. Check `Cleanup.md` - Dead code to avoid
+4. Follow `PLAN.md` Phase-by-phase
+5. Update `PROGRESS.md` as you go
 
 **Contributing code?**
 1. Check `STYLE.md` for conventions
@@ -26,6 +31,24 @@ Complete reference guide for all planning and implementation documentation.
 ---
 
 ## File Descriptions
+
+### DATA_STORAGE_GUIDE.md (7.5 KB) - **NEW & CRITICAL**
+**Purpose**: Detailed guide for data storage conventions and file naming
+**Contents**:
+- Core principle: Distinguish source data from pipeline outputs
+- Folder structure diagram
+- File naming convention (prepend `pipeline_`)
+- 4 detailed implementation examples with code
+- Why this matters (data loss prevention)
+- Special cases (multiple versions, temporary files)
+- Checklist for verifying work
+- Configuration (config.py setup)
+
+**Audience**: Everyone (developers most important)
+**Read Time**: 15 minutes
+**When to Reference**: Before saving any file, during code review, when confused about naming
+
+---
 
 ### README.md (9.1 KB)
 **Purpose**: Project overview and quick start guide
@@ -382,6 +405,7 @@ Refer to the appropriate document above. All information needed to understand, p
 **Most Common Questions**:
 - "How do I start?" → README.md → PLAN.md
 - "What's the code style?" → STYLE.md
+- **"Where do I save my files?" → DATA_STORAGE_GUIDE.md** ⚠️ CRITICAL!
 - "What progress have we made?" → PROGRESS.md
 - "What was excluded and why?" → Cleanup.md
 - "What's the high-level plan?" → PLAN_SUMMARY.md

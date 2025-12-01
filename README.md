@@ -193,6 +193,31 @@ similarity = calculate_similarity(english_text, french_text)
 quality = assess_quality(source_text, translated_text)
 ```
 
+## Data Storage Conventions
+
+**Important**: All Pipeline-generated files must preserve original source data.
+
+### Naming Rules
+- **Pickle files**: Prepend with `pipeline_` (e.g., `pipeline_matched_data.pickle`)
+- **Training data**: `pipeline_training_data.jsonl`
+- **Evaluation results**: `pipeline_evaluation_results.json`
+- **Location**: All saved to `Data/` folder (configured in config.py)
+
+### Reason
+Source repositories contain reference data. Pipeline creates intermediate files during processing. The `pipeline_` prefix clearly distinguishes Pipeline-generated files from source data, preventing accidental overwrites.
+
+**Example**:
+```python
+# Correct - preserves original
+output_path = os.path.join(config.DATA_DIR, "pipeline_matched_data.pickle")
+dataframe.to_pickle(output_path)
+
+# Wrong - overwrites original source
+output_path = "matched_data_wo_linebreaks.pickle"  # Would overwrite!
+```
+
+---
+
 ## Configuration
 
 Edit `config.py` to set:

@@ -251,6 +251,41 @@ Pipeline/
 
 ---
 
+## Data Storage Conventions
+
+**IMPORTANT**: Avoid overwriting existing files. Use these conventions:
+
+### Folder Structure
+```
+Data/
+├── [existing source files - DO NOT MODIFY]
+└── pipeline_*  ← All Pipeline-generated files
+```
+
+### File Naming for Pipeline Outputs
+- **Pickle files**: Prepend with `pipeline_` (e.g., `pipeline_matched_data.pickle`, `pipeline_df_with_features.pickle`)
+- **JSONL training data**: `pipeline_training_data.jsonl`
+- **Model outputs**: Store in `outputs/` (separate from Data/)
+- **Evaluation results**: `pipeline_evaluation_results.json`
+
+**Example**:
+```python
+# BAD - overwrites existing data
+dataframe.to_pickle("matched_data_wo_linebreaks.pickle")
+
+# GOOD - preserves original, creates pipeline version
+dataframe.to_pickle("pipeline_matched_data_wo_linebreaks.pickle")
+```
+
+### Rationale
+- Source repos contain original/reference data
+- Pipeline creates intermediate files during processing
+- Naming convention clarifies which files are Pipeline-generated
+- Prevents accidental overwriting of source data
+- Allows parallel experimentation without conflicts
+
+---
+
 ## Copying Strategy
 
 ### Files to Copy (Grouped by Module)

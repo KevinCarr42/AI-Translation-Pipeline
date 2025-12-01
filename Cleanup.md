@@ -214,17 +214,21 @@ These were identified but not implemented (beyond current Pipeline scope):
 - [ ] Check for path references in this Cleanup.md
 - [ ] Note any deprecated/unused code
 - [ ] Plan config.py entries needed
+- [ ] **IMPORTANT**: Review data naming convention (PLAN.md Data Storage section)
 
 **During Implementation**:
 - [ ] Copy functions as-is (no refactoring)
 - [ ] Adapt imports to Pipeline structure
 - [ ] Update hardcoded paths to config.py references
+- [ ] **Prepend `pipeline_` to all saved intermediate files** (pickle, jsonl, json)
 - [ ] Remove notebook-specific code
 - [ ] Test with sample data
+- [ ] Verify no source data files overwritten
 
 **After Implementation**:
 - [ ] Update PROGRESS.md with completion status
 - [ ] Document any new issues discovered
+- [ ] Verify Data/ folder has only `pipeline_*` output files
 - [ ] Add to this file if new dead code identified
 
 ---
