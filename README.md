@@ -23,7 +23,6 @@ Pipeline/
 │   └── pipeline.py
 ├── model_finetuning/           # Phase 2: Training data → Fine-tuned models
 │   ├── __init__.py
-│   ├── training_config.py
 │   ├── model_loading.py
 │   ├── preprocessing.py
 │   ├── trainer.py
@@ -37,17 +36,28 @@ Pipeline/
 │   ├── __init__.py
 │   ├── metrics.py
 │   └── comparison.py
+├── language_classifier/        # Language detection utilities
+│   ├── __init__.py
+│   └── language_classifier.py
+├── documentation/              # All progress, style, and planning docs
+│   ├── PROGRESS.md
+│   ├── STYLE.md
+│   ├── PLAN.md
+│   ├── PLAN_SUMMARY.md
+│   ├── PHASE_1_COMPLETE.md
+│   ├── PHASE_2_COMPLETE.md
+│   ├── PHASE_4_COMPLETE.md
+│   ├── Cleanup.md
+│   └── (other guides)
 ├── main_pipeline.py            # Phase 5: Orchestrate all components
 ├── config.py                   # Global configuration & paths
-├── requirements.txt
-├── PLAN.md                     # Detailed implementation plan
-├── PROGRESS.md                 # Development status & checkpoints
-├── STYLE.md                    # Code conventions & guidelines
-├── Cleanup.md                  # Dead code inventory & issues
+├── requirements.txt            # Python dependencies
 └── README.md                   # This file
 ```
 
 ## Quick Start
+
+For a complete overview of what's been implemented, see [`documentation/IMPLEMENTATION_COMPLETE.md`](documentation/IMPLEMENTATION_COMPLETE.md).
 
 ### Installation
 
@@ -255,7 +265,7 @@ DEVICE_MAP = "auto"
 
 ## Code Style
 
-Pipeline follows strict code conventions (see `STYLE.md`):
+Pipeline follows strict code conventions (see `documentation/STYLE.md`):
 
 - **No docstrings or type hints**
 - **Comments only for counterintuitive logic**
@@ -266,22 +276,27 @@ Pipeline follows strict code conventions (see `STYLE.md`):
 
 ## Development Progress
 
-**Current Status**: Planning phase complete. See `PROGRESS.md` for implementation roadmap.
+**Current Status**: All phases complete! See `documentation/PROGRESS.md` for detailed implementation tracking.
 
-**Phases**:
+**Completed Phases**:
 1. ✓ Planning & architecture
-2. Data Cleaning module (in progress)
-3. Fine-Tuning module (pending)
-4. Preferential Translations module (pending)
-5. Evaluation module (pending)
-6. Integration & documentation (pending)
+2. ✓ Data Cleaning module
+3. ✓ Fine-Tuning module
+4. ✓ Preferential Translations module
+5. ✓ Evaluation module
+6. ✓ Integration & documentation
 
 ## Documentation
 
-- `PLAN.md` - Detailed architecture and implementation strategy
+See `documentation/` folder for:
+
 - `PROGRESS.md` - Development status and checkpoints
+- `PLAN.md` - Detailed architecture and implementation strategy
+- `PLAN_SUMMARY.md` - Executive summary of design decisions
 - `STYLE.md` - Code conventions and guidelines
 - `Cleanup.md` - Dead code inventory and issues from source repos
+- `PHASE_1_COMPLETE.md`, `PHASE_2_COMPLETE.md`, `PHASE_4_COMPLETE.md` - Phase-specific summaries
+- `DATA_STORAGE_GUIDE.md` - File naming and organization conventions
 
 ## Requirements
 
@@ -303,7 +318,7 @@ Pipeline consolidates code from:
 4. **CSASTranslator** - Translation orchestration and evaluation
 5. **Research notebooks** - Exploratory analysis (not included in production)
 
-See `Cleanup.md` for details on what was excluded and why.
+See `documentation/Cleanup.md` for details on what was excluded and why.
 
 ## Known Limitations
 
@@ -316,11 +331,11 @@ See `Cleanup.md` for details on what was excluded and why.
 
 When adding new functionality:
 
-1. Follow code style guidelines in `STYLE.md`
+1. Follow code style guidelines in `documentation/STYLE.md`
 2. Keep modules self-contained and loosely coupled
 3. Use `config.py` for all file paths
-4. Update `PROGRESS.md` and `STYLE.md` as needed
-5. Document any changes in relevant markdown files
+4. Update `documentation/PROGRESS.md` as needed
+5. Document any changes in relevant markdown files in `documentation/`
 
 ## License
 
