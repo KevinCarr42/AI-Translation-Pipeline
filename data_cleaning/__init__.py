@@ -14,7 +14,7 @@ from .correlation import (
 
 from .feature_engineering import add_features
 
-from .pipeline import prepare_training_data
+from .pipeline import data_cleaning_pipeline
 
 __all__ = [
     'clean_text',
@@ -26,5 +26,5 @@ __all__ = [
     'align_sentences',
     'correlate_and_clean_text',
     'add_features',
-    'prepare_training_data',
+    'data_cleaning_pipeline',
 ]

@@ -1,8 +1,10 @@
+import config
 import os
 import time
 import torch
 import multiprocessing as mp
 import pandas as pd
+import json
 
 from sentence_transformers import SentenceTransformer
 
@@ -19,7 +21,7 @@ except ImportError:
     from language_classifier.language_classifier import LanguageClassifier
 
 
-def get_json_file_link(parsed_docs_folder, pdf_filename):
+def _get_json_file_link(parsed_docs_folder, pdf_filename):
     if pdf_filename.endswith(".pdf"):
         json_filename = pdf_filename + ".json"
         for root, _, files in os.walk(parsed_docs_folder):
@@ -28,7 +30,7 @@ def get_json_file_link(parsed_docs_folder, pdf_filename):
     return None
 
 
-def process_row(row_tuple, device, language_classifier, sentence_encoder, skip_abstracts=False, linebreaks=True, parsed_docs_folder="../ParsedPublications"):
+def _process_row(row_tuple, device, language_classifier, sentence_encoder, skip_abstracts=False, linebreaks=True, parsed_docs_folder="../ParsedPublications"):
     index, row = row_tuple
     pub_number = row['pub_number']
     filename_fr, filename_en = row['filename_fr'], row['filename_en']
@@ -36,14 +38,14 @@ def process_row(row_tuple, device, language_classifier, sentence_encoder, skip_a
     if filename_fr == "WITHDRAWN" and filename_en == "WITHDRAWN":
         return None
     
-    fr_link = get_json_file_link(parsed_docs_folder, filename_fr)
+    fr_link = _get_json_file_link(parsed_docs_folder, filename_fr)
     if fr_link is None:
         return None
     
     if filename_fr == filename_en:
         text_fr, text_en = extract_both_languages_from_single_file(fr_link, language_classifier, linebreaks)
     else:
-        en_link = get_json_file_link(parsed_docs_folder, filename_en)
+        en_link = _get_json_file_link(parsed_docs_folder, filename_en)
         if en_link is None:
             return None
         text_fr, text_en = extract_both_languages_from_two_files(fr_link, en_link, language_classifier, linebreaks)
@@ -63,12 +65,12 @@ def process_row(row_tuple, device, language_classifier, sentence_encoder, skip_a
     return correlate_and_clean_text(text_fr, text_en, pub_number, sentence_encoder, device, linebreaks)
 
 
-def process_row_wrapper(args):
+def _process_row_wrapper(args):
     row, device, language_classifier, sentence_encoder, skip_abstracts, linebreaks, parsed_docs_folder = args
-    return process_row(row, device, language_classifier, sentence_encoder, skip_abstracts, linebreaks, parsed_docs_folder)
+    return _process_row(row, device, language_classifier, sentence_encoder, skip_abstracts, linebreaks, parsed_docs_folder)
 
 
-def print_time_estimate(start_time, processed_count, total_count):
+def _print_time_estimate(start_time, processed_count, total_count):
     if processed_count == 0:
         print(f"\n{processed_count}/{total_count} complete.", end="... ")
         return
@@ -82,18 +84,18 @@ def print_time_estimate(start_time, processed_count, total_count):
     print(f"\n{processed_count}/{total_count} complete at {time_elapsed_text}. Estimated {time_remaining_text} remaining.", end="... ")
 
 
-def print_status(start_time, processed_count, total_count):
+def _print_status(start_time, processed_count, total_count):
     small_update = 50
     large_update = 500
     
     if processed_count % small_update == 0:
         if processed_count % large_update == 0:
-            print_time_estimate(start_time, processed_count, total_count)
+            _print_time_estimate(start_time, processed_count, total_count)
         else:
             print(f"{processed_count}", end="... ")
 
 
-def create_dataframe(num_workers, total_rows, rows, device, language_classifier, sentence_encoder, skip_abstracts, linebreaks, parsed_docs_folder, output_filename):
+def _create_dataframe(num_workers, total_rows, rows, device, language_classifier, sentence_encoder, skip_abstracts, linebreaks, parsed_docs_folder, output_filename):
     start_time = time.time()
     
     args_list = [(row, device, language_classifier, sentence_encoder, skip_abstracts, linebreaks, parsed_docs_folder) for row in rows]
@@ -102,11 +104,11 @@ def create_dataframe(num_workers, total_rows, rows, device, language_classifier,
     
     with mp.Pool(num_workers) as pool:
         results = []
-        for i, result in enumerate(pool.imap_unordered(process_row_wrapper, args_list)):
+        for i, result in enumerate(pool.imap_unordered(_process_row_wrapper, args_list)):
             if result:
                 results.extend(result)
             
-            print_status(start_time, i, len(rows))
+            _print_status(start_time, i, len(rows))
     
     dataframe = pd.DataFrame(results, columns=['pub_number', 'fr', 'en', 'similarity'])
     dataframe.to_pickle(output_filename)
@@ -115,7 +117,7 @@ def create_dataframe(num_workers, total_rows, rows, device, language_classifier,
     return dataframe
 
 
-def prepare_training_data(correlation_csv_path, parsed_docs_folder, linebreaks=True, add_features_flag=True):
+def _prepare_training_data(correlation_csv_path, parsed_docs_folder, linebreaks=True, add_features_flag=True):
     correlation_dataframe = pd.read_csv(correlation_csv_path)
     correlation_dataframe = correlation_dataframe[['pub_number', 'filename_fr', 'filename_en']]
     rows = list(correlation_dataframe.iterrows())
@@ -130,9 +132,7 @@ def prepare_training_data(correlation_csv_path, parsed_docs_folder, linebreaks=T
     print(f'\nUsing device: {device}')
     print(f"Using {num_workers} CPU cores.\n")
     
-    import config
-    
-    matched_data = create_dataframe(
+    matched_data = _create_dataframe(
         num_workers, total_rows, rows, device, language_classifier, sentence_encoder,
         False, linebreaks, parsed_docs_folder,
         os.path.join(config.DATA_DIR, "pipeline_matched_data.pickle")
@@ -146,3 +146,50 @@ def prepare_training_data(correlation_csv_path, parsed_docs_folder, linebreaks=T
         return featured_data
     else:
         return matched_data
+
+
+def data_cleaning_pipeline(correlation_csv_path=None, parsed_docs_folder=None, linebreaks=True, add_features=True):
+    if correlation_csv_path is None:
+        correlation_csv_path = config.CORRELATION_CSV_PATH
+    if parsed_docs_folder is None:
+        parsed_docs_folder = config.PARSED_DOCS_DIR
+    
+    print("Starting data cleaning pipeline...")
+    print(f"Using correlation CSV: {correlation_csv_path}")
+    print(f"Using parsed docs folder: {parsed_docs_folder}\n")
+    
+    if not os.path.exists(correlation_csv_path):
+        print(f"ERROR: Correlation CSV not found at {correlation_csv_path}")
+        return None
+    
+    if not os.path.exists(parsed_docs_folder):
+        print(f"ERROR: Parsed docs folder not found at {parsed_docs_folder}")
+        return None
+    
+    training_data = _prepare_training_data(
+        correlation_csv_path,
+        parsed_docs_folder,
+        linebreaks=linebreaks,
+        add_features_flag=add_features
+    )
+    
+    if training_data is not None:
+        training_data_output = os.path.join(config.DATA_DIR, "pipeline_training_data.jsonl")
+        print(f"Converting to JSONL format and saving to {training_data_output}...")
+        
+        with open(training_data_output, 'w', encoding='utf-8') as f:
+            for _, row in training_data.iterrows():
+                entry = {
+                    'pub_number': row['pub_number'],
+                    'source': row['en'],
+                    'target': row['fr'],
+                    'source_lang': 'en',
+                    'similarity': float(row['similarity'])
+                }
+                f.write(json.dumps(entry, ensure_ascii=False) + '\n')
+        
+        print(f"Data cleaning pipeline complete! Saved {len(training_data)} examples.\n")
+        return training_data
+    else:
+        print("Data cleaning pipeline failed!")
+        return None

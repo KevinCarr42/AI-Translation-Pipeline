@@ -147,3 +147,63 @@ def finetune_model(model_name, data_path, output_directory, learning_rate=2e-4, 
     logging.info(f"Fine-tuning complete. Model saved to {output_directory}")
     
     return trainer, train_result
+
+
+def finetuning_pipeline(data_path=None, model_names=None, **kwargs):
+    import config
+    
+    if data_path is None:
+        data_path = config.TRAINING_DATA_OUTPUT
+    if model_names is None:
+        model_names = list(config.MODELS.keys())
+    
+    print("Starting model fine-tuning pipeline...")
+    print(f"Using training data: {data_path}")
+    print(f"Fine-tuning models: {model_names}\n")
+    
+    if not os.path.exists(data_path):
+        print(f"ERROR: Training data not found at {data_path}")
+        return None
+    
+    results = {}
+    for model_name in model_names:
+        print(f"\n{'=' * 60}")
+        print(f"Fine-tuning {model_name}...")
+        print(f"{'=' * 60}\n")
+        
+        output_directory = os.path.join(config.MODEL_OUTPUT_DIR, model_name)
+        
+        training_params = {
+            'learning_rate': config.TRAINING_HYPERPARAMS.get('learning_rate', 2e-4),
+            'batch_size': config.TRAINING_HYPERPARAMS.get('batch_size', 8),
+            'gradient_accumulation': config.TRAINING_HYPERPARAMS.get('gradient_accumulation', 2),
+            'epochs': config.TRAINING_HYPERPARAMS.get('epochs', 2.0),
+            'lora_r': config.TRAINING_HYPERPARAMS.get('lora_r', 16),
+            'lora_alpha': config.TRAINING_HYPERPARAMS.get('lora_alpha', 32),
+            'lora_dropout': config.TRAINING_HYPERPARAMS.get('lora_dropout', 0.05),
+            'use_qlora': config.QUANTIZATION_CONFIG.get('use_qlora', True),
+            'use_bfloat16': config.QUANTIZATION_CONFIG.get('use_bfloat16', False),
+        }
+        
+        training_params.update(kwargs)
+        
+        trainer, result = finetune_model(
+            model_name=model_name,
+            data_path=data_path,
+            output_directory=output_directory,
+            **training_params
+        )
+        
+        results[model_name] = {
+            'status': 'success',
+            'output_directory': output_directory,
+            'training_loss': result.training_loss if result else None
+        }
+        
+        print(f"\nCompleted fine-tuning {model_name}")
+    
+    print(f"\n{'=' * 60}")
+    print("Model fine-tuning pipeline complete!")
+    print(f"{'=' * 60}\n")
+    
+    return results

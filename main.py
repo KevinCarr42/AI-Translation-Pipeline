@@ -1,4 +1,3 @@
-import config
 from data_cleaning import data_cleaning_pipeline
 from model_finetuning import finetuning_pipeline
 from translate import translation_pipeline
