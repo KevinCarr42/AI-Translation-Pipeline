@@ -97,30 +97,49 @@ run_full_pipeline(
 
 ### 1. Data Cleaning (`data_cleaning/`)
 
-Prepares raw text data into structured training datasets.
+Prepares raw text data into structured training and testing datasets using multi-level quality filtering.
 
 **Input**: Raw JSON files with text content
-**Output**: Pickle files with cleaned, aligned sentence pairs
+**Output**:
+- `pipeline_training_data.jsonl` - High-quality training data (strict filters)
+- `pipeline_eval_data.jsonl` - Testing data (relaxed quality filters)
 
 **Key Features**:
 - Language detection and text extraction
 - Sentence alignment using similarity metrics
 - Linguistic feature extraction (verb/noun ratios, entity counts, etc.)
-- Train/test split
+- Multi-level quality filtering:
+  - **Strict (Training)**: Similarity ≥ 0.757, tight bounds on linguistic ratios
+  - **Relaxed (Testing)**: 3-sigma bounds, allows figures/tables and date references
+- Figure/table text detection and exclusion
+- Date reference detection
+- Period addition to sentence ends
+
+**Quality Criteria**:
+- **Strict training filters** (based on FineTuning notebook):
+  - Similarity >= 0.757
+  - Length ratio: 0.75-1.92
+  - Verb ratio: 0.75-1.50
+  - Noun ratio: 1.00-1.75
+  - Entity ratio: 0.33-1.00
+  - Single-char words: 0-1
+  - No figure/table references, dates, or accent issues
+
+- **Relaxed testing filters** (for lower-quality evaluation data):
+  - More permissive ratio bounds (3 standard deviations)
+  - Excludes lowest/highest outliers but allows figures and dates
 
 **Boolean Flags**:
-- `skip_cleaning` - Skip text normalization
 - `linebreaks` - Include/exclude linebreak splitting
 - `add_features` - Compute linguistic features
 
 **Example**:
 ```python
-from data_cleaning.pipeline import prepare_training_data
+from data_cleaning.pipeline import data_cleaning_pipeline
 
-dataframe = prepare_training_data(
-    correlation_csv="fr_eng_correlation_data.csv",
+data_cleaning_pipeline(
+    correlation_csv_path="fr_eng_correlation_data.csv",
     parsed_docs_folder="../ParsedPublications",
-    skip_cleaning=False,
     linebreaks=True,
     add_features=True
 )

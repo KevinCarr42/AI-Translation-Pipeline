@@ -1,5 +1,6 @@
 import config
 import os
+import re
 import time
 import torch
 import multiprocessing as mp
@@ -148,6 +149,75 @@ def _prepare_training_data(correlation_csv_path, parsed_docs_folder, linebreaks=
         return matched_data
 
 
+def _apply_quality_filters(dataframe, quality_level='strict'):
+    if quality_level == 'strict':
+        outlier_criteria = {
+            "len_ratio": (0.75, 1.92),
+            "verb_ratio": (0.75, 1.50),
+            "noun_ratio": (1.00, 1.75),
+            "entity_ratio": (0.33, 1.00),
+            "clause_ratio": (1.00, 1.50),
+            "one_char_words_fr": (0.0, 1.0),
+            "one_char_words_en": (0.0, 1.0),
+        }
+        dataframe["exclude_quality"] = dataframe["similarity"] < 0.757
+        
+        for feature, (low, high) in outlier_criteria.items():
+            dataframe["exclude_quality"] |= ~dataframe[feature].between(low, high)
+        
+        return dataframe[~dataframe["exclude_quality"]].copy()
+    
+    elif quality_level == 'relaxed':
+        outlier_criteria = {
+            "len_ratio": (0.34, 3.93),
+            "verb_ratio": (0.25, 5.00),
+            "noun_ratio": (0.38, 12.00),
+            "entity_ratio": (0.10, 4.00),
+            "clause_ratio": (0.20, 6.00),
+            "one_char_words_fr": (0.0, 11.0),
+            "one_char_words_en": (0.0, 11.0),
+        }
+        dataframe["exclude_quality"] = False
+        
+        for feature, (low, high) in outlier_criteria.items():
+            dataframe["exclude_quality"] |= ~dataframe[feature].between(low, high)
+        
+        return dataframe[~dataframe["exclude_quality"]].copy()
+
+
+def _analyze_text_for_figrefs(text, language='en'):
+    if language == 'fr':
+        pattern = r'\s*(?:Figure|Tableau|Fig\.?|Tab\.?)\s+\d+.*$'
+    else:
+        pattern = r'\s*(?:Figure|Table|Fig\.?|Tab\.?)\s+\d+.*$'
+    
+    has_figure_refs = bool(re.search(pattern, text, flags=re.IGNORECASE))
+    has_trailing_nums = bool(re.search(r'\s+\d+\s*$', text))
+    has_paren_nums = bool(re.search(r'\s+\(\d+\)\s*$', text))
+    has_repeated_punct = bool(re.search(r'[.!?]{2,}$', text))
+    
+    return any([has_figure_refs, has_trailing_nums, has_paren_nums, has_repeated_punct])
+
+
+def _exclude_figure_text(dataframe):
+    dataframe["exclude_figtext"] = dataframe.apply(
+        lambda row: _analyze_text_for_figrefs(row['en'], 'en') or
+                    _analyze_text_for_figrefs(row['fr'], 'fr'),
+        axis=1
+    )
+    return dataframe
+
+
+def _exclude_date_references(dataframe):
+    date_pattern = (r'\b(?:19|20)\d{2}\b|(?:January|February|March|April|May|June|July|August|September|October|November|December|janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre'
+                    r'|novembre|décembre|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b')
+    dataframe["has_date_refs"] = dataframe[['en', 'fr']].apply(
+        lambda x: x.astype(str).str.contains(date_pattern, case=False, regex=True).any(),
+        axis=1
+    )
+    return dataframe
+
+
 def data_cleaning_pipeline(correlation_csv_path=None, parsed_docs_folder=None, linebreaks=True, add_features=True):
     if correlation_csv_path is None:
         # Note: this csv was created with BS4 webcrawling
@@ -162,23 +232,37 @@ def data_cleaning_pipeline(correlation_csv_path=None, parsed_docs_folder=None, l
     
     if not os.path.exists(correlation_csv_path):
         print(f"ERROR: Correlation CSV not found at {correlation_csv_path}")
-        return None
+        return
     
     if not os.path.exists(parsed_docs_folder):
         print(f"ERROR: Parsed docs folder not found at {parsed_docs_folder}")
-        return None
+        return
     
-    training_data = _prepare_training_data(
+    dataframe = _prepare_training_data(
         correlation_csv_path,
         parsed_docs_folder,
         linebreaks=linebreaks,
         add_features_flag=add_features
     )
     
-    if training_data is not None:
-        training_data_output = os.path.join(config.DATA_DIR, "pipeline_training_data.jsonl")
-        print(f"Converting to JSONL format and saving to {training_data_output}...")
+    if dataframe is not None:
+        dataframe = _exclude_figure_text(dataframe)
+        dataframe = _exclude_date_references(dataframe)
         
+        print("Applying quality filters...")
+        training_data = _apply_quality_filters(dataframe, quality_level='strict')
+        
+        testing_candidates = dataframe[~dataframe.index.isin(training_data.index)]
+        testing_data = _apply_quality_filters(testing_candidates, quality_level='relaxed')
+        
+        for df_set in [training_data, testing_data]:
+            df_set['fr'] = df_set['fr'] + "."
+            df_set['en'] = df_set['en'] + "."
+        
+        training_data_output = os.path.join(config.DATA_DIR, "pipeline_training_data.jsonl")
+        testing_data_output = os.path.join(config.DATA_DIR, "pipeline_eval_data.jsonl")
+        
+        print(f"Saving {len(training_data)} training examples...")
         with open(training_data_output, 'w', encoding='utf-8') as f:
             for _, row in training_data.iterrows():
                 entry = {
@@ -190,8 +274,20 @@ def data_cleaning_pipeline(correlation_csv_path=None, parsed_docs_folder=None, l
                 }
                 f.write(json.dumps(entry, ensure_ascii=False) + '\n')
         
-        print(f"Data cleaning pipeline complete! Saved {len(training_data)} examples.\n")
-        return training_data
+        print(f"Saving {len(testing_data)} testing examples...")
+        with open(testing_data_output, 'w', encoding='utf-8') as f:
+            for _, row in testing_data.iterrows():
+                entry = {
+                    'pub_number': row['pub_number'],
+                    'source': row['en'],
+                    'target': row['fr'],
+                    'source_lang': 'en',
+                    'similarity': float(row['similarity'])
+                }
+                f.write(json.dumps(entry, ensure_ascii=False) + '\n')
+        
+        print(f"Data cleaning pipeline complete!")
+        print(f"  - {training_data_output} ({len(training_data)} examples)")
+        print(f"  - {testing_data_output} ({len(testing_data)} examples)\n")
     else:
         print("Data cleaning pipeline failed!")
-        return None

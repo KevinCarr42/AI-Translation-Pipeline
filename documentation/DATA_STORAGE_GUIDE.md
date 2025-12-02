@@ -29,6 +29,7 @@ Project Root (C:\Users\CARRK\Documents\Repositories\AI\)
 │       ├── pipeline_matched_data.pickle
 │       ├── pipeline_df_with_features.pickle
 │       ├── pipeline_training_data.jsonl
+│       ├── pipeline_eval_data.jsonl
 │       ├── pipeline_evaluation_results.json
 │       └── ... (other pipeline outputs)
 │
@@ -97,14 +98,17 @@ Project Root (C:\Users\CARRK\Documents\Repositories\AI\)
 ✗ DO NOT OVERWRITE:
   - matched_data.pickle              (Original from DataCleaning)
   - matched_data_wo_linebreaks.pickle (Original from DataCleaning)
-  - df_with_features.pickle          (Original from FineTuning)
+  - df_with_more_features.pickle     (Original from FineTuning)
   - training_data.jsonl              (Original from FineTuning)
+  - testing_data.jsonl               (Original from FineTuning)
   - fr_eng_correlation_data.csv      (Original from DataCleaning)
   - preferential_translations.json    (Original from RuleBasedTranslationMatching)
   - all_translations.json            (Original from CSASTranslator)
 
 ✓ CREATE INSTEAD:
   - pipeline_[name].pickle           (Pipeline version)
+  - pipeline_training_data.jsonl     (Pipeline-generated training data)
+  - pipeline_eval_data.jsonl         (Pipeline-generated evaluation data)
 ```
 
 ---
@@ -337,7 +341,9 @@ linebreaks.pickle ────────
 
 pipeline_matched_data.pickle ──→ Feature Engineering ──→ pipeline_df_with_features.pickle
 
-pipeline_df_with_features.pickle ──→ Create JSONL ──→ pipeline_training_data.jsonl
+pipeline_df_with_features.pickle ──┐
+                                    ├──→ Quality Filtering ──→ pipeline_training_data.jsonl (strict)
+                                    └──→ Quality Filtering ──→ pipeline_eval_data.jsonl (relaxed)
 
 pipeline_training_data.jsonl ──→ Fine-tuning ──→ outputs/m2m100_418m/merged_model.bin
 
