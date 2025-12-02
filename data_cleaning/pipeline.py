@@ -150,8 +150,10 @@ def _prepare_training_data(correlation_csv_path, parsed_docs_folder, linebreaks=
 
 def data_cleaning_pipeline(correlation_csv_path=None, parsed_docs_folder=None, linebreaks=True, add_features=True):
     if correlation_csv_path is None:
+        # Note: this csv was created with BS4 webcrawling
         correlation_csv_path = config.CORRELATION_CSV_PATH
     if parsed_docs_folder is None:
+        # Note: this data was provided by CDOS (used for ISAS)
         parsed_docs_folder = config.PARSED_DOCS_DIR
     
     print("Starting data cleaning pipeline...")

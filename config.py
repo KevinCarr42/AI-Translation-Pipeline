@@ -1,8 +1,10 @@
 import os
 
-DATA_DIR = os.environ.get("DATA_DIR", "../Data")
-MODEL_OUTPUT_DIR = os.environ.get("MODEL_OUTPUT_DIR", "../outputs")
-PARSED_DOCS_DIR = os.environ.get("PARSED_DOCS_DIR", "../ParsedPublications")
+DATA_DIR = "../Data"
+MODEL_OUTPUT_DIR = "../outputs"
+TRANSLATED_TEXT_DIR = "translations"
+
+PARSED_DOCS_DIR = os.path.join(DATA_DIR, "ParsedPublications")
 CORRELATION_CSV_PATH = os.path.join(DATA_DIR, "fr_eng_correlation_data.csv")
 TRANSLATIONS_JSON_PATH = os.path.join(DATA_DIR, "all_translations.json")
 
