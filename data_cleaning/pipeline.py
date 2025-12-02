@@ -21,6 +21,9 @@ try:
 except ImportError:
     from language_classifier.language_classifier import LanguageClassifier
 
+_GLOBAL_SENTENCE_ENCODER = None
+_GLOBAL_LANGUAGE_CLASSIFIER = None
+
 
 def _get_json_file_link(parsed_docs_folder, pdf_filename):
     if pdf_filename.endswith(".pdf"):
@@ -66,9 +69,15 @@ def _process_row(row_tuple, device, language_classifier, sentence_encoder, skip_
     return correlate_and_clean_text(text_fr, text_en, pub_number, sentence_encoder, device, linebreaks)
 
 
+def _worker_init(device):
+    global _GLOBAL_SENTENCE_ENCODER, _GLOBAL_LANGUAGE_CLASSIFIER
+    _GLOBAL_LANGUAGE_CLASSIFIER = LanguageClassifier()
+    _GLOBAL_SENTENCE_ENCODER = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2').to(device)
+
+
 def _process_row_wrapper(args):
-    row, device, language_classifier, sentence_encoder, skip_abstracts, linebreaks, parsed_docs_folder = args
-    return _process_row(row, device, language_classifier, sentence_encoder, skip_abstracts, linebreaks, parsed_docs_folder)
+    row, device, skip_abstracts, linebreaks, parsed_docs_folder = args
+    return _process_row(row, device, _GLOBAL_LANGUAGE_CLASSIFIER, _GLOBAL_SENTENCE_ENCODER, skip_abstracts, linebreaks, parsed_docs_folder)
 
 
 def _print_time_estimate(start_time, processed_count, total_count):
@@ -96,14 +105,14 @@ def _print_status(start_time, processed_count, total_count):
             print(f"{processed_count}", end="... ")
 
 
-def _create_dataframe(num_workers, total_rows, rows, device, language_classifier, sentence_encoder, skip_abstracts, linebreaks, parsed_docs_folder, output_filename):
+def _create_dataframe(num_workers, rows, device, skip_abstracts, linebreaks, parsed_docs_folder, output_filename):
     start_time = time.time()
     
-    args_list = [(row, device, language_classifier, sentence_encoder, skip_abstracts, linebreaks, parsed_docs_folder) for row in rows]
+    args_list = [(row, device, skip_abstracts, linebreaks, parsed_docs_folder) for row in rows]
     
     print(f"\n=========== PROCESSING {output_filename} ===========")
     
-    with mp.Pool(num_workers) as pool:
+    with mp.Pool(num_workers, initializer=_worker_init, initargs=(device,)) as pool:
         results = []
         for i, result in enumerate(pool.imap_unordered(_process_row_wrapper, args_list)):
             if result:
@@ -122,19 +131,15 @@ def _prepare_training_data(correlation_csv_path, parsed_docs_folder, linebreaks=
     correlation_dataframe = pd.read_csv(correlation_csv_path)
     correlation_dataframe = correlation_dataframe[['pub_number', 'filename_fr', 'filename_en']]
     rows = list(correlation_dataframe.iterrows())
-    total_rows = len(rows)
     
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    num_workers = max(1, os.cpu_count() // 2)
-    
-    language_classifier = LanguageClassifier()
-    sentence_encoder = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2').to(device)
+    num_workers = max(1, min(4, os.cpu_count() // 4))
     
     print(f'\nUsing device: {device}')
-    print(f"Using {num_workers} CPU cores.\n")
+    print(f"Using {num_workers} worker processes.\n")
     
     matched_data = _create_dataframe(
-        num_workers, total_rows, rows, device, language_classifier, sentence_encoder,
+        num_workers, rows, device,
         False, linebreaks, parsed_docs_folder,
         os.path.join(config.DATA_DIR, "pipeline_matched_data.pickle")
     )
