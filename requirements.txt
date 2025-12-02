@@ -13,3 +13,4 @@ spacy>=3.5.0
 bitsandbytes>=0.41.0
 accelerate>=0.24.0
 safetensors>=0.3.0
+alive-progress>=3.0.0

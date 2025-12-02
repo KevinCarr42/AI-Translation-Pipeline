@@ -8,6 +8,7 @@ import pandas as pd
 import json
 
 from sentence_transformers import SentenceTransformer
+from alive_progress import alive_bar
 
 from .text_processing import (
     extract_both_languages_from_two_files,
@@ -80,49 +81,22 @@ def _process_row_wrapper(args):
     return _process_row(row, device, _GLOBAL_LANGUAGE_CLASSIFIER, _GLOBAL_SENTENCE_ENCODER, skip_abstracts, linebreaks, parsed_docs_folder)
 
 
-def _print_time_estimate(start_time, processed_count, total_count):
-    if processed_count == 0:
-        print(f"\n{processed_count}/{total_count} complete.", end="... ")
-        return
-    
-    time_elapsed = int(time.time() - start_time)
-    time_remaining = int((time_elapsed / processed_count) * (total_count - processed_count))
-    
-    time_elapsed_text = f"{time_elapsed // 3600}h:{(time_elapsed % 3600) // 60:02d}m"
-    time_remaining_text = f"{time_remaining // 3600}h:{(time_remaining % 3600) // 60:02d}m"
-    
-    print(f"\n{processed_count}/{total_count} complete at {time_elapsed_text}. Estimated {time_remaining_text} remaining.", end="... ")
-
-
-def _print_status(start_time, processed_count, total_count):
-    small_update = 50
-    large_update = 500
-    
-    if processed_count % small_update == 0:
-        if processed_count % large_update == 0:
-            _print_time_estimate(start_time, processed_count, total_count)
-        else:
-            print(f"{processed_count}", end="... ")
-
-
 def _create_dataframe(num_workers, rows, device, skip_abstracts, linebreaks, parsed_docs_folder, output_filename):
-    start_time = time.time()
-    
     args_list = [(row, device, skip_abstracts, linebreaks, parsed_docs_folder) for row in rows]
     
     print(f"\n=========== PROCESSING {output_filename} ===========")
     
+    results = []
     with mp.Pool(num_workers, initializer=_worker_init, initargs=(device,)) as pool:
-        results = []
-        for i, result in enumerate(pool.imap_unordered(_process_row_wrapper, args_list)):
-            if result:
-                results.extend(result)
-            
-            _print_status(start_time, i, len(rows))
+        with alive_bar(len(args_list), title=os.path.basename(output_filename)) as bar:
+            for result in pool.imap_unordered(_process_row_wrapper, args_list):
+                if result:
+                    results.extend(result)
+                bar()
     
     dataframe = pd.DataFrame(results, columns=['pub_number', 'fr', 'en', 'similarity'])
     dataframe.to_pickle(output_filename)
-    print(f"\nProcessing {output_filename} complete!\n")
+    print(f"Processing {output_filename} complete!\n")
     
     return dataframe
 
