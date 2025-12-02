@@ -6,7 +6,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 
 def test_file_syntax(filepath):
-    """Test that a Python file has valid syntax"""
     try:
         py_compile.compile(filepath, doraise=True)
         return True
@@ -16,11 +15,10 @@ def test_file_syntax(filepath):
 
 
 def test_all_python_files():
-    """Validate syntax of all Python files in Pipeline"""
     print("\nValidating Python syntax...")
-
+    
     pipeline_dir = os.path.dirname(os.path.dirname(__file__))
-
+    
     files_to_check = [
         "config.py",
         "main.py",
@@ -36,10 +34,10 @@ def test_all_python_files():
         "translate/document.py",
         "translate/pipeline.py",
     ]
-
+    
     passed = 0
     failed = 0
-
+    
     for file_rel in files_to_check:
         filepath = os.path.join(pipeline_dir, file_rel)
         if os.path.exists(filepath):
@@ -52,16 +50,15 @@ def test_all_python_files():
         else:
             print(f"  [MISS] {file_rel} (not found)")
             failed += 1
-
+    
     return passed, failed
 
 
 def test_directory_structure():
-    """Validate directory structure"""
     print("\nValidating directory structure...")
-
+    
     pipeline_dir = os.path.dirname(os.path.dirname(__file__))
-
+    
     required_dirs = [
         "data_cleaning",
         "model_finetuning",
@@ -69,10 +66,10 @@ def test_directory_structure():
         "tests",
         "documentation",
     ]
-
+    
     passed = 0
     failed = 0
-
+    
     for dir_name in required_dirs:
         dir_path = os.path.join(pipeline_dir, dir_name)
         if os.path.isdir(dir_path):
@@ -81,7 +78,7 @@ def test_directory_structure():
         else:
             print(f"  [FAIL] {dir_name}/ missing")
             failed += 1
-
+    
     return passed, failed
 
 
@@ -89,13 +86,13 @@ if __name__ == "__main__":
     print("\n" + "=" * 60)
     print("SYNTAX VALIDATION TESTS")
     print("=" * 60)
-
+    
     dir_pass, dir_fail = test_directory_structure()
     syntax_pass, syntax_fail = test_all_python_files()
-
+    
     total_pass = dir_pass + syntax_pass
     total_fail = dir_fail + syntax_fail
-
+    
     print("\n" + "=" * 60)
     print("SYNTAX VALIDATION SUMMARY")
     print("=" * 60)
@@ -103,7 +100,7 @@ if __name__ == "__main__":
     print(f"Python syntax:       {syntax_pass}/{syntax_pass + syntax_fail} passed")
     print(f"\nTotal: {total_pass}/{total_pass + total_fail} checks passed")
     print("=" * 60 + "\n")
-
+    
     if total_fail == 0:
         print("ALL SYNTAX VALIDATION TESTS PASSED [OK]\n")
         sys.exit(0)

@@ -5,7 +5,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 
 def test_config_import():
-    """Test config module import"""
     print("\nTesting config import...")
     try:
         import config
@@ -20,7 +19,6 @@ def test_config_import():
 
 
 def test_data_cleaning_import():
-    """Test data_cleaning module import"""
     print("\nTesting data_cleaning import...")
     try:
         from data_cleaning import data_cleaning_pipeline
@@ -33,7 +31,6 @@ def test_data_cleaning_import():
 
 
 def test_model_finetuning_imports():
-    """Test model_finetuning module imports"""
     print("\nTesting model_finetuning imports...")
     try:
         from model_finetuning import (
@@ -57,7 +54,6 @@ def test_model_finetuning_imports():
 
 
 def test_translate_imports():
-    """Test translate module imports"""
     print("\nTesting translate imports...")
     try:
         from translate import (
@@ -89,17 +85,16 @@ def test_translate_imports():
 
 
 def test_main_imports():
-    """Test that main.py imports work"""
     print("\nTesting main.py imports...")
     try:
         from data_cleaning import data_cleaning_pipeline
         from model_finetuning import finetuning_pipeline
         from translate import translation_pipeline
-
+        
         assert callable(data_cleaning_pipeline)
         assert callable(finetuning_pipeline)
         assert callable(translation_pipeline)
-
+        
         print("  [OK] main.py can import all required functions")
         return True
     except Exception as e:
@@ -111,29 +106,29 @@ if __name__ == "__main__":
     print("\n" + "=" * 60)
     print("MODULE IMPORT TESTS")
     print("=" * 60)
-
+    
     results = []
-
+    
     results.append(("config", test_config_import()))
     results.append(("data_cleaning", test_data_cleaning_import()))
     results.append(("model_finetuning", test_model_finetuning_imports()))
     results.append(("translate", test_translate_imports()))
     results.append(("main integration", test_main_imports()))
-
+    
     print("\n" + "=" * 60)
     print("IMPORT TESTS SUMMARY")
     print("=" * 60)
-
+    
     passed = sum(1 for _, result in results if result)
     total = len(results)
-
+    
     for test_name, result in results:
         status = "[OK] PASS" if result else "[FAIL] FAIL"
         print(f"  {test_name}: {status}")
-
+    
     print(f"\nTotal: {passed}/{total} tests passed")
     print("=" * 60 + "\n")
-
+    
     if passed == total:
         print("ALL IMPORT TESTS PASSED [OK]\n")
         sys.exit(0)
