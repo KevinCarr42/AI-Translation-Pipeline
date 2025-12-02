@@ -110,7 +110,8 @@ def _prepare_training_data(correlation_csv_path, parsed_docs_folder, linebreaks=
     num_workers = max(1, min(4, os.cpu_count() // 4))
     
     print(f'\nUsing device: {device}')
-    print(f"Using {num_workers} worker processes.\n")
+    print(f"Using {num_workers} worker processes.")
+    print(f"Processing {len(rows)} publications...\n")
     
     matched_data = _create_dataframe(
         num_workers, rows, device,
@@ -119,10 +120,12 @@ def _prepare_training_data(correlation_csv_path, parsed_docs_folder, linebreaks=
     )
     
     if add_features_flag:
-        print("Adding linguistic features...")
+        print("\n========== FEATURE ENGINEERING ==========")
+        print(f"Processing {len(matched_data)} aligned sentence pairs for linguistic features")
+        print("(This is CPU-intensive and typically takes 20-40 minutes for large datasets)\n")
         featured_data = add_features(matched_data)
         featured_data.to_pickle(os.path.join(config.DATA_DIR, "pipeline_df_with_features.pickle"))
-        print("Features added and saved.\n")
+        print("\nFeatures added and saved to pipeline_df_with_features.pickle\n")
         return featured_data
     else:
         return matched_data
@@ -225,14 +228,23 @@ def data_cleaning_pipeline(correlation_csv_path=None, parsed_docs_folder=None, l
     )
     
     if dataframe is not None:
+        print("\n========== QUALITY FILTERING ==========")
+        print(f"Excluding figure/table text...", end=" ", flush=True)
         dataframe = _exclude_figure_text(dataframe)
-        dataframe = _exclude_date_references(dataframe)
+        print("✓")
         
-        print("Applying quality filters...")
+        print(f"Excluding date references...", end=" ", flush=True)
+        dataframe = _exclude_date_references(dataframe)
+        print("✓")
+        
+        print(f"\nApplying strict filters (training data)...", end=" ", flush=True)
         training_data = _apply_quality_filters(dataframe, quality_level='strict')
+        print(f"✓ ({len(training_data)} examples retained)")
         
         testing_candidates = dataframe[~dataframe.index.isin(training_data.index)]
+        print(f"Applying relaxed filters (evaluation data)...", end=" ", flush=True)
         testing_data = _apply_quality_filters(testing_candidates, quality_level='relaxed')
+        print(f"✓ ({len(testing_data)} examples retained)")
         
         for df_set in [training_data, testing_data]:
             df_set['fr'] = df_set['fr'] + "."
@@ -241,7 +253,8 @@ def data_cleaning_pipeline(correlation_csv_path=None, parsed_docs_folder=None, l
         training_data_output = os.path.join(config.DATA_DIR, "pipeline_training_data.jsonl")
         testing_data_output = os.path.join(config.DATA_DIR, "pipeline_eval_data.jsonl")
         
-        print(f"Saving {len(training_data)} training examples...")
+        print(f"\n========== SAVING OUTPUT ==========")
+        print(f"Saving {len(training_data)} training examples to {os.path.basename(training_data_output)}...")
         with open(training_data_output, 'w', encoding='utf-8') as f:
             for _, row in training_data.iterrows():
                 entry = {
@@ -252,8 +265,9 @@ def data_cleaning_pipeline(correlation_csv_path=None, parsed_docs_folder=None, l
                     'similarity': float(row['similarity'])
                 }
                 f.write(json.dumps(entry, ensure_ascii=False) + '\n')
+        print("✓ Complete")
         
-        print(f"Saving {len(testing_data)} testing examples...")
+        print(f"Saving {len(testing_data)} evaluation examples to {os.path.basename(testing_data_output)}...")
         with open(testing_data_output, 'w', encoding='utf-8') as f:
             for _, row in testing_data.iterrows():
                 entry = {
@@ -264,9 +278,12 @@ def data_cleaning_pipeline(correlation_csv_path=None, parsed_docs_folder=None, l
                     'similarity': float(row['similarity'])
                 }
                 f.write(json.dumps(entry, ensure_ascii=False) + '\n')
+        print("✓ Complete")
         
-        print(f"Data cleaning pipeline complete!")
-        print(f"  - {training_data_output} ({len(training_data)} examples)")
-        print(f"  - {testing_data_output} ({len(testing_data)} examples)\n")
+        print(f"\n========== PIPELINE COMPLETE ==========")
+        print(f"Training data:  {training_data_output}")
+        print(f"               {len(training_data)} examples")
+        print(f"\nEvaluation data: {testing_data_output}")
+        print(f"                {len(testing_data)} examples\n")
     else:
         print("Data cleaning pipeline failed!")
