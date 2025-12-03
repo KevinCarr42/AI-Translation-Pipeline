@@ -64,6 +64,20 @@ def add_features(dataframe):
     clauses_en = dataframe["en"].str.count(",") + dataframe["en"].str.count(";") + 1
     dataframe["clause_ratio"] = clauses_fr / clauses_en
     print(f"→ done in {(time.perf_counter() - feature_start) / 60:.2f} min")
+    print(f"TOTAL time elapsed so far: {(time.perf_counter() - total_start) / 60:.2f} min")
+    
+    print('appending one_char_words_fr')
+    feature_start = time.perf_counter()
+    one_char_words_fr = dataframe["fr"].str.split().apply(lambda words: sum(1 for w in words if len(w) == 1)) / (dataframe["fr"].str.split().apply(len) + 1)
+    dataframe["one_char_words_fr"] = one_char_words_fr
+    print(f"→ done in {(time.perf_counter() - feature_start) / 60:.2f} min")
+    print(f"TOTAL time elapsed so far: {(time.perf_counter() - total_start) / 60:.2f} min")
+    
+    print('appending one_char_words_en')
+    feature_start = time.perf_counter()
+    one_char_words_en = dataframe["en"].str.split().apply(lambda words: sum(1 for w in words if len(w) == 1)) / (dataframe["en"].str.split().apply(len) + 1)
+    dataframe["one_char_words_en"] = one_char_words_en
+    print(f"→ done in {(time.perf_counter() - feature_start) / 60:.2f} min")
     print(f"TOTAL time: {(time.perf_counter() - total_start) / 60:.2f} min")
     
     return dataframe
