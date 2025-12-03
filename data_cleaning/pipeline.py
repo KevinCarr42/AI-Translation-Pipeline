@@ -106,11 +106,19 @@ def _prepare_training_data(correlation_csv_path, parsed_docs_folder, linebreaks=
     featured_pickle_path = os.path.join(config.DATA_DIR, "pipeline_df_with_features.pickle")
     matched_pickle_path = os.path.join(config.DATA_DIR, "pipeline_matched_data.pickle")
     
+    required_features = {"len_ratio", "verb_ratio", "noun_ratio", "entity_ratio", "clause_ratio", "one_char_words_fr", "one_char_words_en"}
+    
     if os.path.exists(featured_pickle_path):
         print("\n✓ Found existing pipeline_df_with_features.pickle, loading...")
         featured_data = pd.read_pickle(featured_pickle_path)
-        print(f"Loaded {len(featured_data)} rows with features\n")
-        return featured_data
+        missing_features = required_features - set(featured_data.columns)
+        
+        if missing_features:
+            print(f"⚠ Missing features: {missing_features}")
+            print("Need to regenerate features...\n")
+        else:
+            print(f"Loaded {len(featured_data)} rows with features\n")
+            return featured_data
     
     if os.path.exists(matched_pickle_path):
         print("\n✓ Found existing pipeline_matched_data.pickle, loading...")
