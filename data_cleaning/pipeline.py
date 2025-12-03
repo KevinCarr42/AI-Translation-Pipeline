@@ -103,29 +103,43 @@ def _create_dataframe(num_workers, rows, device, skip_abstracts, linebreaks, par
 
 
 def _prepare_training_data(correlation_csv_path, parsed_docs_folder, linebreaks=True, add_features_flag=True):
-    correlation_dataframe = pd.read_csv(correlation_csv_path)
-    correlation_dataframe = correlation_dataframe[['pub_number', 'filename_fr', 'filename_en']]
-    rows = list(correlation_dataframe.iterrows())
+    featured_pickle_path = os.path.join(config.DATA_DIR, "pipeline_df_with_features.pickle")
+    matched_pickle_path = os.path.join(config.DATA_DIR, "pipeline_matched_data.pickle")
     
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    num_workers = max(1, min(4, os.cpu_count() // 4))
+    if os.path.exists(featured_pickle_path):
+        print("\n✓ Found existing pipeline_df_with_features.pickle, loading...")
+        featured_data = pd.read_pickle(featured_pickle_path)
+        print(f"Loaded {len(featured_data)} rows with features\n")
+        return featured_data
     
-    print(f'\nUsing device: {device}')
-    print(f"Using {num_workers} worker processes.")
-    print(f"Processing {len(rows)} publications...\n")
-    
-    matched_data = _create_dataframe(
-        num_workers, rows, device,
-        False, linebreaks, parsed_docs_folder,
-        os.path.join(config.DATA_DIR, "pipeline_matched_data.pickle")
-    )
+    if os.path.exists(matched_pickle_path):
+        print("\n✓ Found existing pipeline_matched_data.pickle, loading...")
+        matched_data = pd.read_pickle(matched_pickle_path)
+        print(f"Loaded {len(matched_data)} matched rows\n")
+    else:
+        correlation_dataframe = pd.read_csv(correlation_csv_path)
+        correlation_dataframe = correlation_dataframe[['pub_number', 'filename_fr', 'filename_en']]
+        rows = list(correlation_dataframe.iterrows())
+        
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        num_workers = max(1, min(4, os.cpu_count() // 4))
+        
+        print(f'\nUsing device: {device}')
+        print(f"Using {num_workers} worker processes.")
+        print(f"Processing {len(rows)} publications...\n")
+        
+        matched_data = _create_dataframe(
+            num_workers, rows, device,
+            False, linebreaks, parsed_docs_folder,
+            matched_pickle_path
+        )
     
     if add_features_flag:
         print("\n========== FEATURE ENGINEERING ==========")
         print(f"Processing {len(matched_data)} aligned sentence pairs for linguistic features")
         print("(This is CPU-intensive and typically takes 20-40 minutes for large datasets)\n")
         featured_data = add_features(matched_data)
-        featured_data.to_pickle(os.path.join(config.DATA_DIR, "pipeline_df_with_features.pickle"))
+        featured_data.to_pickle(featured_pickle_path)
         print("\nFeatures added and saved to pipeline_df_with_features.pickle\n")
         return featured_data
     else:
