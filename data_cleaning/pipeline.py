@@ -273,8 +273,8 @@ def data_cleaning_pipeline(correlation_csv_path=None, parsed_docs_folder=None, l
             df_set['fr'] = df_set['fr'] + "."
             df_set['en'] = df_set['en'] + "."
         
-        training_data_output = os.path.join(config.DATA_DIR, "pipeline_training_data.jsonl")
-        testing_data_output = os.path.join(config.DATA_DIR, "pipeline_testing_data.jsonl")
+        training_data_output = config.TRAINING_DATA_OUTPUT
+        testing_data_output = config.TESTING_DATA_OUTPUT
         
         print(f"\n========== SAVING OUTPUT ==========")
         print(f"Saving {len(training_data)} training examples to {os.path.basename(training_data_output)}...")
