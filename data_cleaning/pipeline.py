@@ -17,6 +17,33 @@ from .text_processing import (
 from .correlation import correlate_and_clean_text
 from .feature_engineering import add_features
 
+
+def save_jsonl(dataframe, filename, include_metadata=False):
+    with open(filename, 'w', encoding='utf-8') as f:
+        for _, row in dataframe.iterrows():
+            entry_en_fr = {
+                'source': row['en'],
+                'target': row['fr'],
+                'source_lang': 'en',
+            }
+            if include_metadata:
+                entry_en_fr['pub_number'] = row['pub_number']
+                entry_en_fr['similarity'] = float(row['similarity'])
+            
+            f.write(json.dumps(entry_en_fr, ensure_ascii=False) + '\n')
+            
+            entry_fr_en = {
+                'source': row['fr'],
+                'target': row['en'],
+                'source_lang': 'fr',
+            }
+            if include_metadata:
+                entry_fr_en['pub_number'] = row['pub_number']
+                entry_fr_en['similarity'] = float(row['similarity'])
+            
+            f.write(json.dumps(entry_fr_en, ensure_ascii=False) + '\n')
+
+
 try:
     from ..language_classifier import LanguageClassifier
 except ImportError:
@@ -279,35 +306,17 @@ def data_cleaning_pipeline(correlation_csv_path=None, parsed_docs_folder=None, l
         
         print(f"\n========== SAVING OUTPUT ==========")
         print(f"Saving {len(training_data)} training examples to {os.path.basename(training_data_output)}...")
-        with open(training_data_output, 'w', encoding='utf-8') as f:
-            for _, row in training_data.iterrows():
-                entry = {
-                    'pub_number': row['pub_number'],
-                    'source': row['en'],
-                    'target': row['fr'],
-                    'source_lang': 'en',
-                    'similarity': float(row['similarity'])
-                }
-                f.write(json.dumps(entry, ensure_ascii=False) + '\n')
-        print("✓ Complete")
+        save_jsonl(training_data, training_data_output)
+        print(f"✓ Complete ({len(training_data) * 2} bidirectional entries)")
         
         print(f"Saving {len(testing_data)} evaluation examples to {os.path.basename(testing_data_output)}...")
-        with open(testing_data_output, 'w', encoding='utf-8') as f:
-            for _, row in testing_data.iterrows():
-                entry = {
-                    'pub_number': row['pub_number'],
-                    'source': row['en'],
-                    'target': row['fr'],
-                    'source_lang': 'en',
-                    'similarity': float(row['similarity'])
-                }
-                f.write(json.dumps(entry, ensure_ascii=False) + '\n')
-        print("✓ Complete")
+        save_jsonl(testing_data, testing_data_output)
+        print(f"✓ Complete ({len(testing_data) * 2} bidirectional entries)")
         
         print(f"\n========== PIPELINE COMPLETE ==========")
         print(f"Training data:  {training_data_output}")
-        print(f"               {len(training_data)} examples")
+        print(f"               {len(training_data) * 2} bidirectional entries ({len(training_data)} unique pairs)")
         print(f"\nEvaluation data: {testing_data_output}")
-        print(f"                {len(testing_data)} examples\n")
+        print(f"                {len(testing_data) * 2} bidirectional entries ({len(testing_data)} unique pairs)\n")
     else:
         print("Data cleaning pipeline failed!")
