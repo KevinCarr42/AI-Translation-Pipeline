@@ -87,7 +87,8 @@ def _create_dataframe(num_workers, rows, device, skip_abstracts, linebreaks, par
     print(f"\n=========== PROCESSING {output_filename} ===========")
     
     results = []
-    with mp.Pool(num_workers, initializer=_worker_init, initargs=(device,)) as pool:
+    ctx = mp.get_context('spawn')
+    with ctx.Pool(num_workers, initializer=_worker_init, initargs=(device,)) as pool:
         with alive_bar(len(args_list), title=os.path.basename(output_filename)) as bar:
             for result in pool.imap_unordered(_process_row_wrapper, args_list):
                 if result:
