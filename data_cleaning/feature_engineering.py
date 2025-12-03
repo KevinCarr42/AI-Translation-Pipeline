@@ -66,16 +66,29 @@ def add_features(dataframe):
     print(f"→ done in {(time.perf_counter() - feature_start) / 60:.2f} min")
     print(f"TOTAL time elapsed so far: {(time.perf_counter() - total_start) / 60:.2f} min")
     
+    print('fixing missing apostrophes in French')
+    feature_start = time.perf_counter()
+    apostrophe_letters = ['L', 'D', 'N', 'M', 'S', 'T', 'l', 'd', 'n', 'm', 's', 't']
+    for letter in apostrophe_letters:
+        dataframe["fr"] = dataframe["fr"].str.replace(f" {letter} ", f" {letter}'", regex=False)
+        dataframe["fr"] = dataframe["fr"].str.replace(f"^{letter} ", f"{letter}'", regex=True)
+    print(f"→ done in {(time.perf_counter() - feature_start) / 60:.2f} min")
+    print(f"TOTAL time elapsed so far: {(time.perf_counter() - total_start) / 60:.2f} min")
+    
+    # TODO: confirm 'J ai' and 'don t' get fixed on second pass
+    valid_one_char_words_fr = {'À', 'A', 'L', 'D', 'N', 'Y', 'M', 'S', 'T', 'à', 'a', 'l', 'd', 'n', 'y', 'm', 's', 't'}
+    valid_one_char_words_en = {'A', 'I', 'O', 'a', 'i', 'o'}
+    
     print('appending one_char_words_fr')
     feature_start = time.perf_counter()
-    one_char_words_fr = dataframe["fr"].str.split().apply(lambda words: sum(1 for w in words if len(w) == 1)) / (dataframe["fr"].str.split().apply(len) + 1)
+    one_char_words_fr = dataframe["fr"].str.split().apply(lambda words: sum(1 for w in words if len(w) == 1 and w not in valid_one_char_words_fr)) / (dataframe["fr"].str.split().apply(len) + 1)
     dataframe["one_char_words_fr"] = one_char_words_fr
     print(f"→ done in {(time.perf_counter() - feature_start) / 60:.2f} min")
     print(f"TOTAL time elapsed so far: {(time.perf_counter() - total_start) / 60:.2f} min")
     
     print('appending one_char_words_en')
     feature_start = time.perf_counter()
-    one_char_words_en = dataframe["en"].str.split().apply(lambda words: sum(1 for w in words if len(w) == 1)) / (dataframe["en"].str.split().apply(len) + 1)
+    one_char_words_en = dataframe["en"].str.split().apply(lambda words: sum(1 for w in words if len(w) == 1 and w not in valid_one_char_words_en)) / (dataframe["en"].str.split().apply(len) + 1)
     dataframe["one_char_words_en"] = one_char_words_en
     print(f"→ done in {(time.perf_counter() - feature_start) / 60:.2f} min")
     print(f"TOTAL time: {(time.perf_counter() - total_start) / 60:.2f} min")

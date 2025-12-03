@@ -155,6 +155,7 @@ def _prepare_training_data(correlation_csv_path, parsed_docs_folder, linebreaks=
 
 
 def _apply_quality_filters(dataframe, quality_level='strict'):
+    dataframe = dataframe.copy()
     if quality_level == 'strict':
         outlier_criteria = {
             "len_ratio": (0.75, 1.92),
