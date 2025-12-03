@@ -344,7 +344,7 @@ class TranslationManager:
         
         if use_find_replace:
             preprocessed_text, token_mapping = apply_preferential_translations(
-                text, source_lang, target_lang, config.TRANSLATIONS_JSON_PATH
+                text, source_lang, target_lang, config.PREFERENTIAL_JSON_PATH
             )
             
             translated_with_tokens, retry_attempts, retry_params = self.translate_with_retries(
