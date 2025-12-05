@@ -92,6 +92,7 @@ def add_more_features(dataframe):
     
     actual_one_char_words_en = ['A', 'I', 'O', 'a', 'o']
     dataframe['one_char_words_en'] = dataframe['en'].apply(lambda s: sum(len(w) == 1 for w in s.split() if w not in actual_one_char_words_en))
+    print(f"→ done in {(time.perf_counter() - t0) / 60:.2f} min")
     
     # FIXME: should this be earlier? in data cleaning?
     dataframe = clean_ocr_errors(dataframe)
@@ -99,7 +100,6 @@ def add_more_features(dataframe):
     dataframe = clean_misaccented_words(dataframe, replacement_dict)
     dataframe = add_misaccented_column(dataframe, potential_accent_issues_uncommon)
     
-    print(f"→ done in {(time.perf_counter() - t0) / 60:.2f} min")
     return dataframe
 
 
@@ -129,7 +129,7 @@ def clean_ocr_errors(dataframe):
         dataframe['fr'].str.contains('|'.join(missing_apostrophe_patterns), na=False, case=False),
     ].shape[0]
     n_total = dataframe.shape[0]
-    print(f"{n_with_missing} out of {n_total} sentences are missing apostrophes ({n_with_missing / n_total:.0%})")
+    print(f"\t→ {n_with_missing} out of {n_total} sentences are missing apostrophes ({n_with_missing / n_total:.0%})")
     
     dataframe['fr'] = dataframe['fr'].replace(
         dict(zip(missing_apostrophe_patterns, replacement_patterns)),
@@ -219,31 +219,37 @@ def add_misaccented_column(dataframe, potential_accent_issues_uncommon):
 
 
 def add_features(dataframe):
-    filename_data_with_features = config.MATCHED_DATA_WITH_FEATURES
-    filename_data_with_all_features = config.MATCHED_DATA_WITH_ALL_FEATURES
+    some_features = config.MATCHED_DATA_WITH_FEATURES
+    all_features = config.MATCHED_DATA_WITH_ALL_FEATURES
     
-    if os.path.exists(filename_data_with_all_features):
-        print(f"Loading {filename_data_with_all_features}")
-        return pd.read_pickle(filename_data_with_features)
+    if os.path.exists(all_features):
+        print(f"Loading {all_features}")
+        return pd.read_pickle(all_features)
     
-    elif os.path.exists(filename_data_with_features):
-        print(f"Loading {filename_data_with_features}")
-        df = pd.read_pickle(filename_data_with_features)
-        print(f"Calculating {filename_data_with_all_features}...")
+    elif os.path.exists(some_features):
+        print(f"Loading {some_features}")
+        df = pd.read_pickle(some_features)
+        
+        print(f"Calculating {all_features}...")
         df = add_more_features(df)
         print("Saving file...")
-        df.to_pickle(filename_data_with_all_features)
+        df.to_pickle(all_features)
+        print("Save complete!\n")
         return df
     
     else:
-        print(f"Calculating {filename_data_with_features}...")
+        print(f"Calculating {some_features}...")
         df = add_some_features(dataframe)
         print("Saving file...")
-        df.to_pickle(filename_data_with_features)
-        print(f"calculating {filename_data_with_all_features}...")
+        df.to_pickle(some_features)
+        print("Save complete!\n")
+        
+        print(f"calculating {all_features}...")
         df = add_more_features(df)
         print("Saving file...")
-        df.to_pickle(filename_data_with_all_features)
+        df.to_pickle(all_features)
+        print("Save complete!\n")
+        
         return df
 
 
