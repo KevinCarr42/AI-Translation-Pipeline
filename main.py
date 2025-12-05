@@ -3,7 +3,7 @@ import config
 
 from create_training_data.pipeline import create_training_data_pipeline
 from model_finetuning.pipeline import finetuning_pipeline
-from translate import translation_pipeline
+from translate.pipeline import translation_pipeline
 
 
 def translate_text(
