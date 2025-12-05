@@ -277,8 +277,10 @@ def create_df(num_workers, n_rows, rows, device, language_classifier, sentence_e
             print_status(start_time, i, n_rows)
     
     dataframe = pd.DataFrame(results, columns=['pub_number', 'fr', 'en', 'similarity'])
+    
+    print(f"\nSaving {filename}...")
     dataframe.to_pickle(filename)
-    print(f"\nProcessing {filename} complete!\n")
+    print(f"\nCreating {filename} complete!\n")
     
     return dataframe
 

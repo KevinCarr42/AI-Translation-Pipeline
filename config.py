@@ -11,7 +11,7 @@ CORRELATION_CSV_PATH = os.path.join(DATA_DIR, "fr_eng_correlation_data.csv")
 PREFERENTIAL_JSON_PATH = os.path.join(DATA_DIR, "preferential_translations.json")
 
 # calculated data
-MATCHED_DATA = os.path.join(DATA_DIR, "pipeline_matched_data.pickle")
+MATCHED_DATA = os.path.join(DATA_DIR, "pipeline_matched_data.pickle")  # tested, works
 MATCHED_DATA_WITH_FEATURES = os.path.join(DATA_DIR, "pipeline_df_with_features.pickle")
 MATCHED_DATA_WITH_ALL_FEATURES = os.path.join(DATA_DIR, "pipeline_df_with_more_features.pickle")
 

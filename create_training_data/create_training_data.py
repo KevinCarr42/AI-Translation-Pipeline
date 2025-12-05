@@ -170,8 +170,8 @@ def add_periods_to_all_sentences(dataframe):
     print("adding periods to all sentences...")
     t0 = time.perf_counter()
     
-    dataframe['fr'] = dataframe['fr'] + "."
-    dataframe['en'] = dataframe['en'] + "."
+    dataframe.loc[:, 'fr'] = dataframe['fr'] + "."
+    dataframe.loc[:, 'en'] = dataframe['en'] + "."
     
     print(f"→ done in {(time.perf_counter() - t0) / 60:.2f} min")
     return dataframe
