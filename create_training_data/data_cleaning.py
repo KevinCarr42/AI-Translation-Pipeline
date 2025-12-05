@@ -75,8 +75,8 @@ def extract_text_from_single_file(json_file, target_language, clf, skip_cleaning
 
 
 def extract_both_languages_from_two_files(json_file_fr, json_file_en, clf, linebreaks=True):
-    return (extract_text_from_single_file(json_file_fr, "fr", clf, linebreaks),
-            extract_text_from_single_file(json_file_en, "en", clf, linebreaks))
+    return (extract_text_from_single_file(json_file_fr, "fr", clf, linebreaks=linebreaks),
+            extract_text_from_single_file(json_file_en, "en", clf, linebreaks=linebreaks))
 
 
 def extract_both_languages_from_single_file(json_file, clf, linebreaks=True):
