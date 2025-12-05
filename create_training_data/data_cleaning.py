@@ -11,7 +11,7 @@ import numpy as np
 from sentence_transformers import SentenceTransformer, util
 
 import config
-from .language_classifier.language_classifier import LanguageClassifier
+from create_training_data.language_classifier.language_classifier import LanguageClassifier
 
 
 def clean_text(text, skip_cleaning=False):
@@ -284,14 +284,17 @@ def create_df(num_workers, n_rows, rows, device, language_classifier, sentence_e
 
 
 def create_matched_data():
+    print("looking for matched data...")
     filepath = config.MATCHED_DATA
     
     if os.path.exists(filepath):
         print(f"loading {filepath}")
         return pd.read_pickle(filepath)
     
+    print("starting multiprocessing...")
     mp.set_start_method('spawn')
     
+    print("importing raw data...")
     fr_eng_correlation_df = pd.read_csv("fr_eng_correlation_data.csv")
     fr_eng_correlation_df = fr_eng_correlation_df[['pub_number', 'filename_fr', 'filename_en']]
     rows = list(fr_eng_correlation_df.iterrows())
@@ -299,12 +302,14 @@ def create_matched_data():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     num_workers = max(1, os.cpu_count() // 2)
     
+    print("initialising language encoders...")
     language_classifier = LanguageClassifier()
     sentence_encoder = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2').to(device)
     
     print(f'\nUsing device: {device}')
     print(f"Using {num_workers} CPU cores.\n")
     
+    print("creating dataframe from raw data...")
     df = create_df(num_workers, n_rows, rows, device, language_classifier, sentence_encoder, False, True)
     df.to_pickle(filepath)
     
