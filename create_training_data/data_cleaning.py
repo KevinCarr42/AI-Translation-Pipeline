@@ -10,7 +10,7 @@ import numpy as np
 
 from sentence_transformers import SentenceTransformer, util
 
-from .. import config
+import config
 from .language_classifier.language_classifier import LanguageClassifier
 
 

@@ -1,4 +1,4 @@
-from .. import config
+import config
 from .data_cleaning import create_matched_data
 from .add_features import add_features
 from .create_training_data import create_training_data, create_testing_data, save_jsonl

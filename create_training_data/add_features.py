@@ -10,7 +10,7 @@ import numpy as np
 from collections import Counter
 from spellchecker import SpellChecker
 
-from .. import config
+import config
 
 
 # ADD FEATURES
