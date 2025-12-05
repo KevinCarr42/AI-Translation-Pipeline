@@ -1,12 +1,14 @@
 import config
-import json
 import os
+import unicodedata
+import re
 import spacy
 import time
 
 import pandas as pd
 import numpy as np
 
+from collections import Counter
 from spellchecker import SpellChecker
 
 
@@ -91,7 +93,7 @@ def add_more_features(dataframe):
     dataframe['one_char_words_en'] = dataframe['en'].apply(lambda s: sum(len(w) == 1 for w in s.split() if w not in actual_one_char_words_en))
     
     # FIXME: should this be earlier? in data cleaning?
-    dataframe = clean_OCR_errors(dataframe)
+    dataframe = clean_ocr_errors(dataframe)
     replacement_dict, potential_accent_issues_uncommon = build_accent_mapping(dataframe)
     dataframe = clean_misaccented_words(dataframe, replacement_dict)
     dataframe = add_misaccented_column(dataframe, potential_accent_issues_uncommon)
@@ -100,7 +102,7 @@ def add_more_features(dataframe):
     return dataframe
 
 
-def clean_OCR_errors(dataframe):
+def clean_ocr_errors(dataframe):
     print('cleaning OCR errors...')
     t0 = time.perf_counter()
     
@@ -122,13 +124,13 @@ def clean_OCR_errors(dataframe):
         
         # TODO: end of sentence?
     
-    n_with_missing = database.loc[
-        database['fr'].str.contains('|'.join(missing_apostrophe_patterns), na=False, case=False),
+    n_with_missing = dataframe.loc[
+        dataframe['fr'].str.contains('|'.join(missing_apostrophe_patterns), na=False, case=False),
     ].shape[0]
-    n_total = database.shape[0]
+    n_total = dataframe.shape[0]
     print(f"{n_with_missing} out of {n_total} sentences are missing apostrophes ({n_with_missing / n_total:.0%})")
     
-    database['fr'] = database['fr'].replace(
+    dataframe['fr'] = dataframe['fr'].replace(
         dict(zip(missing_apostrophe_patterns, replacement_patterns)),
         regex=True
     )
@@ -145,7 +147,7 @@ def build_accent_mapping(dataframe):
         return ''.join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn')
     
     french_words_with_accents = []
-    for sentence in database['fr'].to_list():
+    for sentence in dataframe['fr'].to_list():
         for word in sentence.split():
             clean_word = word.replace('(', '').replace(')', '')
             if clean_word.isalpha() and has_non_english_chars(clean_word):

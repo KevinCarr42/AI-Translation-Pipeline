@@ -2,6 +2,7 @@ import json
 import re
 import time
 
+
 # ADD EXCLUSION COLUMNS
 #  chosen based on stdev from mean, and tweaked based on performance and final quality
 
@@ -219,7 +220,7 @@ def create_training_data(dataframe):
     return dataframe
 
 
-def create_testing_data(dataframe, exclusion_func):
+def create_testing_data(dataframe):
     dataframe = create_dataset(dataframe, exclude_for_testing_data)
     return dataframe
 
