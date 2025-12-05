@@ -1,4 +1,3 @@
-import config
 import json
 import os
 import re
@@ -9,10 +8,10 @@ import multiprocessing as mp
 import pandas as pd
 import numpy as np
 
-from language_classifier.language_classifier import LanguageClassifier
-from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer, util
 
-from sentence_transformers import util
+from .. import config
+from .language_classifier.language_classifier import LanguageClassifier
 
 
 def clean_text(text, skip_cleaning=False):

@@ -1,4 +1,3 @@
-import config
 import os
 import unicodedata
 import re
@@ -10,6 +9,8 @@ import numpy as np
 
 from collections import Counter
 from spellchecker import SpellChecker
+
+from .. import config
 
 
 # ADD FEATURES
