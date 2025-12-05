@@ -295,7 +295,7 @@ def create_matched_data():
     mp.set_start_method('spawn')
     
     print("importing raw data...")
-    fr_eng_correlation_df = pd.read_csv("fr_eng_correlation_data.csv")
+    fr_eng_correlation_df = pd.read_csv(config.CORRELATION_CSV_PATH)
     fr_eng_correlation_df = fr_eng_correlation_df[['pub_number', 'filename_fr', 'filename_en']]
     rows = list(fr_eng_correlation_df.iterrows())
     n_rows = len(rows)
