@@ -90,9 +90,11 @@ def add_more_features(dataframe):
     actual_one_char_words_en = ['A', 'I', 'O', 'a', 'o']
     dataframe['one_char_words_en'] = dataframe['en'].apply(lambda s: sum(len(w) == 1 for w in s.split() if w not in actual_one_char_words_en))
     
-    # FIXME: should this be earlier? to better characterize one-char words
+    # FIXME: should this be earlier? in data cleaning?
     dataframe = clean_OCR_errors(dataframe)
-    dataframe = clean_misaccented_words(dataframe)
+    replacement_dict, potential_accent_issues_uncommon = build_accent_mapping(dataframe)
+    dataframe = clean_misaccented_words(dataframe, replacement_dict)
+    dataframe = add_misaccented_column(dataframe, potential_accent_issues_uncommon)
     
     print(f"→ done in {(time.perf_counter() - t0) / 60:.2f} min")
     return dataframe
@@ -135,12 +137,7 @@ def clean_OCR_errors(dataframe):
     return dataframe
 
 
-def clean_misaccented_words(dataframe):
-    print('cleaning misaccented words...')
-    t0 = time.perf_counter()
-    
-    # FIXME: test this function, simplify if possible
-    
+def build_accent_mapping(dataframe):
     def has_non_english_chars(word):
         return bool(re.search(r'[^\x00-\x7F]', word))
     
@@ -185,6 +182,13 @@ def clean_misaccented_words(dataframe):
     accent_mapping = accent_mapping.head(1000)
     replacement_dict = accent_mapping.set_index('anglicised')['accented'].to_dict()
     
+    return replacement_dict, potential_accent_issues_uncommon
+
+
+def clean_misaccented_words(dataframe, replacement_dict):
+    print('cleaning misaccented words...')
+    t0 = time.perf_counter()
+    
     def create_replacement_regex(replacement_map):
         pattern = r'\b(' + '|'.join([re.escape(k) for k in replacement_map.keys()]) + r')\b'
         
@@ -195,7 +199,17 @@ def clean_misaccented_words(dataframe):
         return pattern, replace_func
     
     pattern, replace_func = create_replacement_regex(replacement_dict)
-    database['fr'] = database['fr'].str.replace(pattern, replace_func, regex=True)
+    dataframe['fr'] = dataframe['fr'].str.replace(pattern, replace_func, regex=True)
+    
+    print(f"→ done in {(time.perf_counter() - t0) / 60:.2f} min")
+    return dataframe
+
+
+def add_misaccented_column(dataframe, potential_accent_issues_uncommon):
+    print("adding column for potential accent issues (this will take a while :/)..")
+    t0 = time.perf_counter()
+    
+    dataframe['potential_fr_accent_issues'] = dataframe['fr'].apply(lambda s: sum(w in potential_accent_issues_uncommon for w in s.split()))
     
     print(f"→ done in {(time.perf_counter() - t0) / 60:.2f} min")
     return dataframe
