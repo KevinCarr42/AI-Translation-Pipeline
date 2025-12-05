@@ -1,21 +1,27 @@
 import os
 
+# folders
 DATA_DIR = "../Data"
 MODEL_OUTPUT_DIR = "../outputs"
 TRANSLATED_TEXT_DIR = "translations"
 
+# starting data
 PARSED_DOCS_DIR = os.path.join(DATA_DIR, "ParsedPublications")
 CORRELATION_CSV_PATH = os.path.join(DATA_DIR, "fr_eng_correlation_data.csv")
 PREFERENTIAL_JSON_PATH = os.path.join(DATA_DIR, "preferential_translations.json")
 
-TRAINING_DATA_INPUT = os.path.join(DATA_DIR, "matched_data_wo_linebreaks.pickle")
+# calculated data
+MATCHED_DATA = os.path.join(DATA_DIR, "pipeline_matched_data.pickle")
+MATCHED_DATA_WITH_FEATURES = os.path.join(DATA_DIR, "pipeline_df_with_features.pickle")
+MATCHED_DATA_WITH_ALL_FEATURES = os.path.join(DATA_DIR, "pipeline_df_with_more_features.pickle")
+
+# training and testing data
 TRAINING_DATA_OUTPUT = os.path.join(DATA_DIR, "pipeline_training_data.jsonl")
 TESTING_DATA_OUTPUT = os.path.join(DATA_DIR, "pipeline_testing_data.jsonl")
 
-FEATURED_DATA_OUTPUT = os.path.join(DATA_DIR, "pipeline_df_with_features.pickle")
-TRAIN_TEST_DATA_OUTPUT = os.path.join(DATA_DIR, "pipeline_train_test_split.pickle")
-
-EVALUATION_RESULTS_OUTPUT = os.path.join(DATA_DIR, "pipeline_evaluation_results.json")
+# pretrained and finetuned folders
+PRETRAINED_MODELS_FOLDER = os.path.join(DATA_DIR, "pretrained_models")
+FINETUNED_MODELS_FOLDER = os.path.join(DATA_DIR, "merged")
 
 MODELS = {
     "m2m100_418m": {

@@ -1,17 +1,9 @@
 import os
 import config
 
-from data_cleaning import data_cleaning_pipeline
+from create_training_data.pipeline import create_training_data_pipeline
 from model_finetuning import finetuning_pipeline
 from translate import translation_pipeline
-
-
-def create_training_data():
-    data_cleaning_pipeline()
-
-
-def finetune_models():
-    finetuning_pipeline()
 
 
 def translate_text(
@@ -33,4 +25,4 @@ def translate_text(
 
 
 if __name__ == "__main__":
-    create_training_data()
+    create_training_data_pipeline()
