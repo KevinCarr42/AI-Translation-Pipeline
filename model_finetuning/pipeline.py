@@ -8,7 +8,7 @@ from peft import LoraConfig, get_peft_model
 from .model_loading import load_tokenizer_and_model
 from .preprocessing import Preprocessor
 from .trainer import build_trainer
-from .. import config
+import config
 
 
 def setup_logging(output_directory, to_file=True):
