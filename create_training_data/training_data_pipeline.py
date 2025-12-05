@@ -12,3 +12,7 @@ def create_training_data_pipeline():
     save_jsonl(df_clean, config.TRAINING_DATA_OUTPUT)
     df_clean_relaxed = create_testing_data(df_features)
     save_jsonl(df_clean_relaxed, config.TESTING_DATA_OUTPUT)
+
+
+if __name__ == '__main__':
+    create_training_data_pipeline()
