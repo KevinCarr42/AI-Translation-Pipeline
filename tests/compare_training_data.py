@@ -46,13 +46,9 @@ def count_matches(data1, data2):
 
 
 if __name__ == '__main__':
-    # # ===== matched_data.pickle =====
-    # # Sorted lists match
-    # old_file = "../../Data/matched_data.pickle"
-    # new_file = "../../Data/pipe_recalc2/pipeline_matched_data.pickle"
-    # check_match_quality(old_file, new_file, is_pickle=True)
-    
-    # FIXME: still didn't get cleaned? clean_text never ran?
+    old_file = "../../Data/matched_data_wo_linebreaks.pickle"
+    new_file = "../../Data/pipe_recalc2/pipeline_matched_data_wo_linebreaks.pickle"
+    check_match_quality(old_file, new_file, is_pickle=True)
     
     old_file = "../../Data/df_with_features.pickle"
     new_file = "../../Data/pipe_recalc2/pipeline_df_with_features.pickle"

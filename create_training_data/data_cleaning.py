@@ -46,7 +46,7 @@ def get_json_file_link(parsed_docs_folder, pdf_filename):
 
 
 def load_and_split_text(json_file):
-    linebreaks = True
+    linebreaks = False  # NOTE: linebreaks = False improves correlation (based on EDA)
     
     with open(json_file, 'r', encoding='utf-8') as file:
         data = json.load(file)
@@ -54,7 +54,7 @@ def load_and_split_text(json_file):
     if 'text' not in data:
         raise KeyError(f"The key 'text' is missing in the JSON file: {json_file}")
     
-    full_text = clean_text(data['text'])
+    full_text = data['text']  # NOTE: clean_text should be done after correlation (based on EDA)
     if linebreaks:
         text_blocks = re.split(r'(?<![;,])[.?!]\s|\n\n', full_text)
     else:
@@ -108,7 +108,7 @@ def extract_both_languages_from_single_file(json_file, clf):
 
 
 def create_sentences(text_fr, text_en):
-    linebreaks = True
+    linebreaks = False  # NOTE: linebreaks = False improves correlation (based on EDA)
     
     if linebreaks:
         sentences_fr = [x.strip() for x in re.split(r'(?<![;,])[.?!]\s|\n\n', text_fr) if x != ""]
@@ -185,7 +185,7 @@ def correlate_and_clean_text(text_fr, text_en, pub_number, sentence_encoder, dev
     sentences_fr, sentences_en = create_sentences(text_fr, text_en)
     similarity_matrix = create_similarity_matrix(sentences_fr, sentences_en, sentence_encoder, device)
     aligned_pairs = align_sentences(similarity_matrix)
-
+    
     return text_from_coordinates(aligned_pairs, sentences_fr, sentences_en, pub_number)
 
 
@@ -276,6 +276,9 @@ def create_df(num_workers, n_rows, rows, device, language_classifier, sentence_e
             print_status(start_time, i, n_rows)
     
     dataframe = pd.DataFrame(results, columns=['pub_number', 'fr', 'en', 'similarity'])
+    
+    dataframe['fr'] = dataframe['fr'].apply(clean_text)
+    dataframe['en'] = dataframe['en'].apply(clean_text)
     
     print(f"\nSaving {filename}...")
     dataframe.to_pickle(filename)

@@ -6,7 +6,7 @@ from create_training_data.create_training_data import create_training_data, crea
 # FULL DATA-CLEANING PIPELINE
 def create_training_data_pipeline(training_data_path, testing_data_path):
     print('creating training data')
-    df_matched = create_matched_data()  # tested, works (at least the saved file does, didn't seem to pass properly)
+    df_matched = create_matched_data()
     df_features = add_features(df_matched)
     df_clean = create_training_data(df_features)
     save_jsonl(df_clean, training_data_path)
