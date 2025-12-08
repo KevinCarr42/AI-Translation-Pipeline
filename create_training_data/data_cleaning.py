@@ -184,8 +184,8 @@ def text_from_coordinates(aligned_pairs, sentences_fr, sentences_en, pub_number)
 def correlate_and_clean_text(text_fr, text_en, pub_number, sentence_encoder, device):
     sentences_fr, sentences_en = create_sentences(text_fr, text_en)
     similarity_matrix = create_similarity_matrix(sentences_fr, sentences_en, sentence_encoder, device)
-    aligned_pairs = align_sentences(similarity_matrix, device)
-    
+    aligned_pairs = align_sentences(similarity_matrix)
+
     return text_from_coordinates(aligned_pairs, sentences_fr, sentences_en, pub_number)
 
 
