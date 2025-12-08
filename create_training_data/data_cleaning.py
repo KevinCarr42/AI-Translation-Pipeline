@@ -139,7 +139,7 @@ def create_similarity_matrix(sentences_fr, sentences_en, sentence_encoder, devic
     return util.pytorch_cos_sim(embeddings_fr, embeddings_en)
 
 
-def align_sentences(sim_matrix, device):
+def align_sentences(sim_matrix):
     threshold = 0.7
     n, m = sim_matrix.shape
     
