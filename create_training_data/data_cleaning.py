@@ -45,11 +45,8 @@ def get_json_file_link(parsed_docs_folder, pdf_filename):
     return None
 
 
-def extract_text_from_single_file(json_file, target_language, clf):
+def load_and_split_text(json_file):
     linebreaks = True
-    
-    min_block_length = 10
-    max_block_length = 500
     
     with open(json_file, 'r', encoding='utf-8') as file:
         data = json.load(file)
@@ -62,6 +59,15 @@ def extract_text_from_single_file(json_file, target_language, clf):
         text_blocks = re.split(r'(?<![;,])[.?!]\s|\n\n', full_text)
     else:
         text_blocks = re.split(r'(?<![;,])[.?!]\s', full_text)
+    
+    return text_blocks
+
+
+def extract_text_from_single_file(json_file, target_language, clf):
+    min_block_length = 10
+    max_block_length = 500
+    
+    text_blocks = load_and_split_text(json_file)
     text = []
     
     for block in text_blocks:
@@ -81,23 +87,10 @@ def extract_both_languages_from_two_files(json_file_fr, json_file_en, clf):
 
 
 def extract_both_languages_from_single_file(json_file, clf):
-    linebreaks = True
-    
     min_block_length = 10
     max_block_length = 500
     
-    with open(json_file, 'r', encoding='utf-8') as file:
-        data = json.load(file)
-    
-    if 'text' not in data:
-        raise KeyError(f"The key 'text' is missing in the JSON file: {json_file}")
-    
-    full_text = clean_text(data['text'])
-    if linebreaks:
-        text_blocks = re.split(r'(?<![;,])[.?!]\s|\n\n', full_text)
-    else:
-        text_blocks = re.split(r'(?<![;,])[.?!]\s', full_text)
-    
+    text_blocks = load_and_split_text(json_file)
     text_fr, text_en = [], []
     
     for block in text_blocks:
@@ -322,4 +315,3 @@ def create_matched_data():
     df.to_pickle(filepath)
     
     return df
-
