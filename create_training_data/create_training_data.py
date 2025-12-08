@@ -226,6 +226,7 @@ def create_testing_data(dataframe):
 
 
 def save_jsonl(dataframe, filename):
+    print("Saving file...")
     with open(filename, "w", encoding="utf-8") as f:
         for i, row in enumerate(dataframe.itertuples(index=False)):
             f.write(json.dumps({
@@ -238,3 +239,4 @@ def save_jsonl(dataframe, filename):
                 "target": f"{row.en}",
                 "source_lang": "fr",
             }, ensure_ascii=False) + "\n")
+    print("Save complete!\n")

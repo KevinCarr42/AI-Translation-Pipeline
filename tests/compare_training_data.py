@@ -1,39 +1,22 @@
 import pandas as pd
 
 
-def check_match_quality(file1, file2):
-    with open(file1, encoding='utf-8') as f1, open(file2, encoding='utf-8') as f2:
-        lines1 = list(f1)
-        lines2 = list(f2)
-        
-        if lines1 == lines2:
-            print("Lists match")
-        elif sorted(lines1) == sorted(lines2):
-            print("Sorted lists match")
-        elif set(lines1) == set(lines2):
-            print("Sets match")
-        else:
-            print("DO NOT MATCH")
+def load_data(source, is_pickle=False):
+    if is_pickle:
+        df = pd.read_pickle(source)
+        return [tuple(row) for row in df.values]
+    else:
+        with open(source, encoding='utf-8') as f:
+            return list(f)
 
 
-def count_matches(file1, file2):
-    with open(file1, encoding='utf-8') as f1, open(file2, encoding='utf-8') as f2:
-        lines1 = list(f1)
-        lines2 = list(f2)
-        print(f"Total rows in file1: {len(lines1)}")
-        print(f"Total rows in file2: {len(lines2)}")
-        
-        lines2 = set(lines2)
-        matches = sum(1 for line in lines1 if line in lines2)
-        no_match = len(lines1) - matches
-        
-        print(f"Rows from file1 found in file2: {matches}")
-        print(f"Rows from file1 NOT in file2: {no_match}")
-
-
-def check_match_quality_pickle(df1, df2):
-    data1 = [tuple(row) for row in df1.values]
-    data2 = [tuple(row) for row in df2.values]
+def check_match_quality(source1, source2, is_pickle=False, only_print_if_unmatched=True):
+    print(f'\n===== {source1.split("/")[-1]} =====')
+    
+    data1 = load_data(source1, is_pickle)
+    data2 = load_data(source2, is_pickle)
+    
+    print_counts = not only_print_if_unmatched
     
     if data1 == data2:
         print("Lists match")
@@ -41,14 +24,16 @@ def check_match_quality_pickle(df1, df2):
         print("Sorted lists match")
     elif set(data1) == set(data2):
         print("Sets match")
+        print_counts = True
     else:
         print("DO NOT MATCH")
-
-
-def count_matches_pickle(df1, df2):
-    data1 = [tuple(row) for row in df1.values]
-    data2 = [tuple(row) for row in df2.values]
+        print_counts = True
     
+    if print_counts:
+        count_matches(data1, data2)
+
+
+def count_matches(data1, data2):
     print(f"Total rows in file1: {len(data1)}")
     print(f"Total rows in file2: {len(data2)}")
     
@@ -61,53 +46,26 @@ def count_matches_pickle(df1, df2):
 
 
 if __name__ == '__main__':
+    # # ===== matched_data.pickle =====
     # # Sorted lists match
-    # # Total rows in file1: 887164
-    # # Total rows in file2: 887164
-    # # Rows from file1 found in file2: 887164
-    # # Rows from file1 NOT in file2: 0
     # old_file = "../../Data/matched_data.pickle"
-    # new_file = "../../Data/pipe_recalc/pipeline_matched_data.pickle"
+    # new_file = "../../Data/pipe_recalc2/pipeline_matched_data.pickle"
+    # check_match_quality(old_file, new_file, is_pickle=True)
     
-    # # DO NOT MATCH
-    # # Total rows in file1: 778951
-    # # Total rows in file2: 887164
-    # # Rows from file1 found in file2: 137090
-    # # Rows from file1 NOT in file2: 641861
-    # old_file = "../../Data/df_with_features.pickle"
-    # new_file = "../../Data/pipe_recalc/pipeline_df_with_features.pickle"
-    # old_df = pd.read_pickle(old_file)
-    # new_df = pd.read_pickle(new_file)
-    # check_match_quality_pickle(old_df, new_df)
-    # count_matches_pickle(old_df, new_df)
-    # # FIXME: this was saved after with more features (1:07)
+    # FIXME: still didn't get cleaned? clean_text never ran?
     
     old_file = "../../Data/df_with_features.pickle"
     new_file = "../../Data/pipe_recalc2/pipeline_df_with_features.pickle"
-    old_df = pd.read_pickle(old_file)
-    new_df = pd.read_pickle(new_file)
-    check_match_quality_pickle(old_df, new_df)
-    count_matches_pickle(old_df, new_df)
+    check_match_quality(old_file, new_file, is_pickle=True)
     
-    # # DO NOT MATCH
-    # # Total rows in file1: 778951
-    # # Total rows in file2: 887164
-    # # Rows from file1 found in file2: 135187
-    # # Rows from file1 NOT in file2: 643764
-    # old_file = "../../Data/df_with_more_features.pickle"
-    # new_file = "../../Data/pipe_recalc/pipeline_df_with_more_features.pickle"
-    # old_df = pd.read_pickle(old_file)
-    # new_df = pd.read_pickle(new_file)
-    # check_match_quality_pickle(old_df, new_df)
-    # count_matches_pickle(old_df, new_df)
-    # # FIXME: this was saved before with features (1:02)
+    old_file = "../../Data/df_with_features.pickle"
+    new_file = "../../Data/pipe_recalc2/pipeline_df_with_features.pickle"
+    check_match_quality(old_file, new_file, is_pickle=True)
     
-    # # DO NOT MATCH
-    # # Total rows in file1: 527420
-    # # Total rows in file2: 618484
-    # # Rows from file1 found in file2: 102280
-    # # Rows from file1 NOT in file2: 425140
-    # old_file = "../../Data/training_data.jsonl"
-    # new_file = "../../Data/pipe_recalc/pipeline_training_data.jsonl"
-    # check_match_quality(old_file, new_file)
-    # count_matches(old_file, new_file)
+    old_file = "../../Data/df_with_more_features.pickle"
+    new_file = "../../Data/pipe_recalc2/pipeline_df_with_more_features.pickle"
+    check_match_quality(old_file, new_file, is_pickle=True)
+    
+    old_file = "../../Data/training_data.jsonl"
+    new_file = "../../Data/pipe_recalc2/pipeline_training_data.jsonl"
+    check_match_quality(old_file, new_file)
