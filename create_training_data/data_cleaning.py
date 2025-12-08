@@ -14,16 +14,15 @@ import config
 from create_training_data.language_classifier.language_classifier import LanguageClassifier
 
 
-def clean_text(text, skip_cleaning=False):
+def clean_text(text):
     allow_numbers = True
     
-    if not skip_cleaning:
-        if allow_numbers:
-            allowed_chars = r"[^a-zA-ZÀ-ÖØ-öø-ÿ0-9.,;:!?()'\"-]"
-        else:
-            allowed_chars = r"[^a-zA-ZÀ-ÖØ-öø-ÿ.,;:!?()'\"-]"
-        text = re.sub(allowed_chars, ' ', text)
-        text = re.sub(r'\s+', ' ', text).strip()
+    if allow_numbers:
+        allowed_chars = r"[^a-zA-ZÀ-ÖØ-öø-ÿ0-9.,;:!?()'\"-]"
+    else:
+        allowed_chars = r"[^a-zA-ZÀ-ÖØ-öø-ÿ.,;:!?()'\"-]"
+    text = re.sub(allowed_chars, ' ', text)
+    text = re.sub(r'\s+', ' ', text).strip()
     
     return text
 
@@ -46,7 +45,9 @@ def get_json_file_link(parsed_docs_folder, pdf_filename):
     return None
 
 
-def extract_text_from_single_file(json_file, target_language, clf, skip_cleaning=False, linebreaks=True):
+def extract_text_from_single_file(json_file, target_language, clf):
+    linebreaks = True
+    
     min_block_length = 10
     max_block_length = 500
     
@@ -56,7 +57,7 @@ def extract_text_from_single_file(json_file, target_language, clf, skip_cleaning
     if 'text' not in data:
         raise KeyError(f"The key 'text' is missing in the JSON file: {json_file}")
     
-    full_text = clean_text(data['text'], skip_cleaning)
+    full_text = clean_text(data['text'])
     if linebreaks:
         text_blocks = re.split(r'(?<![;,])[.?!]\s|\n\n', full_text)
     else:
@@ -74,12 +75,14 @@ def extract_text_from_single_file(json_file, target_language, clf, skip_cleaning
     return " ".join(text)
 
 
-def extract_both_languages_from_two_files(json_file_fr, json_file_en, clf, linebreaks=True):
-    return (extract_text_from_single_file(json_file_fr, "fr", clf, linebreaks=linebreaks),
-            extract_text_from_single_file(json_file_en, "en", clf, linebreaks=linebreaks))
+def extract_both_languages_from_two_files(json_file_fr, json_file_en, clf):
+    return (extract_text_from_single_file(json_file_fr, "fr", clf),
+            extract_text_from_single_file(json_file_en, "en", clf))
 
 
-def extract_both_languages_from_single_file(json_file, clf, linebreaks=True):
+def extract_both_languages_from_single_file(json_file, clf):
+    linebreaks = True
+    
     min_block_length = 10
     max_block_length = 500
     
@@ -89,7 +92,7 @@ def extract_both_languages_from_single_file(json_file, clf, linebreaks=True):
     if 'text' not in data:
         raise KeyError(f"The key 'text' is missing in the JSON file: {json_file}")
     
-    full_text = clean_text(data['text'], skip_cleaning=False)
+    full_text = clean_text(data['text'])
     if linebreaks:
         text_blocks = re.split(r'(?<![;,])[.?!]\s|\n\n', full_text)
     else:
@@ -111,7 +114,9 @@ def extract_both_languages_from_single_file(json_file, clf, linebreaks=True):
     return " ".join(text_fr), " ".join(text_en)
 
 
-def create_sentences(text_fr, text_en, linebreaks=True):
+def create_sentences(text_fr, text_en):
+    linebreaks = True
+    
     if linebreaks:
         sentences_fr = [x.strip() for x in re.split(r'(?<![;,])[.?!]\s|\n\n', text_fr) if x != ""]
         sentences_en = [x.strip() for x in re.split(r'(?<![;,])[.?!]\s|\n\n', text_en) if x != ""]
@@ -183,16 +188,17 @@ def text_from_coordinates(aligned_pairs, sentences_fr, sentences_en, pub_number)
     return correlated_list
 
 
-def correlate_and_clean_text(text_fr, text_en, pub_number, sentence_encoder, device, linebreaks=True):
-    sentences_fr, sentences_en = create_sentences(text_fr, text_en, linebreaks)
+def correlate_and_clean_text(text_fr, text_en, pub_number, sentence_encoder, device):
+    sentences_fr, sentences_en = create_sentences(text_fr, text_en)
     similarity_matrix = create_similarity_matrix(sentences_fr, sentences_en, sentence_encoder, device)
     aligned_pairs = align_sentences(similarity_matrix, device)
     
     return text_from_coordinates(aligned_pairs, sentences_fr, sentences_en, pub_number)
 
 
-def process_row(row_tuple, device, language_classifier, sentence_encoder, skip_abstract_only_translations=False,
-                linebreaks=True):
+def process_row(row_tuple, device, language_classifier, sentence_encoder):
+    skip_abstract_only_translations = False
+    
     parsed_docs_folder = os.path.join("..", "ParsedPublications")
     index, row = row_tuple
     pub_number = row['pub_number']
@@ -206,12 +212,12 @@ def process_row(row_tuple, device, language_classifier, sentence_encoder, skip_a
         return None
     
     if filename_fr == filename_en:
-        text_fr, text_en = extract_both_languages_from_single_file(fr_link, language_classifier, linebreaks)
+        text_fr, text_en = extract_both_languages_from_single_file(fr_link, language_classifier)
     else:
         en_link = get_json_file_link(parsed_docs_folder, filename_en)
         if en_link is None:
             return None
-        text_fr, text_en = extract_both_languages_from_two_files(fr_link, en_link, language_classifier, linebreaks)
+        text_fr, text_en = extract_both_languages_from_two_files(fr_link, en_link, language_classifier)
     
     # low-quality text criteria
     max_ratio = 2  # abstract only translations to (potentially) exclude
@@ -226,12 +232,12 @@ def process_row(row_tuple, device, language_classifier, sentence_encoder, skip_a
     elif len(text_fr) < min_char or len(text_en) < min_char:
         return None
     
-    return correlate_and_clean_text(text_fr, text_en, pub_number, sentence_encoder, device, linebreaks)
+    return correlate_and_clean_text(text_fr, text_en, pub_number, sentence_encoder, device)
 
 
 def process_row_wrapper(args):
-    row, device, language_classifier, sentence_encoder, skip_abstracts, linebreaks = args
-    return process_row(row, device, language_classifier, sentence_encoder, skip_abstracts, linebreaks)
+    row, device, language_classifier, sentence_encoder = args
+    return process_row(row, device, language_classifier, sentence_encoder)
 
 
 def print_time_estimate(start_time, n, n_total):
@@ -259,12 +265,12 @@ def print_status(start_time, n, n_total):
             print(f"{n}", end="... ")
 
 
-def create_df(num_workers, n_rows, rows, device, language_classifier, sentence_encoder, skip_abstracts, linebreaks):
+def create_df(num_workers, n_rows, rows, device, language_classifier, sentence_encoder):
     filename = config.MATCHED_DATA
     
     start_time = time.time()
     
-    args_list = [(row, device, language_classifier, sentence_encoder, skip_abstracts, linebreaks) for row in rows]
+    args_list = [(row, device, language_classifier, sentence_encoder) for row in rows]
     
     print(f"=========== PROCESSING {filename} ===========")
     
@@ -312,7 +318,7 @@ def create_matched_data():
     print(f"Using {num_workers} CPU cores.\n")
     
     print("creating dataframe from raw data...")
-    df = create_df(num_workers, n_rows, rows, device, language_classifier, sentence_encoder, False, True)
+    df = create_df(num_workers, n_rows, rows, device, language_classifier, sentence_encoder)
     df.to_pickle(filepath)
     
     return df

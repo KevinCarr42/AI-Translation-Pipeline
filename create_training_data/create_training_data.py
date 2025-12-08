@@ -217,11 +217,13 @@ def create_dataset(dataframe, exclusion_func):
 
 def create_training_data(dataframe):
     dataframe = create_dataset(dataframe, exclude_for_training_data)
+    print("Training dataset created.")
     return dataframe
 
 
 def create_testing_data(dataframe):
     dataframe = create_dataset(dataframe, exclude_for_testing_data)
+    print("Testing dataset created.")
     return dataframe
 
 
