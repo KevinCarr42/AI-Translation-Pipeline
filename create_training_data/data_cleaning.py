@@ -59,6 +59,8 @@ def load_and_split_text(json_file):
         text_blocks = re.split(r'(?<![;,])[.?!]\s|\n\n', full_text)
     else:
         text_blocks = re.split(r'(?<![;,])[.?!]\s', full_text)
+        # TODO: replace linebreaks for better correlation
+        #  (ie, don't split by linebreaks, but don't include in sentences)
     
     return text_blocks
 

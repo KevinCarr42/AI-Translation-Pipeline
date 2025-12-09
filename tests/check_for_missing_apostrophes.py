@@ -4,27 +4,47 @@ legitimate_english = {'i', 'a', 'o'}
 legitimate_french = {'à', 'a', 'y', 'ô', 'ù'}
 
 contraction_patterns_english = {
-    't': ['don', 'doesn', 'didn', 'won', 'wouldn', 'couldn', 'shouldn', 'isn', 'aren', 'wasn', 'weren', 'hasn', 'haven', 'hadn', 'can', 'ain', 'it', 'that'],
-    's': ['it', 'that', 'what', 'he', 'she', 'there', 'here', 'let', 'where', 'who'],
+    't': [
+        'don', 'doesn', 'didn', 'won', 'wouldn', 'couldn', 'shouldn',
+        'isn', 'aren', 'wasn', 'weren', 'hasn', 'haven', 'hadn',
+        'ain', 'can',
+    ],
+    's': [
+        'it', 'that', 'what', 'who', 'where', 'when', 'why', 'how',
+        'there', 'here', 'everyone', 'everything', 'something',
+        'nothing', 'he', 'she', 'this',
+    ],
     'm': ['i'],
-    'd': ['i', 'you', 'he', 'she', 'it', 'we', 'they', 'who', 'what', 'there'],
-    'll': ['i', 'you', 'he', 'she', 'it', 'we', 'they', 'who', 'what', 'there'],
+    'd': ['i', 'you', 'he', 'she', 'it', 'we', 'they', 'there', 'that', 'who', 'what'],
+    'll': ['i', 'you', 'he', 'she', 'it', 'we', 'they', 'there', 'who', 'what'],
     've': ['i', 'you', 'we', 'they', 'would', 'could', 'should', 'might', 'must'],
-    're': ['you', 'we', 'they', 'who', 'what', 'there', 'here', 'where'],
+    're': ['you', 'we', 'they', 'here', 'there', 'who', 'what'],
 }
 
 contraction_patterns_french = {
-    'j': ['ai', 'avais', 'aurai', 'aurais', 'étais', 'en', 'y', 'irai', 'irais', 'espère', 'aime', 'adore', 'habite', 'arrive', 'entends', 'attends', 'ouvre', 'écoute', 'imagine', 'ignore', 'accepte',
-          'apprends', 'appelle', 'essaie', 'essaye', 'entends'],
-    'l': ['a', 'est', 'était', 'ont', 'avait', 'aura', 'aurait', 'on', 'un', 'une', 'autre', 'homme', 'eau', 'air', 'or', 'argent', 'amour', 'ami', 'amie', 'enfant', 'église', 'école', 'Europe',
-          'Amérique', 'Afrique', 'Asie', 'Italie', 'Espagne', 'Allemagne', 'Angleterre'],
-    'd': ['un', 'une', 'abord', 'accord', 'autres', 'ailleurs', 'après', 'autant', 'entre', 'eux', 'elle', 'elles', 'ici', 'où', 'avoir', 'être'],
-    'n': ['a', 'ai', 'as', 'avons', 'avez', 'ont', 'est', 'es', 'êtes', 'y', 'en', 'importe', 'oublie', 'oubliez'],
-    'm': ['a', 'as', 'avez', 'en', 'y', 'appelle', 'ont', 'est'],
-    't': ['a', 'as', 'en', 'y', 'ont', 'es', 'est', 'aime', 'appelle', 'inquiète', 'il', 'elle', 'on'],
-    's': ['il', 'ils', 'en', 'y', 'est', 'était', 'appelle', 'agit', 'avère'],
+    'j': [
+        'ai', 'avais', 'aurai', 'aurais', 'étais', 'avais', 'étais',
+        'irai', 'irais', 'aime', 'adore', 'arrive', 'attends', 'entends',
+        'espère', 'ignore', 'imagine', 'habite', 'ouvre'
+    ],
+    'l': [
+        'a', 'est', 'avait', 'avait', 'avait', 'aurait', 'auront',
+        'on', 'un', 'une', 'autre', 'homme', 'enfant', 'ami', 'amie',
+        'air', 'eau', 'école', 'âge'
+    ],
+    'd': [
+        'un', 'une', 'abord', 'accord', 'ailleurs', 'après', 'autant',
+        'entre', 'eux', 'elle', 'elles', 'ici', 'où'
+    ],
+    'n': [
+        'a', 'ai', 'as', 'avons', 'avez', 'ont', 'es', 'est', 'êtes',
+        'importe'
+    ],
+    'm': ['as', 'a', 'en', 'y', 'appelle', 'étais', 'étaient', 'étais'],
+    't': ['as', 'a', 'es', 'est', 'y', 'en', 'il', 'elle', 'on'],
+    's': ['il', 'ils', 'est', 'était', 'en', 'y'],
     'c': ['est', 'était', 'a', 'en'],
-    'qu': ['il', 'ils', 'elle', 'elles', 'on', 'un', 'une', 'est', 'en', 'à', 'au', 'aux', 'y'],
+    'qu': ['il', 'ils', 'elle', 'elles', 'on', 'un', 'une', 'est', 'en'],
 }
 
 

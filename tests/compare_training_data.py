@@ -46,22 +46,28 @@ def count_matches(data1, data2):
 
 
 if __name__ == '__main__':
-    old_file = "../../Data/matched_data_wo_linebreaks.pickle"
-    new_file = "../../Data/pipe_recalc2/pipeline_matched_data_wo_linebreaks.pickle"
+    # # New Method (clean after correlating)
+    # #   MATCH - WORKS CORRECTLY
+    # old_file = "../../Data/pipe_recalc4/new_matched_data_wo_linebreaks.pickle"
+    # new_file = "../../Data/pipe_recalc3/pipeline_matched_data_wo_linebreaks.pickle"
+    # check_match_quality(old_file, new_file, is_pickle=True)
+    
+    # Old Method (clean before correlating) - hacked matched_data file
+    old_file = "../../Data/df_with_features.pickle"
+    new_file = "../../Data/pipe_recalc4/pipeline_df_with_features.pickle"
     check_match_quality(old_file, new_file, is_pickle=True)
     
     old_file = "../../Data/df_with_features.pickle"
-    new_file = "../../Data/pipe_recalc2/pipeline_df_with_features.pickle"
-    check_match_quality(old_file, new_file, is_pickle=True)
-    
-    old_file = "../../Data/df_with_features.pickle"
-    new_file = "../../Data/pipe_recalc2/pipeline_df_with_features.pickle"
+    new_file = "../../Data/pipe_recalc4/pipeline_df_with_features.pickle"
     check_match_quality(old_file, new_file, is_pickle=True)
     
     old_file = "../../Data/df_with_more_features.pickle"
-    new_file = "../../Data/pipe_recalc2/pipeline_df_with_more_features.pickle"
+    new_file = "../../Data/pipe_recalc4/pipeline_df_with_more_features.pickle"
     check_match_quality(old_file, new_file, is_pickle=True)
     
     old_file = "../../Data/training_data.jsonl"
-    new_file = "../../Data/pipe_recalc2/pipeline_training_data.jsonl"
+    new_file = "../../Data/pipe_recalc4/pipeline_training_data.jsonl"
     check_match_quality(old_file, new_file)
+    
+    # NOTE: new method are calculated in pipe_recalc3
+    #   but we need to confirm these work before improving apostrophe and linebreak logic

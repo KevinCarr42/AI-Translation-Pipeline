@@ -165,6 +165,8 @@ def build_accent_mapping(dataframe):
         for word, count in word_counts.items()
     ]).sort_values('count', ascending=False).reset_index(drop=True)
     
+    # TODO: use or delete dead code
+    
     # check accent_mapping for duplicates
     #  create list of duplicates (to classify as potential quality issues)
     potential_accent_issues_ambiguous = accent_mapping.loc[accent_mapping.duplicated('anglicised', keep="first"), 'anglicised'].to_list()
