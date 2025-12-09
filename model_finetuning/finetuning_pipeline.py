@@ -3,11 +3,11 @@ import json
 import logging
 import math
 from datasets import load_dataset
-
 from peft import LoraConfig, get_peft_model
-from .model_loading import load_tokenizer_and_model
-from .preprocessing import Preprocessor
-from .trainer import build_trainer
+
+from model_finetuning.model_loading import load_tokenizer_and_model
+from model_finetuning.preprocessing import Preprocessor
+from model_finetuning.trainer import build_trainer
 import config
 
 

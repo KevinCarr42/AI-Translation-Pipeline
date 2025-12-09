@@ -20,7 +20,8 @@ class Preprocessor:
         
         if self.model_name in ["m2m100_418m", "mbart50_mmt_fr", "mbart50_mmt_en"]:
             self.tokenizer.src_lang = mapped_source
-            self.tokenizer.tgt_lang = mapped_target
+            if hasattr(self.tokenizer, "tgt_lang"):
+                self.tokenizer.tgt_lang = mapped_target
     
     def __call__(self, example):
         if self.restrict_source_language and example["source_lang"] != self.restrict_source_language:

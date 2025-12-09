@@ -20,11 +20,10 @@ def load_tokenizer_and_model(model_id, use_qlora, use_bfloat16, device_map):
             bnb_4bit_quant_type="nf4",
             bnb_4bit_compute_dtype=torch.bfloat16 if use_bfloat16 else torch.float16
         )
-        if device_map is not None:
-            model_kwargs["device_map"] = device_map
-    else:
-        if device_map is not None:
-            model_kwargs["device_map"] = device_map
+    
+    is_opus_model = "opus-mt" in model_id.lower() or "helsinki" in model_id.lower()
+    if device_map is not None and not is_opus_model:
+        model_kwargs["device_map"] = device_map
     
     model = AutoModelForSeq2SeqLM.from_pretrained(model_id, **model_kwargs)
     if hasattr(model.config, "vocab_size") and len(tokenizer) > model.config.vocab_size:

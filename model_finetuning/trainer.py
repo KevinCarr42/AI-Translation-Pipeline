@@ -2,7 +2,7 @@ import os
 import math
 from transformers import Seq2SeqTrainer, Seq2SeqTrainingArguments, DataCollatorForSeq2Seq
 
-from .preprocessing import M2MDataCollator
+from model_finetuning.preprocessing import M2MDataCollator
 
 
 def is_distributed():
