@@ -1,7 +1,7 @@
 import json
 import re
-import time
 
+from helpers.helpers import print_timing
 
 # ADD EXCLUSION COLUMNS
 #  chosen based on stdev from mean, and tweaked based on performance and final quality
@@ -43,10 +43,8 @@ outlier_criteria_s3 = {
 }
 
 
+@print_timing("adding exclusion columns based on similarity scores...")
 def add_exclusion_columns(dataframe):
-    print("adding exclusion columns based on similarity scores...")
-    t0 = time.perf_counter()
-    
     dataframe["exclude_low_similarity"] = dataframe["similarity"] < 0.757
     
     s1_mask = dataframe["similarity"] < 0.85
@@ -65,7 +63,6 @@ def add_exclusion_columns(dataframe):
         dataframe.loc[s2_mask, col_name] = ~dataframe.loc[s2_mask, feature].between(low2, high2)
         dataframe.loc[s3_mask, col_name] = ~dataframe.loc[s3_mask, feature].between(low3, high3)
     
-    print(f"→ done in {(time.perf_counter() - t0) / 60:.2f} min")
     return dataframe
 
 
@@ -112,10 +109,8 @@ def analyze_text_for_figrefs(text, language='en'):
     return result
 
 
+@print_timing("adding exclusion column for detected figure and table text...")
 def add_figref_column(dataframe, text_en_column='en', text_fr_column='fr'):
-    print("adding exclusion column for detected figure and table text...")
-    t0 = time.perf_counter()
-    
     en_results = dataframe[text_en_column].apply(lambda x: analyze_text_for_figrefs(x, language='en'))
     fr_results = dataframe[text_fr_column].apply(lambda x: analyze_text_for_figrefs(x, language='fr'))
     
@@ -124,28 +119,22 @@ def add_figref_column(dataframe, text_en_column='en', text_fr_column='fr'):
             fr_results.apply(lambda x: x['exclude_figtext'])
     )
     
-    print(f"→ done in {(time.perf_counter() - t0) / 60:.2f} min")
     return dataframe
 
 
+@print_timing("adding exclusion column for dates...")
 def add_dates_column(dataframe):
-    print("adding exclusion column for dates...")
-    t0 = time.perf_counter()
-    
     dataframe['has_date_refs'] = dataframe[['en', 'fr']].apply(lambda x: x.astype(str).str.contains(
         r'\b(?:19|20)\d{2}\b|(?:January|February|March|April|May|June|July|August|September|October'
         r'|November|December|janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre'
         r'|décembre|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b',
         case=False, regex=True).any(), axis=1)
     
-    print(f"→ done in {(time.perf_counter() - t0) / 60:.2f} min")
     return dataframe
 
 
+@print_timing("excluding columns to create training data...")
 def exclude_for_training_data(dataframe):
-    print("excluding columns to create training data...")
-    t0 = time.perf_counter()
-    
     exclusion_columns = [
         'exclude_low_similarity',
         'exclude_len_ratio',
@@ -162,25 +151,19 @@ def exclude_for_training_data(dataframe):
     dataframe["exclude"] = dataframe[exclusion_columns].any(axis=1)
     dataframe = dataframe[~dataframe.exclude].copy()
     
-    print(f"→ done in {(time.perf_counter() - t0) / 60:.2f} min")
     return dataframe
 
 
+@print_timing("adding periods to all sentences...")
 def add_periods_to_all_sentences(dataframe):
-    print("adding periods to all sentences...")
-    t0 = time.perf_counter()
-    
     dataframe.loc[:, 'fr'] = dataframe['fr'] + "."
     dataframe.loc[:, 'en'] = dataframe['en'] + "."
     
-    print(f"→ done in {(time.perf_counter() - t0) / 60:.2f} min")
     return dataframe
 
 
+@print_timing("excluding columns to create testing data...")
 def exclude_for_testing_data(dataframe):
-    print("excluding columns to create testing data...")
-    t0 = time.perf_counter()
-    
     for feature, (low, high) in outlier_criteria_s3.items():
         col_name = f"exclude_relaxed_{feature}"
         dataframe[col_name] = False
@@ -199,7 +182,6 @@ def exclude_for_testing_data(dataframe):
     dataframe["exclude_relaxed"] = dataframe[exclusion_relaxed_columns].any(axis=1)
     dataframe = dataframe[~dataframe["exclude_relaxed"] & dataframe["exclude"]]
     
-    print(f"→ done in {(time.perf_counter() - t0) / 60:.2f} min")
     return dataframe
 
 

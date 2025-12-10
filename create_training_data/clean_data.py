@@ -1,10 +1,10 @@
 import unicodedata
 import re
-import time
 import pandas as pd
 
 from collections import Counter
 from spellchecker import SpellChecker
+from helpers.helpers import print_timing
 
 
 def clean_text(text):
@@ -20,11 +20,10 @@ def clean_text(text):
     return text
 
 
+@print_timing("cleaning OCR errors...")
 def clean_ocr_errors(dataframe):
-    print('cleaning OCR errors...')
-    t0 = time.perf_counter()
-    
     # FIXME: missing some patterns (e.g., "don t" and "J ai")
+    #  use updated contraction cleaning algorithm
     
     always_have_apostrophe = ['L', 'D', 'N', 'M', 'S', 'T', 'l', 'd', 'n', 'm', 's', 't']
     
@@ -48,14 +47,11 @@ def clean_ocr_errors(dataframe):
         regex=True
     )
     
-    print(f"→ done in {(time.perf_counter() - t0) / 60:.2f} min")
     return dataframe
 
 
+@print_timing("cleaning misaccented words...")
 def clean_misaccented_words(dataframe, replacement_dict):
-    print('cleaning misaccented words...')
-    t0 = time.perf_counter()
-    
     def create_replacement_regex(replacement_map):
         pattern = r'\b(' + '|'.join([re.escape(k) for k in replacement_map.keys()]) + r')\b'
         
@@ -68,7 +64,6 @@ def clean_misaccented_words(dataframe, replacement_dict):
     pattern, replace_func = create_replacement_regex(replacement_dict)
     dataframe['fr'] = dataframe['fr'].str.replace(pattern, replace_func, regex=True)
     
-    print(f"→ done in {(time.perf_counter() - t0) / 60:.2f} min")
     return dataframe
 
 
