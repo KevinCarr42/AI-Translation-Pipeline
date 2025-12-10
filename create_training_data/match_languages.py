@@ -14,6 +14,10 @@ import config
 from create_training_data.language_classifier.language_classifier import LanguageClassifier
 
 
+def normalize_whitespace(text):
+    return re.sub(r'\s+', ' ', text).strip()
+
+
 def get_files_for_publication(pub_number, fr_eng_correlation_df):
     row = fr_eng_correlation_df.loc[fr_eng_correlation_df['pub_number'] == pub_number]
     if not row.empty:
@@ -46,8 +50,6 @@ def load_and_split_text(json_file):
         text_blocks = re.split(r'(?<![;,])[.?!]\s|\n\n', full_text)
     else:
         text_blocks = re.split(r'(?<![;,])[.?!]\s', full_text)
-        # TODO: replace linebreaks for better correlation
-        #  (ie, don't split by linebreaks, but don't include in sentences)
     
     return text_blocks
 
@@ -60,7 +62,7 @@ def extract_text_from_single_file(json_file, target_language, clf):
     text = []
     
     for block in text_blocks:
-        block = block.strip()
+        block = normalize_whitespace(block)
         if len(block) < min_block_length or len(block) > max_block_length:
             continue
         
@@ -83,7 +85,7 @@ def extract_both_languages_from_single_file(json_file, clf):
     text_fr, text_en = [], []
     
     for block in text_blocks:
-        block = block.strip()
+        block = normalize_whitespace(block)
         if len(block) < min_block_length or len(block) > max_block_length:
             continue
         
