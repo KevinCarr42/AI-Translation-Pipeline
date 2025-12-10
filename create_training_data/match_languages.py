@@ -14,19 +14,6 @@ import config
 from create_training_data.language_classifier.language_classifier import LanguageClassifier
 
 
-def clean_text(text):
-    allow_numbers = True
-    
-    if allow_numbers:
-        allowed_chars = r"[^a-zA-ZÀ-ÖØ-öø-ÿ0-9.,;:!?()'\"-]"
-    else:
-        allowed_chars = r"[^a-zA-ZÀ-ÖØ-öø-ÿ.,;:!?()'\"-]"
-    text = re.sub(allowed_chars, ' ', text)
-    text = re.sub(r'\s+', ' ', text).strip()
-    
-    return text
-
-
 def get_files_for_publication(pub_number, fr_eng_correlation_df):
     row = fr_eng_correlation_df.loc[fr_eng_correlation_df['pub_number'] == pub_number]
     if not row.empty:
@@ -54,7 +41,7 @@ def load_and_split_text(json_file):
     if 'text' not in data:
         raise KeyError(f"The key 'text' is missing in the JSON file: {json_file}")
     
-    full_text = data['text']  # NOTE: clean_text should be done after correlation (based on EDA)
+    full_text = data['text']
     if linebreaks:
         text_blocks = re.split(r'(?<![;,])[.?!]\s|\n\n', full_text)
     else:
@@ -183,7 +170,7 @@ def text_from_coordinates(aligned_pairs, sentences_fr, sentences_en, pub_number)
     return correlated_list
 
 
-def correlate_and_clean_text(text_fr, text_en, pub_number, sentence_encoder, device):
+def correlate_text(text_fr, text_en, pub_number, sentence_encoder, device):
     sentences_fr, sentences_en = create_sentences(text_fr, text_en)
     similarity_matrix = create_similarity_matrix(sentences_fr, sentences_en, sentence_encoder, device)
     aligned_pairs = align_sentences(similarity_matrix)
@@ -227,7 +214,7 @@ def process_row(row_tuple, device, language_classifier, sentence_encoder):
     elif len(text_fr) < min_char or len(text_en) < min_char:
         return None
     
-    return correlate_and_clean_text(text_fr, text_en, pub_number, sentence_encoder, device)
+    return correlate_text(text_fr, text_en, pub_number, sentence_encoder, device)
 
 
 def process_row_wrapper(args):
@@ -278,9 +265,6 @@ def create_df(num_workers, n_rows, rows, device, language_classifier, sentence_e
             print_status(start_time, i, n_rows)
     
     dataframe = pd.DataFrame(results, columns=['pub_number', 'fr', 'en', 'similarity'])
-    
-    dataframe['fr'] = dataframe['fr'].apply(clean_text)
-    dataframe['en'] = dataframe['en'].apply(clean_text)
     
     print(f"\nSaving {filename}...")
     dataframe.to_pickle(filename)
