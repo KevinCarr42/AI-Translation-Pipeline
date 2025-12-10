@@ -55,14 +55,14 @@ def clean_misaccented_words(dataframe, replacement_dict):
     def create_replacement_regex(replacement_map):
         pattern = r'\b(' + '|'.join([re.escape(k) for k in replacement_map.keys()]) + r')\b'
         
-        def replace_func(match):
+        def func(match):
             matched_word = match.group(1)
             return replacement_map.get(matched_word, matched_word)
         
-        return pattern, replace_func
+        return pattern, func
     
-    pattern, replace_func = create_replacement_regex(replacement_dict)
-    dataframe['fr'] = dataframe['fr'].str.replace(pattern, replace_func, regex=True)
+    replace_pattern, replace_func = create_replacement_regex(replacement_dict)
+    dataframe['fr'] = dataframe['fr'].str.replace(replace_pattern, replace_func, regex=True)
     
     return dataframe
 
@@ -98,28 +98,15 @@ def build_accent_mapping(dataframe):
     return accent_mapping[~accent_mapping['anglicised'].isin(spell)]
 
 
-def build_accent_replacements(dataframe):
-    accent_mapping = build_accent_mapping(dataframe)
-    
-    spell = SpellChecker(language='fr')
-    accent_mapping = accent_mapping[~accent_mapping['anglicised'].isin(spell)]
-    
-    accent_mapping = accent_mapping.head(1000)
-    replacement_dict = accent_mapping.set_index('anglicised')['accented'].to_dict()
-    
-    return replacement_dict
-
-
 def clean_data(dataframe):
     # cleaning formerly done in create_matched_data()
     dataframe['fr'] = dataframe['fr'].apply(clean_text)
     dataframe['en'] = dataframe['en'].apply(clean_text)
     
     # cleaning formerly done in add_features()
-    replacement_dict = build_accent_replacements(dataframe)
     dataframe = clean_ocr_errors(dataframe)
+    accent_mapping = build_accent_mapping(dataframe)
+    replacement_dict = accent_mapping.head(1000).set_index('anglicised')['accented'].to_dict()
     dataframe = clean_misaccented_words(dataframe, replacement_dict)
     
-    # cleaning formerly done in add_features()
-    
-    return dataframe
+    return dataframe, accent_mapping

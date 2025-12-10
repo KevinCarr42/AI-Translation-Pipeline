@@ -6,7 +6,6 @@ import pandas as pd
 import numpy as np
 
 import config
-from create_training_data.clean_data import build_accent_mapping
 from helpers.helpers import print_timing
 
 
@@ -117,17 +116,16 @@ def add_misaccented_column(dataframe, potential_accent_issues_uncommon):
     return dataframe
 
 
-def add_more_features(dataframe):
+def add_more_features(dataframe, accent_mapping):
     dataframe = appending_one_char_word_statistics(dataframe)
     
-    accent_mapping = build_accent_mapping(dataframe)
     potential_accent_issues = accent_mapping.tail(accent_mapping.shape[0] - 1000).anglicised.to_list()
     dataframe = add_misaccented_column(dataframe, potential_accent_issues)
     
     return dataframe
 
 
-def add_features(dataframe):
+def add_features(dataframe, accent_mapping):
     some_features = config.MATCHED_DATA_WITH_FEATURES
     all_features = config.MATCHED_DATA_WITH_ALL_FEATURES
     
@@ -140,7 +138,7 @@ def add_features(dataframe):
         df = pd.read_pickle(some_features)
         
         print(f"Calculating {all_features}...")
-        df = add_more_features(df)
+        df = add_more_features(df, accent_mapping)
         print("Saving file...")
         df.to_pickle(all_features)
         print("Save complete!\n")
@@ -154,7 +152,7 @@ def add_features(dataframe):
         print("Save complete!\n")
         
         print(f"calculating {all_features}...")
-        df = add_more_features(df)
+        df = add_more_features(df, accent_mapping)
         print("Saving file...")
         df.to_pickle(all_features)
         print("Save complete!\n")

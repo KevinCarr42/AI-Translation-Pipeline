@@ -8,8 +8,8 @@ from create_training_data.create_training_data import create_training_data, crea
 def create_training_data_pipeline(training_data_path, testing_data_path):
     print('creating training data')
     df_matched = create_matched_data()
-    df_clean = clean_data(df_matched)
-    df_features = add_features(df_clean)
+    df_clean, accent_mapping = clean_data(df_matched)
+    df_features = add_features(df_clean, accent_mapping)
     df_training = create_training_data(df_features)
     save_jsonl(df_training, training_data_path)
     df_testing = create_testing_data(df_features)
