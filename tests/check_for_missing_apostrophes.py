@@ -284,6 +284,43 @@ def create_cleaning_dict_from_space_patterns(space_patterns_df):
     return cleaning_dict
 
 
+def add_ocr_issue_feature(dataframe):
+    def check_text_for_ocr_issues(text, lang):
+        if not isinstance(text, str):
+            return False
+        
+        if " '" in text or " '" in text or "' " in text or "' " in text:
+            return True
+        
+        singles = get_single_letter_words(text)
+        for letter_info in singles:
+            _, letter, _ = letter_info
+            if letter.isdigit():
+                continue
+            if not is_legitimate_single_letter(letter, lang):
+                return True
+        
+        return False
+    
+    ocr_issues = []
+    
+    for idx, row in dataframe.iterrows():
+        has_issue = False
+        
+        if 'fr' in dataframe.columns and pd.notna(row.get('fr')):
+            if check_text_for_ocr_issues(row['fr'], 'fr'):
+                has_issue = True
+        
+        if 'en' in dataframe.columns and pd.notna(row.get('en')):
+            if check_text_for_ocr_issues(row['en'], 'en'):
+                has_issue = True
+        
+        ocr_issues.append(has_issue)
+    
+    dataframe['OCR_issue'] = ocr_issues
+    return dataframe
+
+
 def check_uncleaned_data(dataframe_pickle):
     dataframe = pd.read_pickle(dataframe_pickle)
     
