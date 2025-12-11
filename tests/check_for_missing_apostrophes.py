@@ -30,7 +30,7 @@ contraction_patterns_french = {
     'l': [
         'a', 'est', 'avait', 'avait', 'avait', 'aurait', 'auront',
         'on', 'un', 'une', 'autre', 'homme', 'enfant', 'ami', 'amie',
-        'air', 'eau', 'école', 'âge'
+        'air', 'eau', 'école', 'âge', 'indice'
     ],
     'd': [
         'un', 'une', 'abord', 'accord', 'ailleurs', 'après', 'autant',
@@ -91,26 +91,25 @@ def check_missing_apostrophe(text, letter_info, lang):
     else:
         patterns = contraction_patterns_french
     
-    if letter_lower in patterns:
-        if idx > 0:
-            prev_word = words[idx - 1].strip('.,!?;:"\'-()[]{}').lower()
-            if prev_word in patterns[letter_lower]:
-                return True, f"{prev_word} {letter}"
-        if idx < len(words) - 1:
-            next_word = words[idx + 1].strip('.,!?;:"\'-()[]{}').lower()
-            if next_word in patterns[letter_lower]:
-                return True, f"{letter} {next_word}"
-    
-    for pattern_letter, preceding_words in patterns.items():
-        if letter_lower in preceding_words:
-            if idx < len(words) - 1:
-                next_word = words[idx + 1].strip('.,!?;:"\'-()[]{}').lower()
-                if next_word == pattern_letter:
-                    return True, f"{letter} {next_word}"
+    if lang == 'en':
+        if letter_lower in patterns:
             if idx > 0:
                 prev_word = words[idx - 1].strip('.,!?;:"\'-()[]{}').lower()
-                if prev_word == pattern_letter:
+                if prev_word in patterns[letter_lower]:
                     return True, f"{prev_word} {letter}"
+        
+        for pattern_letter, preceding_words in patterns.items():
+            if letter_lower in preceding_words:
+                if idx < len(words) - 1:
+                    next_word = words[idx + 1].strip('.,!?;:"\'-()[]{}').lower()
+                    if next_word == pattern_letter:
+                        return True, f"{letter} {next_word}"
+    else:
+        if letter_lower in patterns:
+            if idx < len(words) - 1:
+                next_word = words[idx + 1].strip('.,!?;:"\'-()[]{}').lower()
+                if next_word in patterns[letter_lower]:
+                    return True, f"{letter} {next_word}"
     
     return False, None
 
