@@ -39,7 +39,7 @@ def clean_ocr_errors(dataframe):
         missing_apostrophe_patterns.append(f"^{letter} ")
         replacement_patterns.append(f"{letter}'")
         
-        # TODO: end of sentence?
+        # TODO: check end of sentence?
     
     # TODO: also fix english apostrophe errors
     dataframe['fr'] = dataframe['fr'].replace(

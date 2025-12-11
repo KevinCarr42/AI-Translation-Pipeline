@@ -1,6 +1,6 @@
 import pandas as pd
 
-legitimate_english = {'i', 'a', 'o'}
+legitimate_english = {'i', 'a'}
 legitimate_french = {'à', 'a', 'y', 'ô', 'ù'}
 
 contraction_patterns_english = {
@@ -102,10 +102,15 @@ def check_missing_apostrophe(text, letter_info, lang):
                 return True, f"{letter} {next_word}"
     
     for pattern_letter, preceding_words in patterns.items():
-        if idx > 0:
-            prev_word = words[idx - 1].strip('.,!?;:"\'-()[]{}').lower()
-            if prev_word == letter_lower and pattern_letter in [w.strip('.,!?;:"\'-()[]{}').lower() for w in words[idx + 1:idx + 2]] if idx < len(words) - 1 else False:
-                return True, f"{letter} {words[idx + 1] if idx < len(words) - 1 else ''}"
+        if letter_lower in preceding_words:
+            if idx < len(words) - 1:
+                next_word = words[idx + 1].strip('.,!?;:"\'-()[]{}').lower()
+                if next_word == pattern_letter:
+                    return True, f"{letter} {next_word}"
+            if idx > 0:
+                prev_word = words[idx - 1].strip('.,!?;:"\'-()[]{}').lower()
+                if prev_word == pattern_letter:
+                    return True, f"{prev_word} {letter}"
     
     return False, None
 
@@ -130,7 +135,7 @@ def analyze_row(row):
     return issues
 
 
-def filter_dataframe(filename):
+def create_filtered_dataframe(filename):
     df = pd.read_json(filename, lines=True)
     df['has_single_letter'] = df.apply(
         lambda row: has_single_letter_word(row['source']),
@@ -139,7 +144,7 @@ def filter_dataframe(filename):
     return df[df['has_single_letter']].copy()
 
 
-def results_dataframe(dataframe):
+def create_results_dataframe(dataframe):
     results = []
     for idx, row in dataframe.iterrows():
         issues = analyze_row(row)
@@ -158,10 +163,7 @@ def results_dataframe(dataframe):
 
 def print_results(filtered_dataframe, results_dataframe, verbose=True):
     if not results_dataframe.empty:
-        results_dataframe.to_csv("single_letter_analysis.csv", index=False)
-        
         summary_df = results_dataframe.drop_duplicates(subset=['pattern']).sort_values('pattern').reset_index(drop=True)
-        summary_df.to_csv("summary_of_patterns.csv", index=False)
         
         print(f"Total rows with single letter words: {len(filtered_dataframe)}")
         print(f"Total issues found: {len(results_dataframe)}")
@@ -181,7 +183,6 @@ if __name__ == '__main__':
     filename = "../../Data/pipe_recalc6/pipeline_training_data.jsonl"
     # filename = "../../Data/pipeline_testing_data.jsonl"
     
-    filtered_df = filter_dataframe(filename)
-    results_df = results_dataframe(filtered_df)
+    filtered_df = create_filtered_dataframe(filename)
+    results_df = create_results_dataframe(filtered_df)
     print_results(filtered_df, results_df)
-    

@@ -102,6 +102,7 @@ def add_some_features(dataframe):
 def appending_one_char_word_statistics(dataframe):
     # FIXME: should these include always have apostrophe words like "J"
     #  (if so "J" is missing, if not some should not be included)
+    #  or should this exclude "L" because it always needs an apostrophe?
     actual_one_char_words_fr = ['À', 'A', 'L', 'D', 'N', 'Y', 'M', 'S', 'T', 'à', 'a', 'l', 'd', 'n', 'y', 'm', 's', 't']
     dataframe['one_char_words_fr'] = dataframe['fr'].apply(lambda s: sum(len(w) == 1 for w in s.split() if w not in actual_one_char_words_fr))
     
