@@ -1,4 +1,5 @@
 import pandas as pd
+from spellchecker import SpellChecker
 
 legitimate_english = {'i', 'a'}
 legitimate_french = {'à', 'a', 'y', 'ô', 'ù'}
@@ -177,6 +178,112 @@ def print_results(filtered_dataframe, results_dataframe, verbose=True):
         print("No issues found")
 
 
+def extract_contractions_from_data(dataframe_pickle, lang='fr'):
+    dataframe = pd.read_pickle(dataframe_pickle)
+    
+    contractions_found = {}
+    spell = SpellChecker(language=lang)
+    
+    col_name = lang
+    if col_name not in dataframe.columns:
+        return {}
+    
+    for idx, row in dataframe.iterrows():
+        if pd.notna(row[col_name]):
+            text = row[col_name]
+            words = text.split()
+            
+            for word in words:
+                if "'" in word or "'" in word:
+                    parts = word.replace("'", "'").split("'")
+                    if len(parts) == 2:
+                        before, after = parts
+                        before = before.strip('.,!?;:"\'-()[]{}').lower()
+                        after = after.strip('.,!?;:"\'-()[]{}').lower()
+                        
+                        if len(before) <= 2 and len(after) > 0 and len(before) > 0:
+                            if any(c.isdigit() for c in before):
+                                continue
+                            if any(c.isdigit() for c in after):
+                                continue
+                            if spell.known([after]):
+                                if before not in contractions_found:
+                                    contractions_found[before] = set()
+                                contractions_found[before].add(after)
+    
+    for letter in contractions_found:
+        contractions_found[letter] = sorted(list(contractions_found[letter]))
+    
+    return contractions_found
+
+
+def check_space_apostrophe_patterns(dataframe_pickle, lang='fr'):
+    dataframe = pd.read_pickle(dataframe_pickle)
+    
+    patterns_found = []
+    spell = SpellChecker(language=lang)
+    
+    col_name = lang
+    if col_name not in dataframe.columns:
+        return pd.DataFrame()
+    
+    for idx, row in dataframe.iterrows():
+        if pd.notna(row[col_name]):
+            text = row[col_name]
+            words = text.split()
+            
+            for i in range(len(words)):
+                if words[i].endswith("'") or words[i].endswith("'"):
+                    if i < len(words) - 1:
+                        pattern = words[i]
+                        next_word = words[i + 1]
+                        expanded_pattern = f"{pattern} {next_word}"
+                        
+                        next_word_clean = next_word.strip('.,!?;:"\'-()[]{}').lower()
+                        if next_word_clean and spell.known([next_word_clean]):
+                            cleaned = pattern + next_word
+                        else:
+                            cleaned = None
+                        
+                        patterns_found.append({
+                            'original': text,
+                            'pattern': pattern,
+                            'expanded_pattern': expanded_pattern,
+                            'cleaned': cleaned
+                        })
+                
+                if words[i].startswith("'") or words[i].startswith("'"):
+                    if i > 0:
+                        prev_word = words[i - 1]
+                        pattern = words[i]
+                        expanded_pattern = f"{prev_word} {pattern}"
+                        
+                        word_clean = words[i][1:].strip('.,!?;:"\'-()[]{}').lower()
+                        if word_clean and spell.known([word_clean]):
+                            cleaned = prev_word + words[i]
+                        else:
+                            cleaned = None
+                        
+                        patterns_found.append({
+                            'original': text,
+                            'pattern': pattern,
+                            'expanded_pattern': expanded_pattern,
+                            'cleaned': cleaned
+                        })
+    
+    return pd.DataFrame(patterns_found)
+
+
+def create_cleaning_dict_from_space_patterns(space_patterns_df):
+    cleaning_dict = {}
+    
+    for _, row in space_patterns_df.iterrows():
+        if pd.notna(row['cleaned']) and row['cleaned'] is not None:
+            cleaning_dict[row['expanded_pattern']] = row['cleaned']
+    
+    return cleaning_dict
+
+
 def check_uncleaned_data(dataframe_pickle):
     dataframe = pd.read_pickle(dataframe_pickle)
     
@@ -264,13 +371,3 @@ def check_uncleaned_data(dataframe_pickle):
     else:
         print("No potential patterns found")
         return pd.DataFrame()
-
-
-if __name__ == '__main__':
-    # filename = "../../Data/pipe_recalc6/pipeline_training_data.jsonl"
-    # filtered_df = create_filtered_dataframe(filename)
-    # results_df = create_results_dataframe(filtered_df)
-    # print_results(filtered_df, results_df)
-    
-    filename = "../../Data/pipe_recalc5/pipeline_matched_data_wo_linebreaks.pickle"
-    check_uncleaned_data(filename)
