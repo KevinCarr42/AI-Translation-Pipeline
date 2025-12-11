@@ -177,11 +177,100 @@ def print_results(filtered_dataframe, results_dataframe, verbose=True):
         print("No issues found")
 
 
-if __name__ == '__main__':
-    # filename = "../../Data/training_data.jsonl"
-    filename = "../../Data/pipe_recalc6/pipeline_training_data.jsonl"
-    # filename = "../../Data/pipeline_testing_data.jsonl"
+def check_uncleaned_data(dataframe_pickle):
+    dataframe = pd.read_pickle(dataframe_pickle)
     
-    filtered_df = create_filtered_dataframe(filename)
-    results_df = create_results_dataframe(filtered_df)
-    print_results(filtered_df, results_df)
+    potential_patterns = []
+    
+    for idx, row in dataframe.iterrows():
+        if 'en' in dataframe.columns and pd.notna(row['en']):
+            text = row['en']
+            singles = get_single_letter_words(text)
+            for letter_info in singles:
+                letter_idx, letter, original = letter_info
+                if letter.isdigit():
+                    continue
+                if not is_legitimate_single_letter(letter, 'en'):
+                    is_known, _ = check_missing_apostrophe(text, letter_info, 'en')
+                    if not is_known:
+                        words = text.split()
+                        if letter_idx > 0:
+                            prev_word = words[letter_idx - 1].strip('.,!?;:"\'-()[]{}').lower()
+                            potential_patterns.append({
+                                'language': 'en',
+                                'letter': letter,
+                                'other_word': prev_word,
+                                'direction': 'after',
+                                'pattern': f"{prev_word} {letter}",
+                                'example_text': text
+                            })
+                        if letter_idx < len(words) - 1:
+                            next_word = words[letter_idx + 1].strip('.,!?;:"\'-()[]{}').lower()
+                            potential_patterns.append({
+                                'language': 'en',
+                                'letter': letter,
+                                'other_word': next_word,
+                                'direction': 'before',
+                                'pattern': f"{letter} {next_word}",
+                                'example_text': text
+                            })
+        
+        if 'fr' in dataframe.columns and pd.notna(row['fr']):
+            text = row['fr']
+            singles = get_single_letter_words(text)
+            for letter_info in singles:
+                letter_idx, letter, original = letter_info
+                if letter.isdigit():
+                    continue
+                if not is_legitimate_single_letter(letter, 'fr'):
+                    is_known, _ = check_missing_apostrophe(text, letter_info, 'fr')
+                    if not is_known:
+                        words = text.split()
+                        if letter_idx > 0:
+                            prev_word = words[letter_idx - 1].strip('.,!?;:"\'-()[]{}').lower()
+                            potential_patterns.append({
+                                'language': 'fr',
+                                'letter': letter,
+                                'other_word': prev_word,
+                                'direction': 'after',
+                                'pattern': f"{prev_word} {letter}",
+                                'example_text': text
+                            })
+                        if letter_idx < len(words) - 1:
+                            next_word = words[letter_idx + 1].strip('.,!?;:"\'-()[]{}').lower()
+                            potential_patterns.append({
+                                'language': 'fr',
+                                'letter': letter,
+                                'other_word': next_word,
+                                'direction': 'before',
+                                'pattern': f"{letter} {next_word}",
+                                'example_text': text
+                            })
+    
+    results_df = pd.DataFrame(potential_patterns)
+    
+    if not results_df.empty:
+        summary_df = results_df.groupby(['language', 'letter', 'other_word', 'direction', 'pattern']).agg({
+            'example_text': 'first',
+            'pattern': 'size'
+        }).rename(columns={'pattern': 'count'}).reset_index()
+        summary_df = summary_df.sort_values(['language', 'count'], ascending=[True, False])
+        
+        print(f"\nTotal potential patterns found: {len(summary_df)}")
+        print(f"English patterns: {len(summary_df[summary_df['language'] == 'en'])}")
+        print(f"French patterns: {len(summary_df[summary_df['language'] == 'fr'])}")
+        
+        return summary_df
+    else:
+        print("No potential patterns found")
+        return pd.DataFrame()
+
+
+if __name__ == '__main__':
+    # filename = "../../Data/pipe_recalc6/pipeline_training_data.jsonl"
+    # filtered_df = create_filtered_dataframe(filename)
+    # results_df = create_results_dataframe(filtered_df)
+    # print_results(filtered_df, results_df)
+    
+    filename = "../../Data/pipe_recalc5/pipeline_matched_data_wo_linebreaks.pickle"
+    check_uncleaned_data(filename)
