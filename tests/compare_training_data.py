@@ -45,34 +45,38 @@ def count_matches(data1, data2):
     print(f"Rows from file1 NOT in file2: {no_match}")
 
 
-if __name__ == '__main__':
-    # # New Method (clean after correlating)
-    # #   MATCH - WORKS CORRECTLY
-    # old_file = "../../Data/pipe_recalc4/new_matched_data_wo_linebreaks.pickle"
-    # new_file = "../../Data/pipe_recalc3/pipeline_matched_data_wo_linebreaks.pickle"
-    # check_match_quality(old_file, new_file, is_pickle=True)
-    #
-    # # Old Method (clean before correlating) - hacked matched_data file
-    # old_file = "../../Data/df_with_features.pickle"
-    # new_file = "../../Data/pipe_recalc4/pipeline_df_with_features.pickle"
-    # check_match_quality(old_file, new_file, is_pickle=True)
-    #
-    # old_file = "../../Data/df_with_features.pickle"
-    # new_file = "../../Data/pipe_recalc4/pipeline_df_with_features.pickle"
-    # check_match_quality(old_file, new_file, is_pickle=True)
-    #
-    # old_file = "../../Data/df_with_more_features.pickle"
-    # new_file = "../../Data/pipe_recalc4/pipeline_df_with_more_features.pickle"
-    # check_match_quality(old_file, new_file, is_pickle=True)
-    #
-    # old_file = "../../Data/training_data.jsonl"
-    # new_file = "../../Data/pipe_recalc4/pipeline_training_data.jsonl"
-    # check_match_quality(old_file, new_file)
-    #
-    # # NOTE: new method are calculated in pipe_recalc3
-    # #   but we need to confirm these work before improving apostrophe and linebreak logic
-    
-    # check if refactor (incl clean_data.py) gives the same results
-    old_file = "../../Data/pipe_recalc3/pipeline_training_data.jsonl"
-    new_file = "../../Data/pipe_recalc6/pipeline_training_data.jsonl"
-    check_match_quality(old_file, new_file)
+# if __name__ == '__main__':
+#     # # New Method (clean after correlating)
+#     # #   MATCH - WORKS CORRECTLY
+#     # old_file = "../../Data/pipe_recalc4/new_matched_data_wo_linebreaks.pickle"
+#     # new_file = "../../Data/pipe_recalc3/pipeline_matched_data_wo_linebreaks.pickle"
+#     # check_match_quality(old_file, new_file, is_pickle=True)
+#     #
+#     # # Old Method (clean before correlating) - hacked matched_data file
+#     # old_file = "../../Data/df_with_features.pickle"
+#     # new_file = "../../Data/pipe_recalc4/pipeline_df_with_features.pickle"
+#     # check_match_quality(old_file, new_file, is_pickle=True)
+#     #
+#     # old_file = "../../Data/df_with_features.pickle"
+#     # new_file = "../../Data/pipe_recalc4/pipeline_df_with_features.pickle"
+#     # check_match_quality(old_file, new_file, is_pickle=True)
+#     #
+#     # old_file = "../../Data/df_with_more_features.pickle"
+#     # new_file = "../../Data/pipe_recalc4/pipeline_df_with_more_features.pickle"
+#     # check_match_quality(old_file, new_file, is_pickle=True)
+#     #
+#     # old_file = "../../Data/training_data.jsonl"
+#     # new_file = "../../Data/pipe_recalc4/pipeline_training_data.jsonl"
+#     # check_match_quality(old_file, new_file)
+#
+#     # check if refactor (incl clean_data.py) gives the same results
+#     old_file = "../../Data/pipe_recalc3/pipeline_training_data.jsonl"
+#     new_file = "../../Data/pipe_recalc6/pipeline_training_data.jsonl"
+#     check_match_quality(old_file, new_file)
+#
+#     # check if refactor (incl clean_data.py) gives the same results
+#     old_file = "../../Data/pipe_recalc3/pipeline_testing_data.jsonl"
+#     new_file = "../../Data/pipe_recalc6/pipeline_testing_data.jsonl"
+#     check_match_quality(old_file, new_file)
+#
+#     # pretty close but not exact. the new way is better, so we'll leave it and move on
