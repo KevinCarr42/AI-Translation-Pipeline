@@ -13,9 +13,6 @@ outlier_criteria_s1 = {
     "noun_ratio": (1.00, 1.75),
     "entity_ratio": (0.33, 1.00),
     "clause_ratio": (1.00, 1.50),
-    "one_char_words_fr": (0.0, 1.0),
-    "one_char_words_en": (0.0, 1.0),
-    "potential_fr_accent_issues": (0.0, 0.1),  # exclude anything above 0
 }
 
 # when similarity < 0.92 (1 stdev above median)
@@ -25,9 +22,6 @@ outlier_criteria_s2 = {
     "noun_ratio": (0.67, 4.00),
     "entity_ratio": (0.17, 2.00),
     "clause_ratio": (0.50, 3.00),
-    "one_char_words_fr": (0.0, 3.0),
-    "one_char_words_en": (0.0, 3.0),
-    "potential_fr_accent_issues": (0.0, 0.1),  # exclude anything above 0
 }
 
 # all higher similarities
@@ -37,9 +31,6 @@ outlier_criteria_s3 = {
     "noun_ratio": (0.38, 12.00),
     "entity_ratio": (0.10, 4.00),
     "clause_ratio": (0.20, 6.00),
-    "one_char_words_fr": (0.0, 11.0),
-    "one_char_words_en": (0.0, 11.0),
-    "potential_fr_accent_issues": (0.0, 0.1),  # exclude anything above 0
 }
 
 
@@ -142,11 +133,9 @@ def exclude_for_training_data(dataframe):
         'exclude_noun_ratio',
         'exclude_entity_ratio',
         'exclude_clause_ratio',
-        'exclude_one_char_words_fr',
-        'exclude_one_char_words_en',
         'exclude_figtext',
         'has_date_refs',
-        'potential_fr_accent_issues',
+        'OCR_issue',
     ]
     dataframe["exclude"] = dataframe[exclusion_columns].any(axis=1)
     dataframe = dataframe[~dataframe.exclude].copy()
@@ -175,8 +164,7 @@ def exclude_for_testing_data(dataframe):
         'exclude_relaxed_noun_ratio',
         'exclude_relaxed_entity_ratio',
         'exclude_relaxed_clause_ratio',
-        'exclude_relaxed_one_char_words_fr',
-        'exclude_relaxed_one_char_words_en',
+        'OCR_issue',
     ]
     
     dataframe["exclude_relaxed"] = dataframe[exclusion_relaxed_columns].any(axis=1)
