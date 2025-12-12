@@ -3,8 +3,6 @@ import os
 # folders
 DATA_DIR = "../Data"
 TRANSLATED_TEXT_DIR = "translations"
-MODEL_OUTPUT_DIR = os.path.join(DATA_DIR, "finetuning_outputs")
-MERGED_MODEL_DIR = os.path.join(DATA_DIR, "finetuning_merged")
 
 # starting data
 PARSED_DOCS_DIR = os.path.join(DATA_DIR, "ParsedPublications")
@@ -21,7 +19,8 @@ TESTING_DATA_OUTPUT = os.path.join(DATA_DIR, "pipeline_testing_data.jsonl")
 
 # pretrained and finetuned folders
 PRETRAINED_MODELS_FOLDER = os.path.join(DATA_DIR, "pretrained_models")
-FINETUNED_MODELS_FOLDER = os.path.join(DATA_DIR, "merged")
+MODEL_OUTPUT_DIR = os.path.join(DATA_DIR, "finetuning_outputs")
+MERGED_MODEL_DIR = os.path.join(DATA_DIR, "finetuning_merged")
 
 MODELS = {
     "m2m100_418m": {
@@ -148,7 +147,7 @@ TRANSLATION_MODEL_VARIANTS = {
         "base_model_key": "opus_mt_en_fr",
         "model_class": "OpusTranslationModel",
         "use_finetuned": True,
-        "merged_paths": {
+        "merged_model_names": {
             "merged_model_path_en_fr": "opus_mt_en_fr",
             "merged_model_path_fr_en": "opus_mt_fr_en",
         }
@@ -162,7 +161,7 @@ TRANSLATION_MODEL_VARIANTS = {
         "base_model_key": "m2m100_418m",
         "model_class": "M2M100TranslationModel",
         "use_finetuned": True,
-        "merged_paths": {
+        "merged_model_names": {
             "merged_model_path": "m2m100_418m",
         }
     },
@@ -175,7 +174,7 @@ TRANSLATION_MODEL_VARIANTS = {
         "base_model_key": "mbart50_mmt_fr",
         "model_class": "MBART50TranslationModel",
         "use_finetuned": True,
-        "merged_paths": {
+        "merged_model_names": {
             "merged_model_path_en_fr": "mbart50_mmt_fr",
             "merged_model_path_fr_en": "mbart50_mmt_en",
         }

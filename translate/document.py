@@ -52,9 +52,9 @@ def _get_model_config(use_finetuned=True):
             "model_type": base_model["type"],
         }
         
-        if "merged_paths" in variant_config:
-            for path_key, path_value in variant_config["merged_paths"].items():
-                params[path_key] = os.path.join(config.FINETUNED_MODELS_FOLDER, path_value)
+        if "merged_model_names" in variant_config:
+            for path_key, model_name in variant_config["merged_model_names"].items():
+                params[path_key] = os.path.join(config.MERGED_MODEL_DIR, model_name)
         
         all_models[variant_name] = {
             "cls": model_class_map[variant_config["model_class"]],
