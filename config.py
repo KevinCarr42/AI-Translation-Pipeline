@@ -2,8 +2,9 @@ import os
 
 # folders
 DATA_DIR = "../Data"
-MODEL_OUTPUT_DIR = "../outputs"
 TRANSLATED_TEXT_DIR = "translations"
+MODEL_OUTPUT_DIR = os.path.join(DATA_DIR, "finetuning_outputs")
+MERGED_MODEL_DIR = os.path.join(DATA_DIR, "finetuning_merged")
 
 # starting data
 PARSED_DOCS_DIR = os.path.join(DATA_DIR, "ParsedPublications")
