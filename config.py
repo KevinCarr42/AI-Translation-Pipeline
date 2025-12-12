@@ -138,5 +138,49 @@ PREFERENTIAL_TRANSLATION_CONFIG = {
     "validate_tokens": True,
 }
 
+TRANSLATION_MODEL_VARIANTS = {
+    "opus_mt_base": {
+        "base_model_key": "opus_mt_en_fr",
+        "model_class": "OpusTranslationModel",
+        "use_finetuned": False,
+    },
+    "opus_mt_finetuned": {
+        "base_model_key": "opus_mt_en_fr",
+        "model_class": "OpusTranslationModel",
+        "use_finetuned": True,
+        "merged_paths": {
+            "merged_model_path_en_fr": "opus_mt_en_fr",
+            "merged_model_path_fr_en": "opus_mt_fr_en",
+        }
+    },
+    "m2m100_418m_base": {
+        "base_model_key": "m2m100_418m",
+        "model_class": "M2M100TranslationModel",
+        "use_finetuned": False,
+    },
+    "m2m100_418m_finetuned": {
+        "base_model_key": "m2m100_418m",
+        "model_class": "M2M100TranslationModel",
+        "use_finetuned": True,
+        "merged_paths": {
+            "merged_model_path": "m2m100_418m",
+        }
+    },
+    "mbart50_mmt_base": {
+        "base_model_key": "mbart50_mmt_fr",
+        "model_class": "MBART50TranslationModel",
+        "use_finetuned": False,
+    },
+    "mbart50_mmt_finetuned": {
+        "base_model_key": "mbart50_mmt_fr",
+        "model_class": "MBART50TranslationModel",
+        "use_finetuned": True,
+        "merged_paths": {
+            "merged_model_path_en_fr": "mbart50_mmt_fr",
+            "merged_model_path_fr_en": "mbart50_mmt_en",
+        }
+    },
+}
+
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(MODEL_OUTPUT_DIR, exist_ok=True)

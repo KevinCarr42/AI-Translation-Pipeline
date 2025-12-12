@@ -3,7 +3,7 @@ import logging
 import torch
 from sentence_transformers.util import pytorch_cos_sim
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, AutoModelForCausalLM, BitsAndBytesConfig
-from preferential_translations import apply_preferential_translations, reverse_preferential_translations
+from rules_based_replacements.preferential_translations import apply_preferential_translations, reverse_preferential_translations
 
 
 class BaseTranslationModel:

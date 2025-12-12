@@ -1,7 +1,6 @@
 import re
-import json
 
-from .token_utils import create_replacement_token, choose_random_int, load_translations, get_search_patterns
+from rules_based_replacements.token_utils import create_replacement_token, load_translations, get_search_patterns
 
 
 def replace_whole_word(text, word, replacement):

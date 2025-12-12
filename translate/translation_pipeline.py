@@ -1,6 +1,6 @@
 from sentence_transformers import SentenceTransformer
-from .models import TranslationManager
-from .document import translate_document
+from translate.models import TranslationManager
+from translate.document import translate_document
 
 
 def translation_pipeline(input_text_file, output_text_file, with_preferential_translation=True,

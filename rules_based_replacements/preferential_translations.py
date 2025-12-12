@@ -1,4 +1,4 @@
-from .replacements import (
+from rules_based_replacements.replacements import (
     preprocess_for_translation,
     postprocess_translation,
     validate_tokens_replaced,
