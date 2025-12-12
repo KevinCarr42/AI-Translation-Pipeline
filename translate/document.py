@@ -129,8 +129,9 @@ def translate_document(
                 paragraphs_dict[para_idx] = []
             
             paragraphs_dict[para_idx].append(translated_chunk)
-            
-            if metadata['is_last_in_para']:
+        
+        for para_idx in paragraphs_dict:
+            if isinstance(paragraphs_dict[para_idx], list):
                 paragraphs_dict[para_idx] = ' '.join(paragraphs_dict[para_idx])
         
         translated_document = '\n\n'.join(paragraphs_dict[i] for i in sorted(paragraphs_dict.keys()))
