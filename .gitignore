@@ -4,3 +4,4 @@
 *.csv
 scratch.py
 console_output*.txt
+translations/

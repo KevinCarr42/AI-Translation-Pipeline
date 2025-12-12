@@ -1,8 +1,7 @@
 import config
 import os
 import re
-from sentence_transformers import SentenceTransformer
-from translate.models import OpusTranslationModel, M2M100TranslationModel, MBART50TranslationModel, TranslationManager
+from translate.models import OpusTranslationModel, M2M100TranslationModel, MBART50TranslationModel, create_translator
 
 
 def split_by_sentences(text):
@@ -98,9 +97,8 @@ def translate_document(
     
     if debug:
         print(f"Loading embedder...")
-    embedder = SentenceTransformer('sentence-transformers/LaBSE')
     
-    translation_manager = TranslationManager(all_models, embedder)
+    translation_manager = create_translator(all_models, use_embedder=True)
     if debug:
         print(f"Loading models...")
     translation_manager.load_models()

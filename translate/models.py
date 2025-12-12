@@ -472,3 +472,13 @@ class TranslationManager:
     def clear_errors(self):
         self.extra_token_errors.clear()
         self.find_replace_errors.clear()
+
+
+def create_translator(all_models, use_embedder=True):
+    from sentence_transformers import SentenceTransformer
+    
+    embedder = None
+    if use_embedder:
+        embedder = SentenceTransformer('sentence-transformers/LaBSE')
+    
+    return TranslationManager(all_models, embedder)

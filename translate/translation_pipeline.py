@@ -1,5 +1,3 @@
-from sentence_transformers import SentenceTransformer
-from translate.models import TranslationManager
 from translate.document import translate_document
 
 
@@ -34,11 +32,3 @@ def translation_pipeline(input_text_file, output_text_file, with_preferential_tr
     )
     
     return {"status": "complete", "output_file": output_text_file}
-
-
-def create_translator(all_models, use_embedder=True):
-    embedder = None
-    if use_embedder:
-        embedder = SentenceTransformer('sentence-transformers/LaBSE')
-    
-    return TranslationManager(all_models, embedder)
