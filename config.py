@@ -7,7 +7,6 @@ TRANSLATED_TEXT_DIR = "translations"
 # starting data
 PARSED_DOCS_DIR = os.path.join(DATA_DIR, "ParsedPublications")
 CORRELATION_CSV_PATH = os.path.join(DATA_DIR, "fr_eng_correlation_data.csv")
-PREFERENTIAL_JSON_PATH = os.path.join(DATA_DIR, "preferential_translations.json")
 
 # calculated data
 MATCHED_DATA = os.path.join(DATA_DIR, "pipeline_matched_data_wo_linebreaks.pickle")
@@ -17,7 +16,8 @@ MATCHED_DATA_WITH_FEATURES = os.path.join(DATA_DIR, "pipeline_df_with_features.p
 TRAINING_DATA_OUTPUT = os.path.join(DATA_DIR, "pipeline_training_data.jsonl")
 TESTING_DATA_OUTPUT = os.path.join(DATA_DIR, "pipeline_testing_data.jsonl")
 
-# pretrained and finetuned folders
+# translations folders
+PREFERENTIAL_JSON_PATH = os.path.join(DATA_DIR, "preferential_translations.json")
 PRETRAINED_MODELS_FOLDER = os.path.join(DATA_DIR, "pretrained_models")
 MODEL_OUTPUT_DIR = os.path.join(DATA_DIR, "finetuning_outputs")
 MERGED_MODEL_DIR = os.path.join(DATA_DIR, "finetuning_merged")
