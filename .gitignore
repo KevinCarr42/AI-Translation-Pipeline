@@ -3,4 +3,4 @@
 *__pycache__*
 *.csv
 scratch.py
-console_output.txt
+console_output*.txt

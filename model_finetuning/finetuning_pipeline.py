@@ -7,6 +7,7 @@ from peft import LoraConfig, get_peft_model
 
 from model_finetuning.model_loading import load_tokenizer_and_model
 from model_finetuning.preprocessing import Preprocessor
+from model_finetuning.merge_weights import merge_weights
 from model_finetuning.trainer import build_trainer
 import config
 
@@ -216,6 +217,9 @@ def finetuning_pipeline(data_path=None, model_names=None, **kwargs):
         print(f"\nCompleted fine-tuning {model_name}")
     
     print(f"\n{'=' * 60}")
+    print("Merging fine-tuned weights...\n")
+    merge_weights()
+    
     print("Model fine-tuning pipeline complete!")
     print(f"{'=' * 60}\n")
     
