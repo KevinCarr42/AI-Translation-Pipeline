@@ -1,7 +1,5 @@
-import config
-import os
 import re
-from translate.models import OpusTranslationModel, M2M100TranslationModel, MBART50TranslationModel, create_translator
+from translate.models import create_translator
 
 
 def split_by_sentences(text):
@@ -32,36 +30,8 @@ def split_by_paragraphs(text):
     return paragraphs, None
 
 
-def _get_model_config(use_finetuned=True):
-    model_class_map = {
-        "OpusTranslationModel": OpusTranslationModel,
-        "M2M100TranslationModel": M2M100TranslationModel,
-        "MBART50TranslationModel": MBART50TranslationModel,
-    }
-    
-    all_models = {}
-    for variant_name, variant_config in config.TRANSLATION_MODEL_VARIANTS.items():
-        if not use_finetuned and variant_config["use_finetuned"]:
-            continue
-        
-        base_model_key = variant_config["base_model_key"]
-        base_model = config.MODELS[base_model_key]
-        
-        params = {
-            "base_model_id": base_model["model_id"],
-            "model_type": base_model["type"],
-        }
-        
-        if "merged_model_names" in variant_config:
-            for path_key, model_name in variant_config["merged_model_names"].items():
-                params[path_key] = os.path.join(config.MERGED_MODEL_DIR, model_name)
-        
-        all_models[variant_name] = {
-            "cls": model_class_map[variant_config["model_class"]],
-            "params": params
-        }
-    
-    return all_models
+def normalize_apostrophes(text):
+    return text.replace("’", "'").replace("‘", "'")
 
 
 def translate_document(
@@ -72,7 +42,7 @@ def translate_document(
         models_to_use=None,
         use_find_replace=True,
         use_finetuned=True,
-        debug=False
+        translation_manager=None
 ):
     if not output_text_file:
         output_text_file = input_text_file.replace(input_text_file[-4], "_translated" + input_text_file[-4])
@@ -90,25 +60,15 @@ def translate_document(
     else:
         chunks, chunk_metadata = split_by_paragraphs(text)
     
-    all_models = _get_model_config(use_finetuned)
-    
-    if models_to_use:
-        all_models = {k: v for k, v in all_models.items() if k in models_to_use}
-    
-    if debug:
-        print(f"Loading embedder...")
-    
-    translation_manager = create_translator(all_models, use_embedder=True)
-    if debug:
-        print(f"Loading models...")
-    translation_manager.load_models()
+    if not translation_manager:
+        translation_manager = create_translator(
+            use_finetuned=use_finetuned,
+            models_to_use=models_to_use,
+            use_embedder=True,
+            load_models=True
+        )
     
     translated_chunks = []
-    total = len(chunks)
-    
-    if debug:
-        print(f"Translating {total} chunks from {source_lang} to {target_lang}...")
-    
     for i, chunk in enumerate(chunks, 1):
         result = translation_manager.translate_with_best_model(
             text=chunk,
@@ -119,6 +79,7 @@ def translate_document(
         )
         
         translated_text = result.get("translated_text", "[TRANSLATION FAILED]")
+        translated_text = normalize_apostrophes(translated_text)
         translated_chunks.append(translated_text)
     
     if chunk_by == "sentences":
@@ -140,6 +101,3 @@ def translate_document(
     
     with open(output_text_file, 'w', encoding='utf-8') as f:
         f.write(translated_document)
-    
-    if debug:
-        print(f"Translation complete! Output saved to: {output_text_file}")

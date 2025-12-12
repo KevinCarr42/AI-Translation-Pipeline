@@ -1,5 +1,6 @@
 import config
 import logging
+import os
 import torch
 from sentence_transformers.util import pytorch_cos_sim
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, AutoModelForCausalLM, BitsAndBytesConfig
@@ -474,11 +475,53 @@ class TranslationManager:
         self.find_replace_errors.clear()
 
 
-def create_translator(all_models, use_embedder=True):
+def get_model_config(use_finetuned=True, models_to_use=None):
+    model_class_map = {
+        "OpusTranslationModel": OpusTranslationModel,
+        "M2M100TranslationModel": M2M100TranslationModel,
+        "MBART50TranslationModel": MBART50TranslationModel,
+    }
+    
+    all_models = {}
+    for variant_name, variant_config in config.TRANSLATION_MODEL_VARIANTS.items():
+        if not use_finetuned and variant_config["use_finetuned"]:
+            continue
+        
+        base_model_key = variant_config["base_model_key"]
+        base_model = config.MODELS[base_model_key]
+        
+        params = {
+            "base_model_id": base_model["model_id"],
+            "model_type": base_model["type"],
+        }
+        
+        if "merged_model_names" in variant_config:
+            for path_key, model_name in variant_config["merged_model_names"].items():
+                params[path_key] = os.path.join(config.MERGED_MODEL_DIR, model_name)
+        
+        all_models[variant_name] = {
+            "cls": model_class_map[variant_config["model_class"]],
+            "params": params
+        }
+    
+    if models_to_use:
+        all_models = {k: v for k, v in all_models.items() if k in models_to_use}
+    
+    return all_models
+
+
+def create_translator(use_finetuned=True, models_to_use=None, use_embedder=True, load_models=True):
     from sentence_transformers import SentenceTransformer
+    
+    all_models = get_model_config(use_finetuned, models_to_use)
     
     embedder = None
     if use_embedder:
         embedder = SentenceTransformer('sentence-transformers/LaBSE')
     
-    return TranslationManager(all_models, embedder)
+    manager = TranslationManager(all_models, embedder)
+    
+    if load_models:
+        manager.load_models()
+    
+    return manager

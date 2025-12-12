@@ -36,6 +36,9 @@ outlier_criteria_s3 = {
 
 @print_timing("adding exclusion columns based on similarity scores...")
 def add_exclusion_columns(dataframe):
+    # TODO: should we recalculate cosine similarity now that data is cleaned?
+    #  should we refine our stdev based on this updated similarity data?
+    
     dataframe["exclude_low_similarity"] = dataframe["similarity"] < 0.757
     
     s1_mask = dataframe["similarity"] < 0.85
