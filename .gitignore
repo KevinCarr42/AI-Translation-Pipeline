@@ -5,3 +5,4 @@
 scratch.py
 console_output*.txt
 translations/
+*.pickle

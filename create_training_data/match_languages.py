@@ -14,7 +14,11 @@ import config
 from create_training_data.language_classifier.language_classifier import LanguageClassifier
 
 
-def normalize_whitespace(text):
+def clean_text(text):
+    text = re.sub(r'[\u201C\u201D\u201E]', '"', text)  # " " „ -> "
+    text = re.sub(r'[\u2018\u2019\u201A]', "'", text)  # ' ' ‚ -> '
+    text = re.sub(r'[\u00AB\u00BB]', '"', text)  # « » -> "
+    text = re.sub(r"[^a-zA-Z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u00FF0-9.,;:!?()'\"-]", ' ', text)
     return re.sub(r'\s+', ' ', text).strip()
 
 
@@ -36,22 +40,39 @@ def get_json_file_link(parsed_docs_folder, pdf_filename):
     return None
 
 
+_EXEMPTIONS = {
+    'al', 'apr', 'assn', 'aug', 'ave', 'avr', 'blvd', 'bros', 'ca', 'cf', 'ch', 'cit', 'co', 'col', 'corp', 'dec',
+    'dept', 'dr', 'ed', 'eds', 'eg', 'et', 'etc', 'feb', 'fig', 'figs', 'ft', 'gen', 'gov', 'govt', 'hon', 'ibid',
+    'ie', 'inc', 'intl', 'jan', 'janv', 'jr', 'juil', 'jul', 'jun', 'loc', 'lt', 'ltd', 'mar', 'me', 'mgr', 'misc',
+    'mlle', 'mme', 'mr', 'mrs', 'ms', 'mt', 'natl', 'no', 'nos', 'nov', 'oct', 'op', 'pg', 'pgs', 'pp', 'pr',
+    'prof', 'rd', 'rev', 'sec', 'sep', 'sept', 'seq', 'sr', 'st', 'ste', 'viz', 'vol', 'vols', 'vs'
+}
+_EXEMPT_PATTERN = re.compile(
+    r'\b(' + '|'.join(re.escape(e) for e in sorted(_EXEMPTIONS, key=len, reverse=True)) + r')\.\s',
+    re.IGNORECASE
+)
+_SPLIT_PATTERN = re.compile(r'([.?!]["\'\u00BB\u201D\u2019]*)\s+')
+
+
+def split_text(text):
+    protected = _EXEMPT_PATTERN.sub(lambda m: m.group().replace('.', '\x00'), text)
+    parts = _SPLIT_PATTERN.split(protected)
+    sentences = []
+    for i in range(0, len(parts) - 1, 2):
+        sentences.append((parts[i] + parts[i + 1]).replace('\x00', '.').strip())
+    if len(parts) % 2 == 1 and parts[-1].strip():
+        sentences.append(parts[-1].replace('\x00', '.').strip())
+    return sentences
+
+
 def load_and_split_text(json_file):
-    linebreaks = False  # NOTE: linebreaks = False improves correlation (based on EDA)
-    
     with open(json_file, 'r', encoding='utf-8') as file:
         data = json.load(file)
     
     if 'text' not in data:
         raise KeyError(f"The key 'text' is missing in the JSON file: {json_file}")
     
-    full_text = data['text']
-    if linebreaks:
-        text_blocks = re.split(r'(?<![;,])[.?!]\s|\n\n', full_text)
-    else:
-        text_blocks = re.split(r'(?<![;,])[.?!]\s', full_text)
-    
-    return text_blocks
+    return split_text(data['text'])
 
 
 def extract_text_from_single_file(json_file, target_language, clf):
@@ -62,7 +83,7 @@ def extract_text_from_single_file(json_file, target_language, clf):
     text = []
     
     for block in text_blocks:
-        block = normalize_whitespace(block)
+        block = clean_text(block)
         if len(block) < min_block_length or len(block) > max_block_length:
             continue
         
@@ -85,7 +106,7 @@ def extract_both_languages_from_single_file(json_file, clf):
     text_fr, text_en = [], []
     
     for block in text_blocks:
-        block = normalize_whitespace(block)
+        block = clean_text(block)
         if len(block) < min_block_length or len(block) > max_block_length:
             continue
         
@@ -99,15 +120,8 @@ def extract_both_languages_from_single_file(json_file, clf):
 
 
 def create_sentences(text_fr, text_en):
-    linebreaks = False  # NOTE: linebreaks = False improves correlation (based on EDA)
-    
-    if linebreaks:
-        sentences_fr = [x.strip() for x in re.split(r'(?<![;,])[.?!]\s|\n\n', text_fr) if x != ""]
-        sentences_en = [x.strip() for x in re.split(r'(?<![;,])[.?!]\s|\n\n', text_en) if x != ""]
-    else:
-        sentences_fr = [x.strip() for x in re.split(r'(?<![;,])[.?!]\s', text_fr) if x != ""]
-        sentences_en = [x.strip() for x in re.split(r'(?<![;,])[.?!]\s', text_en) if x != ""]
-    
+    sentences_fr = [x.strip() for x in re.split(r'(?<![;,])[.?!]\s', text_fr) if x != ""]
+    sentences_en = [x.strip() for x in re.split(r'(?<![;,])[.?!]\s', text_en) if x != ""]
     return sentences_fr, sentences_en
 
 
@@ -181,8 +195,6 @@ def correlate_text(text_fr, text_en, pub_number, sentence_encoder, device):
 
 
 def process_row(row_tuple, device, language_classifier, sentence_encoder):
-    skip_abstract_only_translations = False
-    
     parsed_docs_folder = os.path.join("..", "ParsedPublications")
     index, row = row_tuple
     pub_number = row['pub_number']
@@ -204,15 +216,11 @@ def process_row(row_tuple, device, language_classifier, sentence_encoder):
         text_fr, text_en = extract_both_languages_from_two_files(fr_link, en_link, language_classifier)
     
     # low-quality text criteria
-    max_ratio = 2  # abstract only translations to (potentially) exclude
-    min_char = 1000  # low quality, bad OCR, or incomplete transcription / parsing
+    min_char = 1000
     len_fr, len_en = len(text_fr), len(text_en)
     
     if len_fr == 0 or len_en == 0:
         return None
-    elif skip_abstract_only_translations:
-        if len(text_fr) / len(text_en) > max_ratio or len(text_en) / len(text_fr) > max_ratio:
-            return None
     elif len(text_fr) < min_char or len(text_en) < min_char:
         return None
     
