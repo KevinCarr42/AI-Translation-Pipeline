@@ -3,10 +3,7 @@ import re
 
 from helpers.helpers import print_timing
 
-# ADD EXCLUSION COLUMNS
-#  chosen based on stdev from mean, and tweaked based on performance and final quality
 
-# when similarity < 0.85 (median)
 outlier_criteria_s1 = {
     "len_ratio": (0.75, 1.92),  # override with 2 stdev len ratios
     "verb_ratio": (0.75, 1.50),
@@ -15,7 +12,6 @@ outlier_criteria_s1 = {
     "clause_ratio": (1.00, 1.50),
 }
 
-# when similarity < 0.92 (1 stdev above median)
 outlier_criteria_s2 = {
     "len_ratio": (0.75, 1.92),
     "verb_ratio": (0.50, 3.00),
@@ -24,7 +20,6 @@ outlier_criteria_s2 = {
     "clause_ratio": (0.50, 3.00),
 }
 
-# all higher similarities
 outlier_criteria_s3 = {
     "len_ratio": (0.34, 3.93),
     "verb_ratio": (0.25, 5.00),
@@ -36,7 +31,8 @@ outlier_criteria_s3 = {
 
 @print_timing("adding exclusion columns based on similarity scores...")
 def add_exclusion_columns(dataframe):
-    # Note: thresholds increased 1 stdev from original POC to improve training data quality
+    # Note:
+    #  thresholds increased 1 stdev from original POC to improve training data quality
     #  median, +1 stdev, +2 stdev
     low_p, med_p, high_p = 0.85, 0.92, 0.99
     
@@ -70,30 +66,22 @@ def analyze_text_for_figrefs(text, language='en'):
         'exclude_figtext': False
     }
     
-    # Check for trailing numbers
     if re.search(r'\s+\d+\s*$', text):
         result['has_trailing_numbers'] = True
     
-    # Check for parenthetical numbers
     if re.search(r'\s+\(\d+\)\s*$', text):
         result['has_parenthetical_numbers'] = True
     
-    # Check for figure/table references (with French support)
     if language == 'fr':
-        # French patterns: Figure, Tableau, Fig., Tab.
         pattern = r'\s*(?:Figure|Tableau|Fig\.?|Tab\.?)\s+\d+.*$'
     else:
-        # English patterns: Figure, Table, Fig., Tab.
         pattern = r'\s*(?:Figure|Table|Fig\.?|Tab\.?)\s+\d+.*$'
-    
     if re.search(pattern, text, flags=re.IGNORECASE):
         result['has_figure_references'] = True
     
-    # Check for repeated punctuation
     if re.search(r'[.!?]{2,}$', text):
         result['has_repeated_punctuation'] = True
     
-    # Set exclude flag if any issue found
     result['exclude_figtext'] = any([
         result['has_figure_references'],
         result['has_trailing_numbers'],
@@ -176,8 +164,6 @@ def exclude_for_testing_data(dataframe):
     
     return dataframe
 
-
-# CREATE TRAINING DATA
 
 def create_dataset(dataframe, exclusion_func):
     dataframe = add_exclusion_columns(dataframe)
