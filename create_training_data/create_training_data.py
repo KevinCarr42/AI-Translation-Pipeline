@@ -36,14 +36,15 @@ outlier_criteria_s3 = {
 
 @print_timing("adding exclusion columns based on similarity scores...")
 def add_exclusion_columns(dataframe):
-    # TODO: should we recalculate cosine similarity now that data is cleaned?
-    #  should we refine our stdev based on this updated similarity data?
+    # Note: thresholds increased 1 stdev from original POC to improve training data quality
+    #  median, +1 stdev, +2 stdev
+    low_p, med_p, high_p = 0.85, 0.92, 0.99
     
-    dataframe["exclude_low_similarity"] = dataframe["similarity"] < 0.757
+    dataframe["exclude_low_similarity"] = dataframe["similarity"] < low_p
     
-    s1_mask = dataframe["similarity"] < 0.85
-    s2_mask = (dataframe["similarity"] >= 0.85) & (dataframe["similarity"] < 0.92)
-    s3_mask = dataframe["similarity"] >= 0.92
+    s1_mask = dataframe["similarity"] < med_p
+    s2_mask = (dataframe["similarity"] >= med_p) & (dataframe["similarity"] < high_p)
+    s3_mask = dataframe["similarity"] >= high_p
     
     for feature in outlier_criteria_s1:
         col_name = f"exclude_{feature}"
