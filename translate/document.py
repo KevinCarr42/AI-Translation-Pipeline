@@ -3,23 +3,31 @@ from translate.models import create_translator
 
 
 def split_by_sentences(text):
-    paragraphs = text.split('\n\n')
+    lines = text.split('\n')
     chunks = []
     chunk_metadata = []
     
-    for para_idx, paragraph in enumerate(paragraphs):
-        if not paragraph.strip():
+    for line_idx, line in enumerate(lines):
+        if not line.strip():
+            chunks.append('')
+            chunk_metadata.append({
+                'line_idx': line_idx,
+                'sent_idx': 0,
+                'is_last_in_line': True,
+                'is_empty': True
+            })
             continue
         
-        sentences = re.split(r'(?<=[.!?])\s+', paragraph)
+        sentences = re.split(r'(?<=[.!?])\s+', line)
         for sent_idx, sentence in enumerate(sentences):
             sentence = sentence.strip()
             if sentence:
                 chunks.append(sentence)
                 chunk_metadata.append({
-                    'para_idx': para_idx,
+                    'line_idx': line_idx,
                     'sent_idx': sent_idx,
-                    'is_last_in_para': sent_idx == len(sentences) - 1
+                    'is_last_in_line': sent_idx == len(sentences) - 1,
+                    'is_empty': False
                 })
     
     return chunks, chunk_metadata
@@ -69,7 +77,11 @@ def translate_document(
         )
     
     translated_chunks = []
-    for i, chunk in enumerate(chunks, 1):
+    for i, (chunk, metadata) in enumerate(zip(chunks, chunk_metadata), 1):
+        if chunk_by == "sentences" and metadata.get('is_empty', False):
+            translated_chunks.append('')
+            continue
+        
         result = translation_manager.translate_with_best_model(
             text=chunk,
             source_lang=source_lang,
@@ -83,19 +95,19 @@ def translate_document(
         translated_chunks.append(translated_text)
     
     if chunk_by == "sentences":
-        paragraphs_dict = {}
+        lines_dict = {}
         for i, (translated_chunk, metadata) in enumerate(zip(translated_chunks, chunk_metadata)):
-            para_idx = metadata['para_idx']
-            if para_idx not in paragraphs_dict:
-                paragraphs_dict[para_idx] = []
+            line_idx = metadata['line_idx']
+            if line_idx not in lines_dict:
+                lines_dict[line_idx] = []
             
-            paragraphs_dict[para_idx].append(translated_chunk)
+            lines_dict[line_idx].append(translated_chunk)
         
-        for para_idx in paragraphs_dict:
-            if isinstance(paragraphs_dict[para_idx], list):
-                paragraphs_dict[para_idx] = ' '.join(paragraphs_dict[para_idx])
+        for line_idx in lines_dict:
+            if isinstance(lines_dict[line_idx], list):
+                lines_dict[line_idx] = ' '.join(lines_dict[line_idx])
         
-        translated_document = '\n\n'.join(paragraphs_dict[i] for i in sorted(paragraphs_dict.keys()))
+        translated_document = '\n'.join(lines_dict[i] for i in sorted(lines_dict.keys()))
     else:
         translated_document = '\n\n'.join(translated_chunks)
     

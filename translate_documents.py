@@ -6,7 +6,7 @@ from translate.models import create_translator
 
 if __name__ == '__main__':
     file_list = (
-        ("example.txt", "en"), ("example_translated.txt", "fr"),
+        ("example1.txt", "en"), ("example1_translated.txt", "fr"),
         ("example2.txt", "en"), ("example2_translated.txt", "fr"),
         ("example3.txt", "en"), ("example3_translated.txt", "fr"),
     )
