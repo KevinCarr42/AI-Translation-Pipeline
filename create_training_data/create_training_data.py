@@ -3,7 +3,6 @@ import re
 
 from helpers.helpers import print_timing
 
-
 outlier_criteria_s1 = {
     "len_ratio": (0.75, 1.92),  # override with 2 stdev len ratios
     "verb_ratio": (0.75, 1.50),
@@ -137,8 +136,12 @@ def exclude_for_training_data(dataframe):
 
 @print_timing("adding periods to all sentences...")
 def add_periods_to_all_sentences(dataframe):
-    dataframe.loc[:, 'fr'] = dataframe['fr'] + "."
-    dataframe.loc[:, 'en'] = dataframe['en'] + "."
+    dataframe.loc[:, 'fr'] = dataframe['fr'].apply(
+        lambda x: x if x.endswith(('.', '!', '?')) else x + "."
+    )
+    dataframe.loc[:, 'en'] = dataframe['en'].apply(
+        lambda x: x if x.endswith(('.', '!', '?')) else x + "."
+    )
     
     return dataframe
 

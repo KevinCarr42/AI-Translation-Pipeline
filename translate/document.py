@@ -35,7 +35,8 @@ def split_by_sentences(text):
 
 def split_by_paragraphs(text):
     paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
-    return paragraphs, None
+    chunk_metadata = [{}] * len(paragraphs)
+    return paragraphs, chunk_metadata
 
 
 def normalize_apostrophes(text):
