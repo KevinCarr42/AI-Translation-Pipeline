@@ -33,10 +33,76 @@ def split_by_sentences(text):
     return chunks, chunk_metadata
 
 
+def reassemble_sentences(translated_chunks, chunk_metadata):
+    lines_dict = {}
+    for i, (translated_chunk, metadata) in enumerate(zip(translated_chunks, chunk_metadata)):
+        line_idx = metadata['line_idx']
+        if line_idx not in lines_dict:
+            lines_dict[line_idx] = []
+        
+        lines_dict[line_idx].append(translated_chunk)
+    
+    for line_idx in lines_dict:
+        if isinstance(lines_dict[line_idx], list):
+            lines_dict[line_idx] = ' '.join(lines_dict[line_idx])
+    
+    return '\n'.join(lines_dict[i] for i in sorted(lines_dict.keys()))
+
+
 def split_by_paragraphs(text):
+    # Notes:
+    #  at 2000 char, we get significant preferential translation errors
+    #  at 1000 char, we get the same errors
+    MAX_CHAR = 1000
+    
     paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
-    chunk_metadata = [{}] * len(paragraphs)
-    return paragraphs, chunk_metadata
+    chunks = []
+    chunk_metadata = []
+    
+    for para_idx, para in enumerate(paragraphs):
+        if len(para) <= MAX_CHAR:
+            chunks.append(para)
+            chunk_metadata.append({'para_idx': para_idx, 'is_last_in_para': True})
+        else:
+            sentences = re.split(r'(?<=[.!?])\s+', para)
+            current_chunk = ''
+            para_chunks = []
+            
+            for sentence in sentences:
+                if len(current_chunk) + len(sentence) + 1 <= MAX_CHAR:
+                    current_chunk += (' ' if current_chunk else '') + sentence
+                else:
+                    if current_chunk:
+                        para_chunks.append(current_chunk)
+                    current_chunk = sentence
+            
+            if current_chunk:
+                para_chunks.append(current_chunk)
+            
+            for chunk_idx, chunk in enumerate(para_chunks):
+                chunks.append(chunk)
+                chunk_metadata.append({
+                    'para_idx': para_idx,
+                    'is_last_in_para': chunk_idx == len(para_chunks) - 1
+                })
+    
+    return chunks, chunk_metadata
+
+
+def reassemble_paragraphs(translated_chunks, chunk_metadata):
+    paras_dict = {}
+    for translated_chunk, metadata in zip(translated_chunks, chunk_metadata):
+        para_idx = metadata['para_idx']
+        if para_idx not in paras_dict:
+            paras_dict[para_idx] = []
+        
+        paras_dict[para_idx].append(translated_chunk)
+    
+    paragraphs = []
+    for para_idx in sorted(paras_dict.keys()):
+        paragraphs.append(' '.join(paras_dict[para_idx]))
+    
+    return '\n\n'.join(paragraphs)
 
 
 def normalize_apostrophes(text):
@@ -96,21 +162,9 @@ def translate_document(
         translated_chunks.append(translated_text)
     
     if chunk_by == "sentences":
-        lines_dict = {}
-        for i, (translated_chunk, metadata) in enumerate(zip(translated_chunks, chunk_metadata)):
-            line_idx = metadata['line_idx']
-            if line_idx not in lines_dict:
-                lines_dict[line_idx] = []
-            
-            lines_dict[line_idx].append(translated_chunk)
-        
-        for line_idx in lines_dict:
-            if isinstance(lines_dict[line_idx], list):
-                lines_dict[line_idx] = ' '.join(lines_dict[line_idx])
-        
-        translated_document = '\n'.join(lines_dict[i] for i in sorted(lines_dict.keys()))
+        translated_document = reassemble_sentences(translated_chunks, chunk_metadata)
     else:
-        translated_document = '\n\n'.join(translated_chunks)
+        translated_document = reassemble_paragraphs(translated_chunks, chunk_metadata)
     
     with open(output_text_file, 'w', encoding='utf-8') as f:
         f.write(translated_document)
