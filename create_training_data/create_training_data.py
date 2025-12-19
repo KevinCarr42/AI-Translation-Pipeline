@@ -58,12 +58,16 @@ def add_exclusion_columns(dataframe):
 
 def analyze_text_for_figrefs(text, language='en'):
     result = {
+        'has_leading_numbers': False,
         'has_trailing_numbers': False,
         'has_parenthetical_numbers': False,
         'has_figure_references': False,
         'has_repeated_punctuation': False,
         'exclude_figtext': False
     }
+    
+    if re.search(r'^\s*\d+\s+', text):
+        result['has_leading_numbers'] = True
     
     if re.search(r'\s+\d+\s*$', text):
         result['has_trailing_numbers'] = True
@@ -83,6 +87,7 @@ def analyze_text_for_figrefs(text, language='en'):
     
     result['exclude_figtext'] = any([
         result['has_figure_references'],
+        result['has_leading_numbers'],
         result['has_trailing_numbers'],
         result['has_parenthetical_numbers'],
         result['has_repeated_punctuation']
