@@ -55,54 +55,72 @@ def split_by_paragraphs(text):
     #  at 1000 char, we get the same errors
     MAX_CHAR = 1000
     
-    paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
+    lines = text.split('\n')
     chunks = []
     chunk_metadata = []
     
-    for para_idx, para in enumerate(paragraphs):
-        if len(para) <= MAX_CHAR:
-            chunks.append(para)
-            chunk_metadata.append({'para_idx': para_idx, 'is_last_in_para': True})
+    para_idx = 0
+    for line_idx, line in enumerate(lines):
+        if not line.strip():
+            chunks.append('')
+            chunk_metadata.append({
+                'line_idx': line_idx,
+                'para_idx': para_idx,
+                'is_empty': True
+            })
+            para_idx += 1
+            continue
+        
+        if len(line) <= MAX_CHAR:
+            chunks.append(line)
+            chunk_metadata.append({
+                'line_idx': line_idx,
+                'para_idx': para_idx,
+                'is_last_in_line': True,
+                'is_empty': False
+            })
         else:
-            sentences = re.split(r'(?<=[.!?])\s+', para)
+            sentences = re.split(r'(?<=[.!?])\s+', line)
+            line_chunks = []
             current_chunk = ''
-            para_chunks = []
             
             for sentence in sentences:
                 if len(current_chunk) + len(sentence) + 1 <= MAX_CHAR:
                     current_chunk += (' ' if current_chunk else '') + sentence
                 else:
                     if current_chunk:
-                        para_chunks.append(current_chunk)
+                        line_chunks.append(current_chunk)
                     current_chunk = sentence
             
             if current_chunk:
-                para_chunks.append(current_chunk)
+                line_chunks.append(current_chunk)
             
-            for chunk_idx, chunk in enumerate(para_chunks):
+            for chunk_idx, chunk in enumerate(line_chunks):
                 chunks.append(chunk)
                 chunk_metadata.append({
+                    'line_idx': line_idx,
                     'para_idx': para_idx,
-                    'is_last_in_para': chunk_idx == len(para_chunks) - 1
+                    'is_last_in_line': chunk_idx == len(line_chunks) - 1,
+                    'is_empty': False
                 })
     
     return chunks, chunk_metadata
 
 
 def reassemble_paragraphs(translated_chunks, chunk_metadata):
-    paras_dict = {}
+    lines_dict = {}
     for translated_chunk, metadata in zip(translated_chunks, chunk_metadata):
-        para_idx = metadata['para_idx']
-        if para_idx not in paras_dict:
-            paras_dict[para_idx] = []
+        line_idx = metadata['line_idx']
+        if line_idx not in lines_dict:
+            lines_dict[line_idx] = []
         
-        paras_dict[para_idx].append(translated_chunk)
+        lines_dict[line_idx].append(translated_chunk)
     
-    paragraphs = []
-    for para_idx in sorted(paras_dict.keys()):
-        paragraphs.append(' '.join(paras_dict[para_idx]))
+    for line_idx in lines_dict:
+        if isinstance(lines_dict[line_idx], list):
+            lines_dict[line_idx] = ' '.join(lines_dict[line_idx])
     
-    return '\n\n'.join(paragraphs)
+    return '\n'.join(lines_dict[i] for i in sorted(lines_dict.keys()))
 
 
 def normalize_apostrophes(text):
@@ -145,7 +163,7 @@ def translate_document(
     
     translated_chunks = []
     for i, (chunk, metadata) in enumerate(zip(chunks, chunk_metadata), 1):
-        if chunk_by == "sentences" and metadata.get('is_empty', False):
+        if metadata.get('is_empty', False):
             translated_chunks.append('')
             continue
         
