@@ -274,6 +274,7 @@ class TranslationManager:
         self.loaded_models = {}
         self.find_replace_errors = {}
         self.extra_token_errors = {}
+        self.token_retry_debug = {}
     
     def load_models(self, model_names=None):
         if model_names is None:
@@ -286,7 +287,8 @@ class TranslationManager:
             self.loaded_models[name] = model_instance
     
     def translate_with_retries(self, model, text, source_lang, target_lang,
-                               token_mapping=None, base_generation_kwargs=None):
+                               token_mapping=None, base_generation_kwargs=None,
+                               model_name=None, idx=None):
         param_variations = [
             {"num_beams": 4},
             {"num_beams": 2},
@@ -298,26 +300,54 @@ class TranslationManager:
             {"num_beams": 4, "length_penalty": 1.2},
             {"num_beams": 4, "repetition_penalty": 1.1},
         ]
-        
+
         base_kwargs = base_generation_kwargs or {}
-        
+
+        debug_key = f"{model_name}_{idx}" if model_name and idx is not None else None
+        retry_log = [] if self.debug and debug_key and token_mapping else None
+
         for i, params in enumerate(param_variations):
-            # TODO: log each instance of the token that can't be found
-            #  which model was translating
-            #  and if it was eventually found, how many attempts it took
-            #  make sure to save token errors to a file if the TranslationManager has self.debug True
-            
             generation_kwargs = {**base_kwargs, **params}
-            
+
             translated = model.translate_text(
                 text, source_lang, target_lang, generation_kwargs
             )
-            
+
+            if self.debug and retry_log is not None and token_mapping:
+                missing_tokens = [token for token in token_mapping.keys() if token not in translated]
+                if missing_tokens:
+                    retry_log.append({
+                        "attempt": i,
+                        "missing_tokens": missing_tokens,
+                        "params": params
+                    })
+
             if self.is_valid_translation(translated, text, token_mapping):
                 if i:
                     print(f"\tValid translation following {i} retries.")
+
+                if self.debug and retry_log and debug_key:
+                    print(f'entry added (success after {i+1}):', model_name)
+                    self.token_retry_debug[debug_key] = {
+                        "total_attempts": i + 1,
+                        "failed_attempts": retry_log,
+                        "success": True,
+                        "model_name": model_name,
+                        "original_text": text
+                    }
+
                 return translated, i, params
-        
+
+        if self.debug and retry_log and debug_key:
+            print(f'entry added (failed after {i + 1}):', model_name)
+            self.token_retry_debug[debug_key] = {
+                "total_attempts": len(param_variations),
+                "failed_attempts": retry_log,
+                "success": False,
+                "model_name": model_name,
+                "original_text": text
+            }
+
         print(f"\tNo valid translations found following {i} attempted configs.")
         return None, len(param_variations), None
     
@@ -356,7 +386,7 @@ class TranslationManager:
             
             translated_with_tokens, retry_attempts, retry_params = self.translate_with_retries(
                 model, preprocessed_text, source_lang, target_lang,
-                token_mapping, generation_kwargs
+                token_mapping, generation_kwargs, model_name, idx
             )
             
             if translated_with_tokens and self.is_valid_translation(
@@ -479,6 +509,7 @@ class TranslationManager:
     def clear_errors(self):
         self.extra_token_errors.clear()
         self.find_replace_errors.clear()
+        self.token_retry_debug.clear()
 
 
 def get_model_config(use_finetuned=True, models_to_use=None):

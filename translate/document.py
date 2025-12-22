@@ -135,7 +135,8 @@ def translate_document(
         models_to_use=None,
         use_find_replace=True,
         use_finetuned=True,
-        translation_manager=None
+        translation_manager=None,
+        start_idx=0
 ):
     if not output_text_file:
         output_text_file = input_text_file.replace(input_text_file[-4], "_translated" + input_text_file[-4])
@@ -162,11 +163,11 @@ def translate_document(
         )
     
     translated_chunks = []
-    for i, (chunk, metadata) in enumerate(zip(chunks, chunk_metadata), 1):
+    for i, (chunk, metadata) in enumerate(zip(chunks, chunk_metadata), start_idx + 1):
         if metadata.get('is_empty', False):
             translated_chunks.append('')
             continue
-        
+
         result = translation_manager.translate_with_best_model(
             text=chunk,
             source_lang=source_lang,
@@ -174,15 +175,18 @@ def translate_document(
             use_find_replace=use_find_replace,
             idx=i
         )
-        
+
         translated_text = result.get("translated_text", "[TRANSLATION FAILED]")
         translated_text = normalize_apostrophes(translated_text)
         translated_chunks.append(translated_text)
+        next_idx = i
     
     if chunk_by == "sentences":
         translated_document = reassemble_sentences(translated_chunks, chunk_metadata)
     else:
         translated_document = reassemble_paragraphs(translated_chunks, chunk_metadata)
-    
+
     with open(output_text_file, 'w', encoding='utf-8') as f:
         f.write(translated_document)
+
+    return next_idx if translated_chunks else start_idx
