@@ -3,8 +3,10 @@ import os
 from translate.document import translate_document
 from translate.models import create_translator
 
-
 if __name__ == '__main__':
+    # TODO: translate_document and create_translator should get use_finetuned from the same place
+    use_finetuned = False
+    
     file_list = (
         ("example1.txt", "en"), ("example1_translated.txt", "fr"),
         ("example2.txt", "en"), ("example2_translated.txt", "fr"),
@@ -12,7 +14,7 @@ if __name__ == '__main__':
         ("example4.txt", "en"), ("example4_translated.txt", "fr"),
     )
     
-    translation_manager = create_translator()
+    translation_manager = create_translator(use_finetuned=use_finetuned)
     for filename, source_lang in file_list:
         translate_document(
             input_text_file=os.path.join(config.TRANSLATED_TEXT_DIR, filename),
@@ -21,18 +23,6 @@ if __name__ == '__main__':
             chunk_by="paragraph",
             models_to_use=None,
             use_find_replace=True,
-            use_finetuned=True,
+            use_finetuned=use_finetuned,
             translation_manager=translation_manager
         )
-
-# FIXME (paragraphs)
-#  C:\Users\CARRK\Documents\Repositories\AI\Pipeline\.venv\Scripts\python.exe C:\Users\CARRK\Documents\Repositories\AI\Pipeline\translate_documents.py
-#    `torch_dtype` is deprecated! Use `dtype` instead!
-#    	No valid translations found following 8 attempted configs.
-#    	No valid translations found following 8 attempted configs.
-#    	No valid translations found following 8 attempted configs.
-#    	No valid translations found following 8 attempted configs.
-#    	No valid translations found following 8 attempted configs.
-#    	No valid translations found following 8 attempted configs.
-#    	Valid translation following 7 retries.
-#    	No valid translations found following 8 attempted configs.

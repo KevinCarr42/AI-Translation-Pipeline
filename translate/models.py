@@ -267,9 +267,10 @@ class MBART50TranslationModel(BaseTranslationModel):
 class TranslationManager:
     TOKEN_PREFIXES = ['NOMENCLATURE', 'TAXON', 'ACRONYM', 'SITE']
     
-    def __init__(self, all_models, embedder=None):
+    def __init__(self, all_models, embedder=None, debug=False):
         self.all_models = all_models
         self.embedder = embedder
+        self.debug = debug
         self.loaded_models = {}
         self.find_replace_errors = {}
         self.extra_token_errors = {}
@@ -301,6 +302,11 @@ class TranslationManager:
         base_kwargs = base_generation_kwargs or {}
         
         for i, params in enumerate(param_variations):
+            # TODO: log each instance of the token that can't be found
+            #  which model was translating
+            #  and if it was eventually found, how many attempts it took
+            #  make sure to save token errors to a file if the TranslationManager has self.debug True
+            
             generation_kwargs = {**base_kwargs, **params}
             
             translated = model.translate_text(
@@ -510,7 +516,7 @@ def get_model_config(use_finetuned=True, models_to_use=None):
     return all_models
 
 
-def create_translator(use_finetuned=True, models_to_use=None, use_embedder=True, load_models=True):
+def create_translator(use_finetuned=True, models_to_use=None, use_embedder=True, load_models=True, debug=False):
     from sentence_transformers import SentenceTransformer
     
     all_models = get_model_config(use_finetuned, models_to_use)
@@ -519,7 +525,7 @@ def create_translator(use_finetuned=True, models_to_use=None, use_embedder=True,
     if use_embedder:
         embedder = SentenceTransformer('sentence-transformers/LaBSE')
     
-    manager = TranslationManager(all_models, embedder)
+    manager = TranslationManager(all_models, embedder, debug=debug)
     
     if load_models:
         manager.load_models()
