@@ -3,7 +3,6 @@ import json
 import os
 import random
 import re
-import tempfile
 from translate.document import translate_document
 from translate.models import create_translator
 from create_training_data.language_classifier.language_classifier import LanguageClassifier
@@ -75,25 +74,31 @@ def get_paragraphs(folder, n_paragraphs_per_lang=10):
             continue
         if p_lang not in ['en', 'fr']:
             continue
-        
-        for cleaned_paragraph in cleaned_paragraphs:
-            temp_file = tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', suffix='.txt', delete=False)
-            temp_file.write(cleaned_paragraph)
-            temp_file.close()
-            
-            output_list.append((temp_file.name, p_lang))
-            
+
+        test_paragraphs_dir = os.path.join(os.path.dirname(__file__), 'paragraphs')
+        os.makedirs(test_paragraphs_dir, exist_ok=True)
+
+        for para_idx, cleaned_paragraph in enumerate(cleaned_paragraphs):
+            base_filename = f"{os.path.splitext(os.path.basename(random_file))[0]}_para{para_idx}_{p_lang}.txt"
+            filepath = os.path.join(test_paragraphs_dir, base_filename)
+
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(cleaned_paragraph)
+
+            output_list.append((filepath, p_lang))
+
             if p_lang == 'en':
                 n_en -= 1
             else:
                 n_fr -= 1
     
+    print('total paragraphs =', len(output_list))
     return output_list
 
 
 if __name__ == '__main__':
     use_finetuned = False
-    file_list = get_paragraphs(r"..\Data\ParsedPublications\2024")
+    file_list = get_paragraphs(r"..\Data\ParsedPublications\2024", 2)
     translation_manager = create_translator(use_finetuned=use_finetuned, debug=True)
     
     global_idx = 0

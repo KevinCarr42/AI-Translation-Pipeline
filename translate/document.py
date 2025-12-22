@@ -51,9 +51,8 @@ def reassemble_sentences(translated_chunks, chunk_metadata):
 
 def split_by_paragraphs(text):
     # Notes:
-    #  at 2000 char, we get significant preferential translation errors
-    #  at 1000 char, we get the same errors
-    MAX_CHAR = 1000
+    #  still get >512 token issues with 1000 characters, use 600 to be conservative
+    MAX_CHAR = 600
     
     lines = text.split('\n')
     chunks = []
@@ -139,7 +138,9 @@ def translate_document(
         start_idx=0
 ):
     if not output_text_file:
-        output_text_file = input_text_file.replace(input_text_file[-4], "_translated" + input_text_file[-4])
+        import os
+        base, ext = os.path.splitext(input_text_file)
+        output_text_file = f"{base}_translated{ext}"
     
     if source_lang not in ["en", "fr"]:
         raise ValueError('source_lang must be either "fr" or "en"')
@@ -167,7 +168,7 @@ def translate_document(
         if metadata.get('is_empty', False):
             translated_chunks.append('')
             continue
-
+        
         result = translation_manager.translate_with_best_model(
             text=chunk,
             source_lang=source_lang,
@@ -175,7 +176,7 @@ def translate_document(
             use_find_replace=use_find_replace,
             idx=i
         )
-
+        
         translated_text = result.get("translated_text", "[TRANSLATION FAILED]")
         translated_text = normalize_apostrophes(translated_text)
         translated_chunks.append(translated_text)
@@ -185,8 +186,8 @@ def translate_document(
         translated_document = reassemble_sentences(translated_chunks, chunk_metadata)
     else:
         translated_document = reassemble_paragraphs(translated_chunks, chunk_metadata)
-
+    
     with open(output_text_file, 'w', encoding='utf-8') as f:
         f.write(translated_document)
-
+    
     return next_idx if translated_chunks else start_idx

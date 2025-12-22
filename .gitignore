@@ -6,3 +6,4 @@ scratch.py
 console_output*.txt
 translations/
 *.pickle
+tests/paragraphs/
