@@ -74,19 +74,19 @@ def get_paragraphs(folder, n_paragraphs_per_lang=10):
             continue
         if p_lang not in ['en', 'fr']:
             continue
-
+        
         test_paragraphs_dir = os.path.join(os.path.dirname(__file__), 'paragraphs')
         os.makedirs(test_paragraphs_dir, exist_ok=True)
-
+        
         for para_idx, cleaned_paragraph in enumerate(cleaned_paragraphs):
             base_filename = f"{os.path.splitext(os.path.basename(random_file))[0]}_para{para_idx}_{p_lang}.txt"
             filepath = os.path.join(test_paragraphs_dir, base_filename)
-
+            
             with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(cleaned_paragraph)
-
+            
             output_list.append((filepath, p_lang))
-
+            
             if p_lang == 'en':
                 n_en -= 1
             else:
@@ -140,7 +140,7 @@ if __name__ == '__main__':
         with open('token_retry_debug.csv', 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow(['key', 'model_name', 'total_attempts', 'success',
-                             'attempt_number', 'missing_tokens', 'params', 'original_text'])
+                             'attempt_number', 'all_tokens', 'missing_tokens', 'params', 'original_text'])
             
             for key, value in retry_debug_data.items():
                 model_name = value.get('model_name', '')
@@ -155,6 +155,7 @@ if __name__ == '__main__':
                         total_attempts,
                         success,
                         failed_attempt.get('attempt', ''),
+                        ', '.join(failed_attempt.get('all_tokens', [])),
                         ', '.join(failed_attempt.get('missing_tokens', [])),
                         str(failed_attempt.get('params', {})),
                         original_text
@@ -166,6 +167,7 @@ if __name__ == '__main__':
                         model_name,
                         total_attempts,
                         success,
+                        '',
                         '',
                         '',
                         '',

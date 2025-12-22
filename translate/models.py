@@ -318,6 +318,7 @@ class TranslationManager:
                 if missing_tokens:
                     retry_log.append({
                         "attempt": i,
+                        "all_tokens": list(token_mapping.keys()),
                         "missing_tokens": missing_tokens,
                         "params": params
                     })
