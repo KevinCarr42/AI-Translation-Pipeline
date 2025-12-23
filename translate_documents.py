@@ -5,6 +5,7 @@ from translate.models import create_translator
 
 if __name__ == '__main__':
     use_finetuned = False
+    use_terminology = False
     
     file_list = (
         ("example1.txt", "en"), ("example1_translated.txt", "fr"),
@@ -21,7 +22,7 @@ if __name__ == '__main__':
             source_lang=source_lang,
             chunk_by="paragraph",
             models_to_use=None,
-            use_find_replace=True,
+            use_terminology=use_terminology,
             use_finetuned=use_finetuned,
             translation_manager=translation_manager
         )
