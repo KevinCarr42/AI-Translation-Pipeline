@@ -21,8 +21,8 @@ def apply_preferential_translations(source_text, source_language, target_languag
     else:
         return source_text, {}
     
-    processed_text = source_text
-    applied_replacements = {}
+    all_valid_matches = []
+    replaced_chars = set()
     
     sorted_terms = sorted(replacements.keys(), key=len, reverse=True)
     
@@ -34,19 +34,28 @@ def apply_preferential_translations(source_text, source_language, target_languag
         else:
             pattern = re.compile(r'\b' + re.escape(source_term) + r'\b', re.IGNORECASE)
         
-        matches = list(pattern.finditer(processed_text))
+        matches = list(pattern.finditer(source_text))
         
-        if matches:
-            for match in reversed(matches):
-                original_text = match.group()
-                start, end = match.span()
-                
-                processed_text = processed_text[:start] + target_term + processed_text[end:]
-                
-                applied_replacements[source_term] = {
-                    'original_text': original_text,
-                    'target_term': target_term
-                }
+        for match in matches:
+            start, end = match.span()
+            char_range = set(range(start, end))
+            
+            if not char_range.intersection(replaced_chars):
+                all_valid_matches.append((start, end, match.group(), source_term, target_term))
+                replaced_chars.update(char_range)
+    
+    all_valid_matches.sort(key=lambda x: x[0], reverse=True)
+    
+    processed_text = source_text
+    applied_replacements = {}
+    
+    for start, end, original_text, source_term, target_term in all_valid_matches:
+        processed_text = processed_text[:start] + target_term + processed_text[end:]
+        
+        applied_replacements[source_term] = {
+            'original_text': original_text,
+            'target_term': target_term
+        }
     
     return processed_text, applied_replacements
 
