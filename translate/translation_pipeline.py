@@ -27,8 +27,7 @@ def translation_pipeline(input_text_file, output_text_file, with_preferential_tr
         chunk_by=chunk_by,
         models_to_use=models_to_use,
         use_find_replace=with_preferential_translation,
-        use_finetuned=use_finetuned,
-        debug=debug
+        use_finetuned=use_finetuned
     )
     
     return {"status": "complete", "output_file": output_text_file}

@@ -7,3 +7,4 @@ console_output*.txt
 translations/
 *.pickle
 tests/paragraphs/
+tests/token_testing/
