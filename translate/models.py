@@ -5,6 +5,7 @@ import torch
 from sentence_transformers.util import pytorch_cos_sim
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, AutoModelForCausalLM, BitsAndBytesConfig
 from rules_based_replacements.preferential_translations import apply_preferential_translations, reverse_preferential_translations
+from translate.terminology import TerminologyManager
 
 
 class BaseTranslationModel:
@@ -291,8 +292,8 @@ class MBART50TranslationModel(BaseTranslationModel):
 
 class TranslationManager:
     TOKEN_PREFIXES = ['NOMENCLATURE', 'TAXON', 'ACRONYM', 'SITE']
-    
-    def __init__(self, all_models, embedder=None, debug=False):
+
+    def __init__(self, all_models, embedder=None, debug=False, terminology_path=None):
         self.all_models = all_models
         self.embedder = embedder
         self.debug = debug
@@ -300,16 +301,28 @@ class TranslationManager:
         self.find_replace_errors = {}
         self.extra_token_errors = {}
         self.token_retry_debug = {}
+        self.constraint_errors = {}
+
+        self.terminology = TerminologyManager(terminology_path)
     
     def load_models(self, model_names=None):
         if model_names is None:
             model_names = list(self.all_models.keys())
-        
+
         for name in model_names:
             config = self.all_models[name]
             model_instance = config['cls'](**config.get('params', {}))
             _ = model_instance.translate_text("Test", "en", "fr")
             self.loaded_models[name] = model_instance
+
+    def get_tokenizer_for_model(self, model_name, source_lang, target_lang):
+        model = self.loaded_models[model_name]
+
+        if hasattr(model, '_load_directional'):
+            tokenizer, _ = model._load_directional(source_lang, target_lang)
+            return tokenizer
+        else:
+            return model.load_tokenizer()
     
     def translate_with_retries(self, model, text, source_lang, target_lang,
                                token_mapping=None, base_generation_kwargs=None,
@@ -397,70 +410,134 @@ class TranslationManager:
     
     def translate_single(self, text, model_name, source_lang="en", target_lang="fr",
                          use_find_replace=True, generation_kwargs=None, idx=None,
-                         target_text=None, debug=False):
-        
+                         target_text=None, debug=False, use_terminology=True,
+                         use_legacy_find_replace=False):
+
         model = self.loaded_models[model_name]
-        
-        find_replace_error = False
-        retry_attempts = 0
-        retry_params = None
-        
-        if use_find_replace:
-            preprocessed_text, token_mapping = apply_preferential_translations(
-                text, source_lang, target_lang, config.PREFERENTIAL_JSON_PATH
-            )
-            
-            translated_with_tokens, retry_attempts, retry_params = self.translate_with_retries(
-                model, preprocessed_text, source_lang, target_lang,
-                token_mapping, generation_kwargs, model_name, idx
-            )
-            
-            if translated_with_tokens and self.is_valid_translation(
-                    translated_with_tokens, text, token_mapping
-            ):
-                translated_text = reverse_preferential_translations(
-                    translated_with_tokens, token_mapping
+
+        if use_legacy_find_replace:
+            find_replace_error = False
+            retry_attempts = 0
+            retry_params = None
+
+            if use_find_replace:
+                preprocessed_text, token_mapping = apply_preferential_translations(
+                    text, source_lang, target_lang, config.PREFERENTIAL_JSON_PATH
                 )
+
+                translated_with_tokens, retry_attempts, retry_params = self.translate_with_retries(
+                    model, preprocessed_text, source_lang, target_lang,
+                    token_mapping, generation_kwargs, model_name, idx
+                )
+
+                if translated_with_tokens and self.is_valid_translation(
+                        translated_with_tokens, text, token_mapping
+                ):
+                    translated_text = reverse_preferential_translations(
+                        translated_with_tokens, token_mapping
+                    )
+                else:
+                    find_replace_error = True
+                    self.find_replace_errors[f"{model_name}_{idx}"] = {
+                        "original_text": text,
+                        "preprocessed_text": preprocessed_text,
+                        "translated_with_tokens": translated_with_tokens,
+                        "token_mapping": token_mapping,
+                        "retry_attempts": retry_attempts,
+                        "final_retry_params": retry_params,
+                    }
+                    translated_text = model.translate_text(
+                        text, source_lang, target_lang, generation_kwargs
+                    )
             else:
-                find_replace_error = True
-                self.find_replace_errors[f"{model_name}_{idx}"] = {
-                    "original_text": text,
-                    "preprocessed_text": preprocessed_text,
-                    "translated_with_tokens": translated_with_tokens,
-                    "token_mapping": token_mapping,
-                    "retry_attempts": retry_attempts,
-                    "final_retry_params": retry_params,
-                }
+                preprocessed_text = None
+                translated_with_tokens = None
+                token_mapping = None
                 translated_text = model.translate_text(
                     text, source_lang, target_lang, generation_kwargs
                 )
-        else:
-            preprocessed_text = None
-            translated_with_tokens = None
-            token_mapping = None
-            translated_text = model.translate_text(
-                text, source_lang, target_lang, generation_kwargs
-            )
-        
-        token_prefix_error = self.check_token_prefix_error(translated_text, text)
-        if token_prefix_error and debug:
-            tokens_to_replace = [x for x in token_mapping.keys()] if token_mapping else None
-            self.extra_token_errors[f"{model_name}_{idx}"] = {
-                "original_text": text,
+
+            token_prefix_error = self.check_token_prefix_error(translated_text, text)
+            if token_prefix_error and debug:
+                tokens_to_replace = [x for x in token_mapping.keys()] if token_mapping else None
+                self.extra_token_errors[f"{model_name}_{idx}"] = {
+                    "original_text": text,
+                    "translated_text": translated_text,
+                    "use_find_replace": use_find_replace,
+                    "tokens_to_replace": tokens_to_replace,
+                    "preprocessed_text": preprocessed_text,
+                    "translated_with_tokens": translated_with_tokens,
+                    "retry_attempts": retry_attempts,
+                    "final_retry_params": retry_params,
+                }
+
+            if self.embedder:
+                source_embedding = self.embedder.encode(text, convert_to_tensor=True)
+                translated_embedding = self.embedder.encode(translated_text, convert_to_tensor=True)
+                similarity_vs_source = pytorch_cos_sim(source_embedding, translated_embedding).item()
+
+                similarity_vs_target = None
+                similarity_of_original_translation = None
+                if target_text:
+                    target_embedding = self.embedder.encode(target_text, convert_to_tensor=True)
+                    similarity_vs_target = pytorch_cos_sim(target_embedding, translated_embedding).item()
+                    similarity_of_original_translation = pytorch_cos_sim(source_embedding, target_embedding).item()
+            else:
+                similarity_vs_source = None
+                similarity_vs_target = None
+                similarity_of_original_translation = None
+
+            return {
+                "find_replace_error": find_replace_error,
+                "token_prefix_error": token_prefix_error,
                 "translated_text": translated_text,
-                "use_find_replace": use_find_replace,
-                "tokens_to_replace": tokens_to_replace,
-                "preprocessed_text": preprocessed_text,
-                "translated_with_tokens": translated_with_tokens,
-                "retry_attempts": retry_attempts,
-                "final_retry_params": retry_params,
+                "similarity_of_original_translation": similarity_of_original_translation,
+                "similarity_vs_source": similarity_vs_source,
+                "similarity_vs_target": similarity_vs_target,
+                "model_name": model_name,
+                "retry_attempts": retry_attempts if use_find_replace else 0,
             }
-        
+
+        force_words_ids = None
+        constraints_applied = []
+        constraint_error = False
+
+        if use_terminology:
+            constraints_applied = self.terminology.find_constraints(
+                text, source_lang, target_lang
+            )
+
+            if constraints_applied:
+                tokenizer = self.get_tokenizer_for_model(
+                    model_name, source_lang, target_lang
+                )
+                force_words_ids = self.terminology.get_constraint_token_ids(
+                    constraints_applied, tokenizer
+                )
+
+        translated_text = model.translate_text(
+            text, source_lang, target_lang,
+            generation_kwargs=generation_kwargs,
+            force_words_ids=force_words_ids
+        )
+
+        if constraints_applied:
+            for constraint in constraints_applied:
+                if constraint.lower() not in translated_text.lower():
+                    constraint_error = True
+                    if debug:
+                        self.constraint_errors[f"{model_name}_{idx}"] = {
+                            "text": text,
+                            "expected_constraints": constraints_applied,
+                            "translation": translated_text
+                        }
+                    break
+
         if self.embedder:
             source_embedding = self.embedder.encode(text, convert_to_tensor=True)
             translated_embedding = self.embedder.encode(translated_text, convert_to_tensor=True)
             similarity_vs_source = pytorch_cos_sim(source_embedding, translated_embedding).item()
-            
+
             similarity_vs_target = None
             similarity_of_original_translation = None
             if target_text:
@@ -471,42 +548,52 @@ class TranslationManager:
             similarity_vs_source = None
             similarity_vs_target = None
             similarity_of_original_translation = None
-        
+
         return {
-            "find_replace_error": find_replace_error,
-            "token_prefix_error": token_prefix_error,
             "translated_text": translated_text,
+            "constraints_applied": constraints_applied,
+            "constraint_error": constraint_error,
             "similarity_of_original_translation": similarity_of_original_translation,
             "similarity_vs_source": similarity_vs_source,
             "similarity_vs_target": similarity_vs_target,
             "model_name": model_name,
-            "retry_attempts": retry_attempts if use_find_replace else 0,
         }
     
     def translate_with_all_models(self, text, source_lang="en", target_lang="fr",
                                   use_find_replace=True, generation_kwargs=None,
-                                  idx=None, target_text=None, debug=False):
+                                  idx=None, target_text=None, debug=False,
+                                  use_terminology=True, use_legacy_find_replace=False):
         model_names = list(self.loaded_models.keys())
-        
+
         all_results = {}
         best_result = None
         best_similarity = float('-inf')
-        
+
         for model_name in model_names:
             result = self.translate_single(
                 text, model_name, source_lang, target_lang,
-                use_find_replace, generation_kwargs, idx, target_text, debug
+                use_find_replace, generation_kwargs, idx, target_text, debug,
+                use_terminology, use_legacy_find_replace
             )
             all_results[model_name] = result
-            
-            if (self.is_valid_translation(result['translated_text'], text)
-                    and result["similarity_vs_source"] is not None):
-                if result["similarity_vs_source"] > best_similarity:
-                    best_similarity = result["similarity_vs_source"]
-                    best_result = result.copy()
-                    best_result["model_name"] = "best_model"
-                    best_result["best_model_source"] = model_name
-        
+
+            if use_legacy_find_replace:
+                if (self.is_valid_translation(result['translated_text'], text)
+                        and result["similarity_vs_source"] is not None):
+                    if result["similarity_vs_source"] > best_similarity:
+                        best_similarity = result["similarity_vs_source"]
+                        best_result = result.copy()
+                        best_result["model_name"] = "best_model"
+                        best_result["best_model_source"] = model_name
+            else:
+                if (result["similarity_vs_source"] is not None
+                        and not result.get("constraint_error", False)):
+                    if result["similarity_vs_source"] > best_similarity:
+                        best_similarity = result["similarity_vs_source"]
+                        best_result = result.copy()
+                        best_result["model_name"] = "best_model"
+                        best_result["best_model_source"] = model_name
+
         if best_result is None:
             best_result = {
                 "error": "No valid translations from any model",
@@ -516,9 +603,9 @@ class TranslationManager:
                 "model_name": "best_model",
                 "best_model_source": None
             }
-        
+
         all_results['best_model'] = best_result
-        
+
         return all_results
     
     def translate_with_best_model(self, *args, **kwargs):
