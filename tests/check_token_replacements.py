@@ -115,62 +115,19 @@ if __name__ == '__main__':
             start_idx=global_idx
         )
     
-    error_data = translation_manager.extra_token_errors
-    retry_debug_data = translation_manager.token_retry_debug
+    error_data = translation_manager.find_replace_errors
     
     if error_data:
-        with open('token_errors.csv', 'w', newline='', encoding='utf-8') as f:
+        with open('find_replace_errors.csv', 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
-            writer.writerow(['key', 'model_name', 'use_find_replace', 'tokens_to_replace',
-                             'retry_attempts', 'original_text', 'translated_text'])
+            writer.writerow(['key', 'original_text', 'preprocessed_text', 'translated_text', 'applied_replacements'])
             
             for key, value in error_data.items():
                 writer.writerow([
                     key,
-                    value.get('model_name', ''),
-                    value.get('use_find_replace', ''),
-                    str(value.get('tokens_to_replace', [])),
-                    value.get('retry_attempts', 0),
                     value.get('original_text', ''),
-                    value.get('translated_text', '')
+                    value.get('preprocessed_text', ''),
+                    value.get('translated_text', ''),
+                    str(value.get('applied_replacements', {}))
                 ])
-        print(f"Saved {len(error_data)} token errors to token_errors.csv")
-    
-    if retry_debug_data:
-        with open('token_retry_debug.csv', 'w', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
-            writer.writerow(['key', 'model_name', 'total_attempts', 'success',
-                             'attempt_number', 'all_tokens', 'missing_tokens', 'params', 'original_text'])
-            
-            for key, value in retry_debug_data.items():
-                model_name = value.get('model_name', '')
-                total_attempts = value.get('total_attempts', 0)
-                success = value.get('success', False)
-                original_text = value.get('original_text', '')
-                
-                for failed_attempt in value.get('failed_attempts', []):
-                    writer.writerow([
-                        key,
-                        model_name,
-                        total_attempts,
-                        success,
-                        failed_attempt.get('attempt', ''),
-                        ', '.join(failed_attempt.get('all_tokens', [])),
-                        ', '.join(failed_attempt.get('missing_tokens', [])),
-                        str(failed_attempt.get('params', {})),
-                        original_text
-                    ])
-                
-                if not value.get('failed_attempts'):
-                    writer.writerow([
-                        key,
-                        model_name,
-                        total_attempts,
-                        success,
-                        '',
-                        '',
-                        '',
-                        '',
-                        original_text
-                    ])
-        print(f"Saved {len(retry_debug_data)} retry debug entries to token_retry_debug.csv")
+        print(f"Saved {len(error_data)} find/replace errors to find_replace_errors.csv")

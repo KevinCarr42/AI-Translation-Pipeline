@@ -265,16 +265,23 @@ class MBART50TranslationModel(BaseTranslationModel):
 
 
 class TranslationManager:
-    TOKEN_PREFIXES = ['NOMENCLATURE', 'TAXON', 'ACRONYM', 'SITE']
     
-    def __init__(self, all_models, embedder=None, debug=False):
+    def __init__(self, all_models, embedder=None, debug=False, preferential_translations_path=None):
         self.all_models = all_models
         self.embedder = embedder
         self.debug = debug
         self.loaded_models = {}
         self.find_replace_errors = {}
-        self.extra_token_errors = {}
-        self.token_retry_debug = {}
+        
+        if preferential_translations_path is None:
+            preferential_translations_path = config.PREFERENTIAL_JSON_PATH
+        self.preferential_translations_path = preferential_translations_path
+        self.preferential_translations = self._load_preferential_translations()
+    
+    def _load_preferential_translations(self):
+        import json
+        with open(self.preferential_translations_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
     
     def load_models(self, model_names=None):
         if model_names is None:
@@ -286,89 +293,8 @@ class TranslationManager:
             _ = model_instance.translate_text("Test", "en", "fr")
             self.loaded_models[name] = model_instance
     
-    def translate_with_retries(self, model, text, source_lang, target_lang,
-                               token_mapping=None, base_generation_kwargs=None,
-                               model_name=None, idx=None):
-        param_variations = [
-            {"num_beams": 4},
-            {"num_beams": 2},
-            {"num_beams": 5},
-            {"num_beams": 6},
-            {"num_beams": 7},
-            {"num_beams": 8},
-            {"num_beams": 4, "length_penalty": 0.8},
-            {"num_beams": 4, "length_penalty": 1.2},
-            {"num_beams": 4, "repetition_penalty": 1.1},
-        ]
-
-        base_kwargs = base_generation_kwargs or {}
-
-        debug_key = f"{model_name}_{idx}" if model_name and idx is not None else None
-        retry_log = [] if self.debug and debug_key and token_mapping else None
-
-        for i, params in enumerate(param_variations):
-            generation_kwargs = {**base_kwargs, **params}
-
-            translated = model.translate_text(
-                text, source_lang, target_lang, generation_kwargs
-            )
-
-            if self.debug and retry_log is not None and token_mapping:
-                missing_tokens = [token for token in token_mapping.keys() if token not in translated]
-                if missing_tokens:
-                    retry_log.append({
-                        "attempt": i,
-                        "all_tokens": list(token_mapping.keys()),
-                        "missing_tokens": missing_tokens,
-                        "params": params
-                    })
-
-            if self.is_valid_translation(translated, text, token_mapping):
-                if i:
-                    print(f"\tValid translation following {i} retries.")
-
-                if self.debug and retry_log and debug_key:
-                    print(f'entry added (success after {i+1}):', model_name)
-                    self.token_retry_debug[debug_key] = {
-                        "total_attempts": i + 1,
-                        "failed_attempts": retry_log,
-                        "success": True,
-                        "model_name": model_name,
-                        "original_text": text
-                    }
-
-                return translated, i, params
-
-        if self.debug and retry_log and debug_key:
-            print(f'entry added (failed after {i + 1}):', model_name)
-            self.token_retry_debug[debug_key] = {
-                "total_attempts": len(param_variations),
-                "failed_attempts": retry_log,
-                "success": False,
-                "model_name": model_name,
-                "original_text": text
-            }
-
-        print(f"\tNo valid translations found following {i} attempted configs.")
-        return None, len(param_variations), None
-    
-    def check_token_prefix_error(self, translated_text, original_text):
-        for token_prefix in self.TOKEN_PREFIXES:
-            if token_prefix in translated_text:
-                if not original_text or token_prefix not in original_text:
-                    return True
-        return False
-    
-    def is_valid_translation(self, translated_text, original_text, token_mapping=None):
-        if self.check_token_prefix_error(translated_text, original_text):
-            return False
-        
-        if token_mapping:
-            for key in token_mapping.keys():
-                if key not in translated_text:
-                    return False
-        
-        return True
+    def is_valid_translation(self, translated_text):
+        return translated_text is not None
     
     def translate_single(self, text, model_name, source_lang="en", target_lang="fr",
                          use_find_replace=True, generation_kwargs=None, idx=None,
@@ -377,59 +303,35 @@ class TranslationManager:
         model = self.loaded_models[model_name]
         
         find_replace_error = False
-        retry_attempts = 0
-        retry_params = None
         
         if use_find_replace:
-            preprocessed_text, token_mapping = apply_preferential_translations(
-                text, source_lang, target_lang, config.PREFERENTIAL_JSON_PATH
+            preprocessed_text, applied_replacements = apply_preferential_translations(
+                text, source_lang, target_lang, self.preferential_translations
             )
             
-            translated_with_tokens, retry_attempts, retry_params = self.translate_with_retries(
-                model, preprocessed_text, source_lang, target_lang,
-                token_mapping, generation_kwargs, model_name, idx
+            translated_text = model.translate_text(
+                preprocessed_text, source_lang, target_lang, generation_kwargs
             )
             
-            if translated_with_tokens and self.is_valid_translation(
-                    translated_with_tokens, text, token_mapping
-            ):
-                translated_text = reverse_preferential_translations(
-                    translated_with_tokens, token_mapping
-                )
-            else:
+            validated_text = reverse_preferential_translations(
+                translated_text, applied_replacements
+            )
+            
+            if validated_text is None:
                 find_replace_error = True
                 self.find_replace_errors[f"{model_name}_{idx}"] = {
                     "original_text": text,
                     "preprocessed_text": preprocessed_text,
-                    "translated_with_tokens": translated_with_tokens,
-                    "token_mapping": token_mapping,
-                    "retry_attempts": retry_attempts,
-                    "final_retry_params": retry_params,
+                    "translated_text": translated_text,
+                    "applied_replacements": applied_replacements,
                 }
                 translated_text = model.translate_text(
                     text, source_lang, target_lang, generation_kwargs
                 )
         else:
-            preprocessed_text = None
-            translated_with_tokens = None
-            token_mapping = None
             translated_text = model.translate_text(
                 text, source_lang, target_lang, generation_kwargs
             )
-        
-        token_prefix_error = self.check_token_prefix_error(translated_text, text)
-        if token_prefix_error and debug:
-            tokens_to_replace = [x for x in token_mapping.keys()] if token_mapping else None
-            self.extra_token_errors[f"{model_name}_{idx}"] = {
-                "original_text": text,
-                "translated_text": translated_text,
-                "use_find_replace": use_find_replace,
-                "tokens_to_replace": tokens_to_replace,
-                "preprocessed_text": preprocessed_text,
-                "translated_with_tokens": translated_with_tokens,
-                "retry_attempts": retry_attempts,
-                "final_retry_params": retry_params,
-            }
         
         if self.embedder:
             source_embedding = self.embedder.encode(text, convert_to_tensor=True)
@@ -449,13 +351,11 @@ class TranslationManager:
         
         return {
             "find_replace_error": find_replace_error,
-            "token_prefix_error": token_prefix_error,
             "translated_text": translated_text,
             "similarity_of_original_translation": similarity_of_original_translation,
             "similarity_vs_source": similarity_vs_source,
             "similarity_vs_target": similarity_vs_target,
             "model_name": model_name,
-            "retry_attempts": retry_attempts if use_find_replace else 0,
         }
     
     def translate_with_all_models(self, text, source_lang="en", target_lang="fr",
@@ -474,7 +374,7 @@ class TranslationManager:
             )
             all_results[model_name] = result
             
-            if (self.is_valid_translation(result['translated_text'], text)
+            if (self.is_valid_translation(result['translated_text'])
                     and result["similarity_vs_source"] is not None):
                 if result["similarity_vs_source"] > best_similarity:
                     best_similarity = result["similarity_vs_source"]
@@ -501,16 +401,12 @@ class TranslationManager:
     
     def get_error_summary(self):
         return {
-            "extra_token_errors": len(self.extra_token_errors),
             "find_replace_errors": len(self.find_replace_errors),
-            "extra_token_error_details": self.extra_token_errors,
             "find_replace_error_details": self.find_replace_errors,
         }
     
     def clear_errors(self):
-        self.extra_token_errors.clear()
         self.find_replace_errors.clear()
-        self.token_retry_debug.clear()
 
 
 def get_model_config(use_finetuned=True, models_to_use=None):
@@ -548,7 +444,7 @@ def get_model_config(use_finetuned=True, models_to_use=None):
     return all_models
 
 
-def create_translator(use_finetuned=True, models_to_use=None, use_embedder=True, load_models=True, debug=False):
+def create_translator(use_finetuned=True, models_to_use=None, use_embedder=True, load_models=True, debug=False, preferential_translations_path=None):
     from sentence_transformers import SentenceTransformer
     
     all_models = get_model_config(use_finetuned, models_to_use)
@@ -557,7 +453,7 @@ def create_translator(use_finetuned=True, models_to_use=None, use_embedder=True,
     if use_embedder:
         embedder = SentenceTransformer('sentence-transformers/LaBSE')
     
-    manager = TranslationManager(all_models, embedder, debug=debug)
+    manager = TranslationManager(all_models, embedder, debug=debug, preferential_translations_path=preferential_translations_path)
     
     if load_models:
         manager.load_models()

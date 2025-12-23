@@ -1,56 +1,78 @@
-from rules_based_replacements.replacements import (
-    preprocess_for_translation,
-    postprocess_translation,
-    validate_tokens_replaced,
-)
+import json
+import re
 
 
-def apply_preferential_translations(source_text, source_language, target_language, translations_file, use_replacements=True, validate_tokens=True):
+def load_translations(file_path):
+    with open(file_path, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+
+def apply_preferential_translations(source_text, source_language, target_language, translations_data, use_replacements=True, validate_tokens=True):
     if not use_replacements:
         return source_text, {}
     
-    preprocessed_text, token_mapping = preprocess_for_translation(source_text, translations_file)
+    if isinstance(translations_data, str):
+        translations_data = load_translations(translations_data)
     
-    return preprocessed_text, token_mapping
+    if source_language == 'fr':
+        replacements = translations_data.get('fr_to_en', {})
+    elif source_language == 'en':
+        replacements = translations_data.get('en_to_fr', {})
+    else:
+        return source_text, {}
+    
+    processed_text = source_text
+    applied_replacements = {}
+    
+    sorted_terms = sorted(replacements.keys(), key=len, reverse=True)
+    
+    for source_term in sorted_terms:
+        target_term = replacements[source_term]
+        
+        if ' ' in source_term:
+            pattern = re.compile(re.escape(source_term), re.IGNORECASE)
+        else:
+            pattern = re.compile(r'\b' + re.escape(source_term) + r'\b', re.IGNORECASE)
+        
+        matches = list(pattern.finditer(processed_text))
+        
+        if matches:
+            for match in reversed(matches):
+                original_text = match.group()
+                start, end = match.span()
+                
+                processed_text = processed_text[:start] + target_term + processed_text[end:]
+                
+                applied_replacements[source_term] = {
+                    'original_text': original_text,
+                    'target_term': target_term
+                }
+    
+    return processed_text, applied_replacements
 
 
 def reverse_preferential_translations(translated_text, token_mapping, validate_tokens_flag=True):
     if not token_mapping:
         return translated_text
     
-    result_text = postprocess_translation(translated_text, token_mapping)
-    
     if validate_tokens_flag:
-        if not validate_tokens_replaced(result_text, token_mapping):
-            return None
+        for source_term, info in token_mapping.items():
+            target_term = info['target_term']
+            
+            if ' ' in target_term:
+                target_pattern = re.compile(re.escape(target_term), re.IGNORECASE)
+            else:
+                target_pattern = re.compile(r'\b' + re.escape(target_term) + r'\b', re.IGNORECASE)
+            
+            if not target_pattern.search(translated_text):
+                return None
+            
+            if ' ' in source_term:
+                source_pattern = re.compile(re.escape(source_term), re.IGNORECASE)
+            else:
+                source_pattern = re.compile(r'\b' + re.escape(source_term) + r'\b', re.IGNORECASE)
+            
+            if source_pattern.search(translated_text):
+                return None
     
-    return result_text
-
-
-def compare_translations(source_text, translated_text_1, translated_text_2, translations_file, source_language='en', target_language='fr'):
-    preprocessed_1, mapping_1 = preprocess_for_translation(source_text, translations_file)
-    preprocessed_2, mapping_2 = preprocess_for_translation(source_text, translations_file)
-    
-    return {
-        'source': source_text,
-        'preprocessed_1': preprocessed_1,
-        'preprocessed_2': preprocessed_2,
-        'mapping_1': mapping_1,
-        'mapping_2': mapping_2,
-        'translations_match': mapping_1 == mapping_2
-    }
-
-
-def detect_mistranslations(source_text, translated_text, token_mapping, translations_file):
-    issues = []
-    
-    for token, mapping in token_mapping.items():
-        if token not in translated_text:
-            issues.append({
-                'token': token,
-                'category': mapping['category'],
-                'original_text': mapping['original_text'],
-                'issue': 'token_missing_from_translation'
-            })
-    
-    return issues
+    return translated_text

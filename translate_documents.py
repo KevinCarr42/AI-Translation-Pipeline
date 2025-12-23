@@ -4,7 +4,6 @@ from translate.document import translate_document
 from translate.models import create_translator
 
 if __name__ == '__main__':
-    # TODO: translate_document and create_translator should get use_finetuned from the same place
     use_finetuned = False
     
     file_list = (
