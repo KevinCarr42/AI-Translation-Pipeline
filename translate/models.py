@@ -148,27 +148,27 @@ class OpusTranslationModel(BaseTranslationModel):
             force_words_ids=None,
     ):
         tokenizer, model = self._load_directional(input_language, target_language)
-
+        
         model_inputs = tokenizer(input_text, return_tensors="pt", padding=True)
         model_inputs = {k: (v.to(model.device) if hasattr(v, "to") else v) for k, v in model_inputs.items()}
-
+        
         generation_arguments = {
             "max_new_tokens": 256,
             "num_beams": 5,
             "do_sample": False,
             "pad_token_id": tokenizer.pad_token_id,
         }
-
+        
         if force_words_ids:
             generation_arguments["force_words_ids"] = force_words_ids
             generation_arguments["num_beams"] = max(
                 generation_arguments.get("num_beams", 5),
                 len(force_words_ids) + 2
             )
-
+        
         if generation_kwargs:
             generation_arguments.update(generation_kwargs)
-
+        
         output_token_ids = model.generate(**model_inputs, **generation_arguments)
         text_output = tokenizer.batch_decode(output_token_ids, skip_special_tokens=True)[0].strip()
         return self.clean_output(text_output)
@@ -180,14 +180,14 @@ class M2M100TranslationModel(BaseTranslationModel):
     def translate_text(self, input_text, input_language="en", target_language="fr", generation_kwargs=None, force_words_ids=None):
         tokenizer = self.load_tokenizer()
         model = self.load_model()
-
+        
         source_code = self.LANGUAGE_CODES[input_language]
         target_code = self.LANGUAGE_CODES[target_language]
         tokenizer.src_lang = source_code
-
+        
         model_inputs = tokenizer(input_text, return_tensors="pt", padding=True)
         model_inputs = {k: (v.to(model.device) if hasattr(v, "to") else v) for k, v in model_inputs.items()}
-
+        
         generation_arguments = {
             "max_new_tokens": 256,
             "num_beams": 5,
@@ -195,17 +195,17 @@ class M2M100TranslationModel(BaseTranslationModel):
             "pad_token_id": tokenizer.pad_token_id,
             "forced_bos_token_id": tokenizer.get_lang_id(target_code),
         }
-
+        
         if force_words_ids:
             generation_arguments["force_words_ids"] = force_words_ids
             generation_arguments["num_beams"] = max(
                 generation_arguments.get("num_beams", 5),
                 len(force_words_ids) + 2
             )
-
+        
         if generation_kwargs:
             generation_arguments.update(generation_kwargs)
-
+        
         output_token_ids = model.generate(**model_inputs, **generation_arguments)
         text_output = tokenizer.batch_decode(output_token_ids, skip_special_tokens=True)[0].strip()
         return self.clean_output(text_output)
@@ -251,18 +251,18 @@ class MBART50TranslationModel(BaseTranslationModel):
     def translate_text(self, input_text, input_language="en", target_language="fr",
                        generation_kwargs=None, force_words_ids=None):
         tokenizer, model = self._load_directional(input_language, target_language)
-
+        
         source_code = self.LANGUAGE_CODES[input_language]
         target_code = self.LANGUAGE_CODES[target_language]
         tokenizer.src_lang = source_code
-
+        
         model_inputs = tokenizer(input_text, return_tensors="pt", padding=True)
         model_inputs = {k: (v.to(model.device) if hasattr(v, "to") else v) for k, v in model_inputs.items()}
-
+        
         target_id = getattr(tokenizer, "lang_code_to_id", {}).get(target_code) if hasattr(tokenizer, "lang_code_to_id") else None
         if target_id is None:
             target_id = tokenizer.convert_tokens_to_ids(target_code)
-
+        
         generation_arguments = {
             "max_new_tokens": 256,
             "num_beams": 5,
@@ -270,17 +270,17 @@ class MBART50TranslationModel(BaseTranslationModel):
             "pad_token_id": tokenizer.pad_token_id,
             "forced_bos_token_id": target_id,
         }
-
+        
         if force_words_ids:
             generation_arguments["force_words_ids"] = force_words_ids
             generation_arguments["num_beams"] = max(
                 generation_arguments.get("num_beams", 5),
                 len(force_words_ids) + 2
             )
-
+        
         if generation_kwargs:
             generation_arguments.update(generation_kwargs)
-
+        
         output_token_ids = model.generate(**model_inputs, **generation_arguments)
         text_output = tokenizer.batch_decode(output_token_ids, skip_special_tokens=True)[0].strip()
         return self.clean_output(text_output)
@@ -292,7 +292,7 @@ class MBART50TranslationModel(BaseTranslationModel):
 
 class TranslationManager:
     TOKEN_PREFIXES = ['NOMENCLATURE', 'TAXON', 'ACRONYM', 'SITE']
-
+    
     def __init__(self, all_models, embedder=None, debug=False, terminology_path=None):
         self.all_models = all_models
         self.embedder = embedder
@@ -302,22 +302,22 @@ class TranslationManager:
         self.extra_token_errors = {}
         self.token_retry_debug = {}
         self.constraint_errors = {}
-
+        
         self.terminology = TerminologyManager(terminology_path)
     
     def load_models(self, model_names=None):
         if model_names is None:
             model_names = list(self.all_models.keys())
-
+        
         for name in model_names:
             config = self.all_models[name]
             model_instance = config['cls'](**config.get('params', {}))
             _ = model_instance.translate_text("Test", "en", "fr")
             self.loaded_models[name] = model_instance
-
+    
     def get_tokenizer_for_model(self, model_name, source_lang, target_lang):
         model = self.loaded_models[model_name]
-
+        
         if hasattr(model, '_load_directional'):
             tokenizer, _ = model._load_directional(source_lang, target_lang)
             return tokenizer
@@ -338,19 +338,19 @@ class TranslationManager:
             {"num_beams": 4, "length_penalty": 1.2},
             {"num_beams": 4, "repetition_penalty": 1.1},
         ]
-
+        
         base_kwargs = base_generation_kwargs or {}
-
+        
         debug_key = f"{model_name}_{idx}" if model_name and idx is not None else None
         retry_log = [] if self.debug and debug_key and token_mapping else None
-
+        
         for i, params in enumerate(param_variations):
             generation_kwargs = {**base_kwargs, **params}
-
+            
             translated = model.translate_text(
                 text, source_lang, target_lang, generation_kwargs
             )
-
+            
             if self.debug and retry_log is not None and token_mapping:
                 missing_tokens = [token for token in token_mapping.keys() if token not in translated]
                 if missing_tokens:
@@ -360,13 +360,13 @@ class TranslationManager:
                         "missing_tokens": missing_tokens,
                         "params": params
                     })
-
+            
             if self.is_valid_translation(translated, text, token_mapping):
                 if i:
                     print(f"\tValid translation following {i} retries.")
-
+                
                 if self.debug and retry_log and debug_key:
-                    print(f'entry added (success after {i+1}):', model_name)
+                    print(f'entry added (success after {i + 1}):', model_name)
                     self.token_retry_debug[debug_key] = {
                         "total_attempts": i + 1,
                         "failed_attempts": retry_log,
@@ -374,9 +374,9 @@ class TranslationManager:
                         "model_name": model_name,
                         "original_text": text
                     }
-
+                
                 return translated, i, params
-
+        
         if self.debug and retry_log and debug_key:
             print(f'entry added (failed after {i + 1}):', model_name)
             self.token_retry_debug[debug_key] = {
@@ -386,7 +386,7 @@ class TranslationManager:
                 "model_name": model_name,
                 "original_text": text
             }
-
+        
         print(f"\tNo valid translations found following {i} attempted configs.")
         return None, len(param_variations), None
     
@@ -410,26 +410,26 @@ class TranslationManager:
     
     def translate_single(self, text, model_name, source_lang="en", target_lang="fr",
                          use_find_replace=True, generation_kwargs=None, idx=None,
-                         target_text=None, debug=False, use_terminology=True,
+                         target_text=None, debug=False, use_terminology=False,
                          use_legacy_find_replace=False):
-
+        
         model = self.loaded_models[model_name]
-
+        
         if use_legacy_find_replace:
             find_replace_error = False
             retry_attempts = 0
             retry_params = None
-
+            
             if use_find_replace:
                 preprocessed_text, token_mapping = apply_preferential_translations(
                     text, source_lang, target_lang, config.PREFERENTIAL_JSON_PATH
                 )
-
+                
                 translated_with_tokens, retry_attempts, retry_params = self.translate_with_retries(
                     model, preprocessed_text, source_lang, target_lang,
                     token_mapping, generation_kwargs, model_name, idx
                 )
-
+                
                 if translated_with_tokens and self.is_valid_translation(
                         translated_with_tokens, text, token_mapping
                 ):
@@ -456,7 +456,7 @@ class TranslationManager:
                 translated_text = model.translate_text(
                     text, source_lang, target_lang, generation_kwargs
                 )
-
+            
             token_prefix_error = self.check_token_prefix_error(translated_text, text)
             if token_prefix_error and debug:
                 tokens_to_replace = [x for x in token_mapping.keys()] if token_mapping else None
@@ -470,12 +470,12 @@ class TranslationManager:
                     "retry_attempts": retry_attempts,
                     "final_retry_params": retry_params,
                 }
-
+            
             if self.embedder:
                 source_embedding = self.embedder.encode(text, convert_to_tensor=True)
                 translated_embedding = self.embedder.encode(translated_text, convert_to_tensor=True)
                 similarity_vs_source = pytorch_cos_sim(source_embedding, translated_embedding).item()
-
+                
                 similarity_vs_target = None
                 similarity_of_original_translation = None
                 if target_text:
@@ -486,7 +486,7 @@ class TranslationManager:
                 similarity_vs_source = None
                 similarity_vs_target = None
                 similarity_of_original_translation = None
-
+            
             return {
                 "find_replace_error": find_replace_error,
                 "token_prefix_error": token_prefix_error,
@@ -497,16 +497,16 @@ class TranslationManager:
                 "model_name": model_name,
                 "retry_attempts": retry_attempts if use_find_replace else 0,
             }
-
+        
         force_words_ids = None
         constraints_applied = []
         constraint_error = False
-
+        
         if use_terminology:
             constraints_applied = self.terminology.find_constraints(
                 text, source_lang, target_lang
             )
-
+            
             if constraints_applied:
                 tokenizer = self.get_tokenizer_for_model(
                     model_name, source_lang, target_lang
@@ -514,13 +514,13 @@ class TranslationManager:
                 force_words_ids = self.terminology.get_constraint_token_ids(
                     constraints_applied, tokenizer
                 )
-
+        
         translated_text = model.translate_text(
             text, source_lang, target_lang,
             generation_kwargs=generation_kwargs,
             force_words_ids=force_words_ids
         )
-
+        
         if constraints_applied:
             for constraint in constraints_applied:
                 if constraint.lower() not in translated_text.lower():
@@ -532,12 +532,12 @@ class TranslationManager:
                             "translation": translated_text
                         }
                     break
-
+        
         if self.embedder:
             source_embedding = self.embedder.encode(text, convert_to_tensor=True)
             translated_embedding = self.embedder.encode(translated_text, convert_to_tensor=True)
             similarity_vs_source = pytorch_cos_sim(source_embedding, translated_embedding).item()
-
+            
             similarity_vs_target = None
             similarity_of_original_translation = None
             if target_text:
@@ -548,7 +548,7 @@ class TranslationManager:
             similarity_vs_source = None
             similarity_vs_target = None
             similarity_of_original_translation = None
-
+        
         return {
             "translated_text": translated_text,
             "constraints_applied": constraints_applied,
@@ -562,13 +562,13 @@ class TranslationManager:
     def translate_with_all_models(self, text, source_lang="en", target_lang="fr",
                                   use_find_replace=True, generation_kwargs=None,
                                   idx=None, target_text=None, debug=False,
-                                  use_terminology=True, use_legacy_find_replace=False):
+                                  use_terminology=False, use_legacy_find_replace=False):
         model_names = list(self.loaded_models.keys())
-
+        
         all_results = {}
         best_result = None
         best_similarity = float('-inf')
-
+        
         for model_name in model_names:
             result = self.translate_single(
                 text, model_name, source_lang, target_lang,
@@ -576,7 +576,7 @@ class TranslationManager:
                 use_terminology, use_legacy_find_replace
             )
             all_results[model_name] = result
-
+            
             if use_legacy_find_replace:
                 if (self.is_valid_translation(result['translated_text'], text)
                         and result["similarity_vs_source"] is not None):
@@ -593,7 +593,7 @@ class TranslationManager:
                         best_result = result.copy()
                         best_result["model_name"] = "best_model"
                         best_result["best_model_source"] = model_name
-
+        
         if best_result is None:
             best_result = {
                 "error": "No valid translations from any model",
@@ -603,9 +603,9 @@ class TranslationManager:
                 "model_name": "best_model",
                 "best_model_source": None
             }
-
+        
         all_results['best_model'] = best_result
-
+        
         return all_results
     
     def translate_with_best_model(self, *args, **kwargs):
@@ -662,19 +662,19 @@ def get_model_config(use_finetuned=True, models_to_use=None):
 
 def create_translator(use_finetuned=True, models_to_use=None, use_embedder=True, load_models=True, debug=False, terminology_path=None):
     from sentence_transformers import SentenceTransformer
-
+    
     all_models = get_model_config(use_finetuned, models_to_use)
-
+    
     embedder = None
     if use_embedder:
         embedder = SentenceTransformer('sentence-transformers/LaBSE')
-
+    
     if terminology_path is None:
         terminology_path = getattr(config, 'TERMINOLOGY_JSON_PATH', None)
-
+    
     manager = TranslationManager(all_models, embedder, debug=debug, terminology_path=terminology_path)
-
+    
     if load_models:
         manager.load_models()
-
+    
     return manager

@@ -1,3 +1,5 @@
+// FIXME: update source to include prefixes, update this file
+//  maybe find the most replaced few words and make sure it works
 {
   "en_to_fr": {
     "table": "la table",

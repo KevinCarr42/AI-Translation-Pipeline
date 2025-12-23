@@ -132,7 +132,7 @@ def translate_document(
         source_lang="en",
         chunk_by="sentences",
         models_to_use=None,
-        use_terminology=True,
+        use_terminology=False,
         use_finetuned=True,
         translation_manager=None,
         start_idx=0
