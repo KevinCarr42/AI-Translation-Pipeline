@@ -29,10 +29,7 @@ def apply_preferential_translations(source_text, source_language, target_languag
     for source_term in sorted_terms:
         target_term = replacements[source_term]
         
-        if ' ' in source_term:
-            pattern = re.compile(re.escape(source_term), re.IGNORECASE)
-        else:
-            pattern = re.compile(r'\b' + re.escape(source_term) + r'\b', re.IGNORECASE)
+        pattern = re.compile(r'\b' + re.escape(source_term) + r'\b', re.IGNORECASE)
         
         matches = list(pattern.finditer(source_text))
         
@@ -68,18 +65,12 @@ def reverse_preferential_translations(translated_text, token_mapping, validate_t
         for source_term, info in token_mapping.items():
             target_term = info['target_term']
             
-            if ' ' in target_term:
-                target_pattern = re.compile(re.escape(target_term), re.IGNORECASE)
-            else:
-                target_pattern = re.compile(r'\b' + re.escape(target_term) + r'\b', re.IGNORECASE)
+            target_pattern = re.compile(r'\b' + re.escape(target_term) + r'\b', re.IGNORECASE)
             
             if not target_pattern.search(translated_text):
                 return None
             
-            if ' ' in source_term:
-                source_pattern = re.compile(re.escape(source_term), re.IGNORECASE)
-            else:
-                source_pattern = re.compile(r'\b' + re.escape(source_term) + r'\b', re.IGNORECASE)
+            source_pattern = re.compile(r'\b' + re.escape(source_term) + r'\b', re.IGNORECASE)
             
             if source_pattern.search(translated_text):
                 return None
