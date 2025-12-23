@@ -132,7 +132,7 @@ def translate_document(
         source_lang="en",
         chunk_by="sentences",
         models_to_use=None,
-        use_find_replace=True,
+        use_terminology=True,
         use_finetuned=True,
         translation_manager=None,
         start_idx=0
@@ -173,7 +173,7 @@ def translate_document(
             text=chunk,
             source_lang=source_lang,
             target_lang=target_lang,
-            use_find_replace=use_find_replace,
+            use_terminology=use_terminology,
             idx=i
         )
         
