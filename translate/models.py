@@ -660,18 +660,21 @@ def get_model_config(use_finetuned=True, models_to_use=None):
     return all_models
 
 
-def create_translator(use_finetuned=True, models_to_use=None, use_embedder=True, load_models=True, debug=False):
+def create_translator(use_finetuned=True, models_to_use=None, use_embedder=True, load_models=True, debug=False, terminology_path=None):
     from sentence_transformers import SentenceTransformer
-    
+
     all_models = get_model_config(use_finetuned, models_to_use)
-    
+
     embedder = None
     if use_embedder:
         embedder = SentenceTransformer('sentence-transformers/LaBSE')
-    
-    manager = TranslationManager(all_models, embedder, debug=debug)
-    
+
+    if terminology_path is None:
+        terminology_path = getattr(config, 'TERMINOLOGY_JSON_PATH', None)
+
+    manager = TranslationManager(all_models, embedder, debug=debug, terminology_path=terminology_path)
+
     if load_models:
         manager.load_models()
-    
+
     return manager
