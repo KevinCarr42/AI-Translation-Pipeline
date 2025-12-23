@@ -168,8 +168,17 @@ class OpusTranslationModel(BaseTranslationModel):
         
         if generation_kwargs:
             generation_arguments.update(generation_kwargs)
-        
-        output_token_ids = model.generate(**model_inputs, **generation_arguments)
+
+        try:
+            output_token_ids = model.generate(**model_inputs, **generation_arguments)
+        except (AttributeError, NotImplementedError, ValueError) as e:
+            if force_words_ids:
+                print(f"Warning: Constrained generation not supported by this model, falling back to unconstrained. Error: {e}")
+                generation_arguments.pop("force_words_ids", None)
+                output_token_ids = model.generate(**model_inputs, **generation_arguments)
+            else:
+                raise
+
         text_output = tokenizer.batch_decode(output_token_ids, skip_special_tokens=True)[0].strip()
         return self.clean_output(text_output)
 
@@ -205,8 +214,17 @@ class M2M100TranslationModel(BaseTranslationModel):
         
         if generation_kwargs:
             generation_arguments.update(generation_kwargs)
-        
-        output_token_ids = model.generate(**model_inputs, **generation_arguments)
+
+        try:
+            output_token_ids = model.generate(**model_inputs, **generation_arguments)
+        except (AttributeError, NotImplementedError, ValueError) as e:
+            if force_words_ids:
+                print(f"Warning: Constrained generation not supported by this model, falling back to unconstrained. Error: {e}")
+                generation_arguments.pop("force_words_ids", None)
+                output_token_ids = model.generate(**model_inputs, **generation_arguments)
+            else:
+                raise
+
         text_output = tokenizer.batch_decode(output_token_ids, skip_special_tokens=True)[0].strip()
         return self.clean_output(text_output)
 
@@ -280,11 +298,20 @@ class MBART50TranslationModel(BaseTranslationModel):
         
         if generation_kwargs:
             generation_arguments.update(generation_kwargs)
-        
-        output_token_ids = model.generate(**model_inputs, **generation_arguments)
+
+        try:
+            output_token_ids = model.generate(**model_inputs, **generation_arguments)
+        except (AttributeError, NotImplementedError, ValueError) as e:
+            if force_words_ids:
+                print(f"Warning: Constrained generation not supported by this model, falling back to unconstrained. Error: {e}")
+                generation_arguments.pop("force_words_ids", None)
+                output_token_ids = model.generate(**model_inputs, **generation_arguments)
+            else:
+                raise
+
         text_output = tokenizer.batch_decode(output_token_ids, skip_special_tokens=True)[0].strip()
         return self.clean_output(text_output)
-    
+
     def clear_cache(self):
         self.directional_cache.clear()
         super().clear_cache()
