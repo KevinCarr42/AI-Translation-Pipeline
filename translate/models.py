@@ -91,6 +91,9 @@ class BaseTranslationModel:
         cleaned = text
         for pattern in patterns:
             cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE).strip()
+
+        cleaned = re.sub(r'([.!?])([A-Z])', r'\1 \2', cleaned)
+
         return cleaned
     
     def clear_cache(self):
@@ -168,7 +171,7 @@ class OpusTranslationModel(BaseTranslationModel):
         
         if generation_kwargs:
             generation_arguments.update(generation_kwargs)
-
+        
         try:
             output_token_ids = model.generate(**model_inputs, **generation_arguments)
         except (AttributeError, NotImplementedError, ValueError) as e:
@@ -178,7 +181,7 @@ class OpusTranslationModel(BaseTranslationModel):
                 output_token_ids = model.generate(**model_inputs, **generation_arguments)
             else:
                 raise
-
+        
         text_output = tokenizer.batch_decode(output_token_ids, skip_special_tokens=True)[0].strip()
         return self.clean_output(text_output)
 
@@ -214,7 +217,7 @@ class M2M100TranslationModel(BaseTranslationModel):
         
         if generation_kwargs:
             generation_arguments.update(generation_kwargs)
-
+        
         try:
             output_token_ids = model.generate(**model_inputs, **generation_arguments)
         except (AttributeError, NotImplementedError, ValueError) as e:
@@ -224,7 +227,7 @@ class M2M100TranslationModel(BaseTranslationModel):
                 output_token_ids = model.generate(**model_inputs, **generation_arguments)
             else:
                 raise
-
+        
         text_output = tokenizer.batch_decode(output_token_ids, skip_special_tokens=True)[0].strip()
         return self.clean_output(text_output)
 
@@ -298,7 +301,7 @@ class MBART50TranslationModel(BaseTranslationModel):
         
         if generation_kwargs:
             generation_arguments.update(generation_kwargs)
-
+        
         try:
             output_token_ids = model.generate(**model_inputs, **generation_arguments)
         except (AttributeError, NotImplementedError, ValueError) as e:
@@ -308,10 +311,10 @@ class MBART50TranslationModel(BaseTranslationModel):
                 output_token_ids = model.generate(**model_inputs, **generation_arguments)
             else:
                 raise
-
+        
         text_output = tokenizer.batch_decode(output_token_ids, skip_special_tokens=True)[0].strip()
         return self.clean_output(text_output)
-
+    
     def clear_cache(self):
         self.directional_cache.clear()
         super().clear_cache()
