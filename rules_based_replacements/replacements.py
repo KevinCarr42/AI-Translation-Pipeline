@@ -98,19 +98,14 @@ def preserve_capitalization(original_text, replacement_text, is_sentence_start=F
     if not original_text or not replacement_text:
         return replacement_text
     
-    if is_sentence_start:
-        if replacement_text and replacement_text[0].isalpha():
-            return replacement_text[0].upper() + replacement_text[1:]
-        return replacement_text
-    
     if original_text.isupper():
         return replacement_text.upper()
-    elif original_text.islower():
+    if original_text.islower():
         return replacement_text.lower()
-    elif original_text[0].isupper():
-        return replacement_text.capitalize()
-    else:
-        return replacement_text
+    if is_sentence_start and replacement_text[0].islower():
+        return replacement_text[0].upper() + replacement_text[1:]
+    
+    return replacement_text
 
 
 def postprocess_translation(translated_text, token_mapping):
