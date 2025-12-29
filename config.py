@@ -17,7 +17,7 @@ TRAINING_DATA_OUTPUT = os.path.join(DATA_DIR, "pipeline_training_data.jsonl")
 TESTING_DATA_OUTPUT = os.path.join(DATA_DIR, "pipeline_testing_data.jsonl")
 
 # translations folders
-PREFERENTIAL_JSON_PATH = os.path.join(DATA_DIR, "preferential_translations.json")
+PREFERENTIAL_JSON_PATH = os.path.join(DATA_DIR, "preferential_translations_v2.json")
 PRETRAINED_MODELS_FOLDER = os.path.join(DATA_DIR, "pretrained_models")
 MODEL_OUTPUT_DIR = os.path.join(DATA_DIR, "finetuning_outputs")
 MERGED_MODEL_DIR = os.path.join(DATA_DIR, "finetuning_merged")

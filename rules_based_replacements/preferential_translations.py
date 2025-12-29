@@ -2,34 +2,44 @@ from rules_based_replacements.replacements import (
     preprocess_for_translation,
     postprocess_translation,
     validate_tokens_replaced,
+    correct_article_gender,
 )
 
 
-def apply_preferential_translations(source_text, source_language, target_language, translations_file, use_replacements=True, validate_tokens=True):
+def apply_preferential_translations(source_text, source_language, target_language, translations_file, use_replacements=True,
+                                    validate_tokens=True):
     if not use_replacements:
         return source_text, {}
     
-    preprocessed_text, token_mapping = preprocess_for_translation(source_text, translations_file)
+    preprocessed_text, token_mapping = preprocess_for_translation(source_text, translations_file, source_lang=source_language)
     
     return preprocessed_text, token_mapping
 
 
-def reverse_preferential_translations(translated_text, token_mapping, validate_tokens_flag=True):
+def reverse_preferential_translations(translated_text, token_mapping, validate_tokens_flag=True, correct_gender=True):
     if not token_mapping:
-        return translated_text
+        return translated_text, []
     
-    result_text = postprocess_translation(translated_text, token_mapping)
+    corrections_made = []
+    result_text = translated_text
+    
+    # Gender correction must happen BEFORE token replacement
+    # so we can find articles (le, la, l') before the tokens
+    if correct_gender:
+        result_text, corrections_made = correct_article_gender(result_text, token_mapping)
+    
+    result_text = postprocess_translation(result_text, token_mapping)
     
     if validate_tokens_flag:
         if not validate_tokens_replaced(result_text, token_mapping):
-            return None
+            return None, corrections_made
     
-    return result_text
+    return result_text, corrections_made
 
 
 def compare_translations(source_text, translated_text_1, translated_text_2, translations_file, source_language='en', target_language='fr'):
-    preprocessed_1, mapping_1 = preprocess_for_translation(source_text, translations_file)
-    preprocessed_2, mapping_2 = preprocess_for_translation(source_text, translations_file)
+    preprocessed_1, mapping_1 = preprocess_for_translation(source_text, translations_file, source_lang=source_language)
+    preprocessed_2, mapping_2 = preprocess_for_translation(source_text, translations_file, source_lang=source_language)
     
     return {
         'source': source_text,

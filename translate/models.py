@@ -390,10 +390,13 @@ class TranslationManager:
                 token_mapping, generation_kwargs, model_name, idx
             )
             
+            # FIXME: this registers as invalid because it's using the original text without replacements
+            #  even if the replacements did happen
+            #  should be preprocessed_text not text?
             if translated_with_tokens and self.is_valid_translation(
-                    translated_with_tokens, text, token_mapping
+                    translated_with_tokens, preprocessed_text, token_mapping
             ):
-                translated_text = reverse_preferential_translations(
+                translated_text, gender_corrections_made = reverse_preferential_translations(
                     translated_with_tokens, token_mapping
                 )
             else:
