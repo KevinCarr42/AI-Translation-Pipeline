@@ -9,7 +9,7 @@ def apply_preferential_translations(source_text, source_language, target_languag
     if not use_replacements:
         return source_text, {}
     
-    preprocessed_text, token_mapping = preprocess_for_translation(source_text, translations_file)
+    preprocessed_text, token_mapping = preprocess_for_translation(source_text, translations_file, source_lang=source_language)
     
     return preprocessed_text, token_mapping
 
@@ -28,8 +28,8 @@ def reverse_preferential_translations(translated_text, token_mapping, validate_t
 
 
 def compare_translations(source_text, translated_text_1, translated_text_2, translations_file, source_language='en', target_language='fr'):
-    preprocessed_1, mapping_1 = preprocess_for_translation(source_text, translations_file)
-    preprocessed_2, mapping_2 = preprocess_for_translation(source_text, translations_file)
+    preprocessed_1, mapping_1 = preprocess_for_translation(source_text, translations_file, source_lang=source_language)
+    preprocessed_2, mapping_2 = preprocess_for_translation(source_text, translations_file, source_lang=source_language)
     
     return {
         'source': source_text,

@@ -300,19 +300,19 @@ class TranslationManager:
             {"num_beams": 4, "length_penalty": 1.2},
             {"num_beams": 4, "repetition_penalty": 1.1},
         ]
-
+        
         base_kwargs = base_generation_kwargs or {}
-
+        
         debug_key = f"{model_name}_{idx}" if model_name and idx is not None else None
         retry_log = [] if self.debug and debug_key and token_mapping else None
-
+        
         for i, params in enumerate(param_variations):
             generation_kwargs = {**base_kwargs, **params}
-
+            
             translated = model.translate_text(
                 text, source_lang, target_lang, generation_kwargs
             )
-
+            
             if self.debug and retry_log is not None and token_mapping:
                 missing_tokens = [token for token in token_mapping.keys() if token not in translated]
                 if missing_tokens:
@@ -322,13 +322,13 @@ class TranslationManager:
                         "missing_tokens": missing_tokens,
                         "params": params
                     })
-
+            
             if self.is_valid_translation(translated, text, token_mapping):
                 if i:
                     print(f"\tValid translation following {i} retries.")
-
+                
                 if self.debug and retry_log and debug_key:
-                    print(f'entry added (success after {i+1}):', model_name)
+                    print(f'entry added (success after {i + 1}):', model_name)
                     self.token_retry_debug[debug_key] = {
                         "total_attempts": i + 1,
                         "failed_attempts": retry_log,
@@ -336,9 +336,9 @@ class TranslationManager:
                         "model_name": model_name,
                         "original_text": text
                     }
-
+                
                 return translated, i, params
-
+        
         if self.debug and retry_log and debug_key:
             print(f'entry added (failed after {i + 1}):', model_name)
             self.token_retry_debug[debug_key] = {
@@ -348,7 +348,7 @@ class TranslationManager:
                 "model_name": model_name,
                 "original_text": text
             }
-
+        
         print(f"\tNo valid translations found following {i} attempted configs.")
         return None, len(param_variations), None
     
@@ -391,7 +391,7 @@ class TranslationManager:
             )
             
             if translated_with_tokens and self.is_valid_translation(
-                    translated_with_tokens, text, token_mapping
+                    translated_with_tokens, preprocessed_text, token_mapping
             ):
                 translated_text = reverse_preferential_translations(
                     translated_with_tokens, token_mapping

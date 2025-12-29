@@ -1,6 +1,9 @@
 import re
 
-from rules_based_replacements.token_utils import create_replacement_token, load_translations, get_search_patterns
+from rules_based_replacements.token_utils import (
+    create_replacement_token, load_translations, get_search_patterns,
+    get_translation_value, build_english_to_french_lookup
+)
 
 
 def replace_whole_word(text, word, replacement):
@@ -27,7 +30,7 @@ def find_translation_matches(source, target, source_lang, french_index, english_
     return matches
 
 
-def preprocess_for_translation(text, translations_file):
+def preprocess_for_translation(text, translations_file, source_lang='fr'):
     translations_data = load_translations(translations_file)
     
     if 'translations' in translations_data:
@@ -35,7 +38,11 @@ def preprocess_for_translation(text, translations_file):
     else:
         translations = translations_data
     
-    patterns = get_search_patterns(translations)
+    patterns = get_search_patterns(translations, source_lang)
+    
+    en_to_fr_lookup = None
+    if source_lang == 'en':
+        en_to_fr_lookup = build_english_to_french_lookup(translations)
     
     processed_text = text
     token_mapping = {}
@@ -57,19 +64,28 @@ def preprocess_for_translation(text, translations_file):
                 original_text = match.group()
                 start, end = match.span()
                 
+                if source_lang == 'en':
+                    lookup_result = en_to_fr_lookup.get(term.lower())
+                    if not lookup_result:
+                        continue
+                    found_category, french_term, term_data = lookup_result
+                    translation = french_term
+                else:
+                    translation_key = None
+                    for original_key in translations[category].keys():
+                        if original_key.lower() == term.lower():
+                            translation_key = original_key
+                            break
+                    term_data = translations[category].get(translation_key) if translation_key else None
+                    translation = get_translation_value(term_data) if term_data else None
+                
                 token_counters[category] += 1
                 token = create_replacement_token(category, token_counters[category])
-                
-                translation_key = None
-                for original_key in translations[category].keys():
-                    if original_key.lower() == term.lower():
-                        translation_key = original_key
-                        break
                 
                 token_mapping[token] = {
                     'original_text': original_text,
                     'category': category,
-                    'translation': translations[category].get(translation_key, None) if translation_key else None,
+                    'translation': translation,
                     'should_translate': True
                 }
                 

@@ -4,16 +4,20 @@ from translate.document import translate_document
 from translate.models import create_translator
 
 if __name__ == '__main__':
-    use_finetuned = False
+    use_finetuned = True
     
     file_list = (
-        ("example1.txt", "en"), ("example1_translated.txt", "fr"),
-        ("example2.txt", "en"), ("example2_translated.txt", "fr"),
-        ("example3.txt", "en"), ("example3_translated.txt", "fr"),
-        ("example4.txt", "en"), ("example4_translated.txt", "fr"),
+        ("example.txt", "en"),
+        # ("example1.txt", "en"), ("example1_translated.txt", "fr"),
+        # ("example2.txt", "en"), ("example2_translated.txt", "fr"),
+        # ("example3.txt", "en"), ("example3_translated.txt", "fr"),
+        # ("example4.txt", "en"), ("example4_translated.txt", "fr"),
     )
     
-    translation_manager = create_translator(use_finetuned=use_finetuned)
+    translation_manager = create_translator(
+        use_finetuned=use_finetuned,
+        # models_to_use=['opus_mt_finetuned']
+    )
     for filename, source_lang in file_list:
         translate_document(
             input_text_file=os.path.join(config.TRANSLATED_TEXT_DIR, filename),

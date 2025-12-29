@@ -19,23 +19,50 @@ def load_translations(file_path):
     return data
 
 
+def get_translation_value(term_data):
+    if isinstance(term_data, dict):
+        return term_data.get('en')
+    return term_data
+
+
+def build_english_to_french_lookup(translations):
+    lookup = {}
+    for category, terms in translations.items():
+        for french_key, term_data in terms.items():
+            en_term = get_translation_value(term_data)
+            if en_term:
+                en_lower = en_term.lower()
+                lookup[en_lower] = (category, french_key, term_data)
+    return lookup
+
+
 def build_term_index(translations):
     french_to_info = {}
     english_to_info = {}
     
     for category, terms in translations.items():
-        for french_term, english_term in terms.items():
+        for french_term, term_data in terms.items():
+            english_term = get_translation_value(term_data)
             french_to_info[french_term] = (category, french_term, english_term)
-            english_to_info[english_term] = (category, french_term, english_term)
+            if english_term:
+                english_to_info[english_term] = (category, french_term, english_term)
     
     return french_to_info, english_to_info
 
 
-def get_search_patterns(translations):
+def get_search_patterns(translations, source_lang='fr'):
     patterns = {}
     
     for category, terms in translations.items():
-        sorted_terms = sorted(terms.keys(), key=len, reverse=True)
+        if source_lang == 'en':
+            english_terms = []
+            for french_key, term_data in terms.items():
+                en_term = get_translation_value(term_data)
+                if en_term:
+                    english_terms.append(en_term)
+            sorted_terms = sorted(english_terms, key=len, reverse=True)
+        else:
+            sorted_terms = sorted(terms.keys(), key=len, reverse=True)
         patterns[category] = sorted_terms
     
     return patterns
