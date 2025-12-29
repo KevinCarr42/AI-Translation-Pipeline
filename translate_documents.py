@@ -4,7 +4,6 @@ from translate.document import translate_document
 from translate.models import create_translator
 
 if __name__ == '__main__':
-    # TODO: translate_document and create_translator should get use_finetuned from the same place
     use_finetuned = False
     
     file_list = (
@@ -23,6 +22,6 @@ if __name__ == '__main__':
             chunk_by="paragraph",
             models_to_use=None,
             use_find_replace=True,
-            use_finetuned=use_finetuned,
+            use_finetuned=None,
             translation_manager=translation_manager
         )
