@@ -7,7 +7,8 @@ if __name__ == '__main__':
     use_finetuned = True
     
     file_list = (
-        ("example.txt", "en"), # ("example_translated.txt", "fr"),
+        ("example.txt", "en"), ("example_translated.txt", "fr"),
+        ("example0.txt", "en"), ("example0_translated.txt", "fr"),
         # ("example1.txt", "en"), ("example1_translated.txt", "fr"),
         # ("example2.txt", "en"), ("example2_translated.txt", "fr"),
         # ("example3.txt", "en"), ("example3_translated.txt", "fr"),
