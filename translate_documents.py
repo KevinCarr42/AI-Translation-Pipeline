@@ -27,5 +27,6 @@ if __name__ == '__main__':
             models_to_use=None,
             use_find_replace=True,
             use_finetuned=None,
-            translation_manager=translation_manager
+            translation_manager=translation_manager,
+            single_attempt=False
         )

@@ -135,7 +135,8 @@ def translate_document(
         use_find_replace=True,
         use_finetuned=True,
         translation_manager=None,
-        start_idx=0
+        start_idx=0,
+        single_attempt=False
 ):
     if not output_text_file:
         import os
@@ -174,7 +175,8 @@ def translate_document(
             source_lang=source_lang,
             target_lang=target_lang,
             use_find_replace=use_find_replace,
-            idx=i
+            idx=i,
+            single_attempt=single_attempt
         )
         
         translated_text = result.get("translated_text", "[TRANSLATION FAILED]")
