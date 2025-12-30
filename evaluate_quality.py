@@ -4,7 +4,7 @@ if __name__ == '__main__':
     jsonl_path = "../Data/pipeline_testing_data.jsonl"
     results_output_file = "quality_evaluation/tests/quality_test_results.pickle"
     seed = 42
-    n_samples = 100
+    n_samples = 1000
     models_to_use = [
         'opus_mt_base', 'opus_mt_finetuned',
         'm2m100_418m_base', 'm2m100_418m_finetuned',
