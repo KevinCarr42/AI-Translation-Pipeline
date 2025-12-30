@@ -5,7 +5,7 @@ import pandas as pd
 from sentence_transformers import SentenceTransformer
 from sentence_transformers.util import pytorch_cos_sim
 
-from translate.models import create_translator, get_model_config
+from translate.models import create_translator
 from translate.document import translate_document
 
 TEMP_DIR = os.path.join(os.path.dirname(__file__), "tests", "quality")
@@ -30,11 +30,12 @@ def sample_testing_data(data, n=None, seed=None):
 
 
 def run_quality_evaluation(
+        models_to_use,
         jsonl_path,
         n_samples=None,
         seed=None,
         use_find_replace=True,
-        use_finetuned=True,
+        compare_find_replace=True,
         output_pickle=None
 ):
     if output_pickle is None:
@@ -44,16 +45,12 @@ def run_quality_evaluation(
     if n_samples:
         data = sample_testing_data(data, n_samples, seed)
     
-    all_models = get_model_config(use_finetuned=use_finetuned)
-    model_names = list(all_models.keys())
-    
     embedder = SentenceTransformer('sentence-transformers/LaBSE')
     
     translation_managers = {}
-    for model_name in model_names:
+    for model_name in models_to_use:
         print(f"Loading model: {model_name}")
         translation_managers[model_name] = create_translator(
-            use_finetuned=use_finetuned,
             models_to_use=[model_name],
             use_embedder=False,
             load_models=True
@@ -80,6 +77,7 @@ def run_quality_evaluation(
             "source_text": source_text,
             "source_lang": source_lang,
             "translator": "human_target",
+            "use_find_replace": None,
             "translated_text": target_text,
             "similarity_vs_source": target_similarity
         })
@@ -89,35 +87,39 @@ def run_quality_evaluation(
             f.write(source_text)
         
         for model_name, manager in translation_managers.items():
-            output_file = os.path.join(TEMP_DIR, f"output_{model_name}_{idx}.txt")
-            
-            translate_document(
-                input_text_file=input_file,
-                output_text_file=output_file,
-                source_lang=source_lang,
-                chunk_by="sentences",
-                use_find_replace=use_find_replace,
-                translation_manager=manager,
-                single_attempt=True
-            )
-            
-            with open(output_file, 'r', encoding='utf-8') as f:
-                translated_text = f.read()
-            
-            translated_embedding = embedder.encode(translated_text, convert_to_tensor=True)
-            similarity = pytorch_cos_sim(source_embedding, translated_embedding).item()
-            
-            results.append({
-                "sample_idx": idx,
-                "source_text": source_text,
-                "source_lang": source_lang,
-                "translator": model_name,
-                "translated_text": translated_text,
-                "similarity_vs_source": similarity
-            })
-            
-            if os.path.exists(output_file):
-                os.remove(output_file)
+            find_replace_options = [True, False] if compare_find_replace else [use_find_replace]
+            for fr_option in find_replace_options:
+                suffix = "fr" if fr_option else "nofr"
+                output_file = os.path.join(TEMP_DIR, f"output_{model_name}_{suffix}_{idx}.txt")
+                
+                translate_document(
+                    input_text_file=input_file,
+                    output_text_file=output_file,
+                    source_lang=source_lang,
+                    chunk_by="sentences",
+                    use_find_replace=fr_option,
+                    translation_manager=manager,
+                    single_attempt=True
+                )
+                
+                with open(output_file, 'r', encoding='utf-8') as f:
+                    translated_text = f.read()
+                
+                translated_embedding = embedder.encode(translated_text, convert_to_tensor=True)
+                similarity = pytorch_cos_sim(source_embedding, translated_embedding).item()
+                
+                results.append({
+                    "sample_idx": idx,
+                    "source_text": source_text,
+                    "source_lang": source_lang,
+                    "translator": model_name,
+                    "use_find_replace": fr_option,
+                    "translated_text": translated_text,
+                    "similarity_vs_source": similarity
+                })
+                
+                if os.path.exists(output_file):
+                    os.remove(output_file)
         
         if os.path.exists(input_file):
             os.remove(input_file)
