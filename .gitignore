@@ -8,3 +8,4 @@ translations/
 *.pickle
 tests/paragraphs/
 tests/token_testing/
+quality_evaluation/tests/quality/

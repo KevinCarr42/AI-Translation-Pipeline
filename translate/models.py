@@ -288,7 +288,7 @@ class TranslationManager:
     
     def translate_with_retries(self, model, text, source_lang, target_lang,
                                token_mapping=None, base_generation_kwargs=None,
-                               model_name=None, idx=None):
+                               model_name=None, idx=None, single_attempt=False):
         param_variations = [
             {"num_beams": 4},
             {"num_beams": 2},
@@ -339,6 +339,9 @@ class TranslationManager:
 
                 return translated, i, params
 
+            if single_attempt:
+                return None, 1, None
+
         if self.debug and retry_log and debug_key:
             print(f'entry added (failed after {i + 1}):', model_name)
             self.token_retry_debug[debug_key] = {
@@ -372,7 +375,7 @@ class TranslationManager:
     
     def translate_single(self, text, model_name, source_lang="en", target_lang="fr",
                          use_find_replace=True, generation_kwargs=None, idx=None,
-                         target_text=None, debug=False):
+                         target_text=None, debug=False, single_attempt=False):
         
         model = self.loaded_models[model_name]
         
@@ -387,7 +390,7 @@ class TranslationManager:
             
             translated_with_tokens, retry_attempts, retry_params = self.translate_with_retries(
                 model, preprocessed_text, source_lang, target_lang,
-                token_mapping, generation_kwargs, model_name, idx
+                token_mapping, generation_kwargs, model_name, idx, single_attempt
             )
             
             # FIXME: this registers as invalid because it's using the original text without replacements
@@ -463,7 +466,8 @@ class TranslationManager:
     
     def translate_with_all_models(self, text, source_lang="en", target_lang="fr",
                                   use_find_replace=True, generation_kwargs=None,
-                                  idx=None, target_text=None, debug=False):
+                                  idx=None, target_text=None, debug=False,
+                                  single_attempt=False):
         model_names = list(self.loaded_models.keys())
         
         all_results = {}
@@ -473,7 +477,8 @@ class TranslationManager:
         for model_name in model_names:
             result = self.translate_single(
                 text, model_name, source_lang, target_lang,
-                use_find_replace, generation_kwargs, idx, target_text, debug
+                use_find_replace, generation_kwargs, idx, target_text, debug,
+                single_attempt
             )
             all_results[model_name] = result
             
