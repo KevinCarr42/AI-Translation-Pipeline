@@ -482,9 +482,13 @@ class TranslationManager:
             )
             all_results[model_name] = result
             
-            if (self.is_valid_translation(result['translated_text'], text)
-                    and result["similarity_vs_source"] is not None):
-                if result["similarity_vs_source"] > best_similarity:
+            if self.is_valid_translation(result['translated_text'], text):
+                if result["similarity_vs_source"] is None:
+                    if best_result is None:
+                        best_result = result.copy()
+                        best_result["model_name"] = "best_model"
+                        best_result["best_model_source"] = model_name
+                elif result["similarity_vs_source"] > best_similarity:
                     best_similarity = result["similarity_vs_source"]
                     best_result = result.copy()
                     best_result["model_name"] = "best_model"
