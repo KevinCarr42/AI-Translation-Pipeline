@@ -109,6 +109,15 @@ def add_figref_column(dataframe, text_en_column='en', text_fr_column='fr'):
     return dataframe
 
 
+@print_timing("adding exclusion column for short text...")
+def add_too_short_column(dataframe, min_length=20):
+    dataframe['exclude_too_short'] = (
+            (dataframe['en'].str.len() < min_length) |
+            (dataframe['fr'].str.len() < min_length)
+    )
+    return dataframe
+
+
 @print_timing("adding exclusion column for dates...")
 def add_dates_column(dataframe):
     dataframe['has_date_refs'] = dataframe[['en', 'fr']].apply(lambda x: x.astype(str).str.contains(
@@ -130,6 +139,7 @@ def exclude_for_training_data(dataframe):
         'exclude_entity_ratio',
         'exclude_clause_ratio',
         'exclude_figtext',
+        'exclude_too_short',
         'has_date_refs',
         'OCR_issue',
     ]
@@ -164,6 +174,7 @@ def exclude_for_testing_data(dataframe):
         'exclude_relaxed_noun_ratio',
         'exclude_relaxed_entity_ratio',
         'exclude_relaxed_clause_ratio',
+        'exclude_too_short',
         'OCR_issue',
     ]
     
@@ -176,6 +187,7 @@ def exclude_for_testing_data(dataframe):
 def create_dataset(dataframe, exclusion_func):
     dataframe = add_exclusion_columns(dataframe)
     dataframe = add_figref_column(dataframe)
+    dataframe = add_too_short_column(dataframe)
     dataframe = add_dates_column(dataframe)
     dataframe = exclusion_func(dataframe)
     dataframe = add_periods_to_all_sentences(dataframe)
