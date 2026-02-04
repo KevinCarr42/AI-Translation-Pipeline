@@ -2,7 +2,7 @@ from quality_evaluation.evaluate import run_quality_evaluation
 
 if __name__ == '__main__':
     jsonl_path = "../Data/pipeline_testing_data.jsonl"
-    results_output_file = "quality_evaluation/tests/quality_test_results.pickle"
+    results_output_file = "quality_evaluation/eval_results/quality_test_results.pickle"
     seed = 42
     n_samples = 1000
     models_to_use = [

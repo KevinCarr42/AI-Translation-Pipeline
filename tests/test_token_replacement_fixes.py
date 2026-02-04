@@ -1,5 +1,6 @@
 import sys
 import os
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from rules_based_replacements.replacements import find_corrupted_token, postprocess_translation
@@ -7,7 +8,7 @@ from rules_based_replacements.replacements import find_corrupted_token, postproc
 
 def test_find_corrupted_token():
     print("\n=== Testing find_corrupted_token() ===\n")
-
+    
     test_cases = [
         {
             'name': 'Exact match',
@@ -70,14 +71,14 @@ def test_find_corrupted_token():
             'expected': (True, 4, 'SITE0042s')
         }
     ]
-
+    
     passed = 0
     failed = 0
-
+    
     for test in test_cases:
         result = find_corrupted_token(test['text'], test['token'])
         expected = test['expected']
-
+        
         if result == expected:
             print(f"[PASS] {test['name']}")
             print(f"  Found: {result}")
@@ -87,14 +88,14 @@ def test_find_corrupted_token():
             print(f"  Expected: {expected}")
             print(f"  Got:      {result}")
             failed += 1
-
+    
     print(f"\n{passed} passed, {failed} failed\n")
     return failed == 0
 
 
 def test_postprocess_translation():
     print("\n=== Testing postprocess_translation() ===\n")
-
+    
     test_cases = [
         {
             'name': 'Clean token replacement',
@@ -203,14 +204,14 @@ def test_postprocess_translation():
             'expected': 'Oxygène is at the start'
         }
     ]
-
+    
     passed = 0
     failed = 0
-
+    
     for test in test_cases:
         result = postprocess_translation(test['translated_text'], test['token_mapping'])
         expected = test['expected']
-
+        
         if result == expected:
             print(f"[PASS] {test['name']}")
             print(f"  Result: {result}")
@@ -221,18 +222,18 @@ def test_postprocess_translation():
             print(f"  Expected: {expected}")
             print(f"  Got:      {result}")
             failed += 1
-
+    
     print(f"\n{passed} passed, {failed} failed\n")
     return failed == 0
 
 
 def test_validation_with_fuzzy_matching():
     print("\n=== Testing is_valid_translation() with fuzzy matching ===\n")
-
+    
     from translate.models import TranslationManager
-
+    
     manager = TranslationManager(all_models={})
-
+    
     test_cases = [
         {
             'name': 'Clean tokens pass',
@@ -292,10 +293,10 @@ def test_validation_with_fuzzy_matching():
             'expected': True
         }
     ]
-
+    
     passed = 0
     failed = 0
-
+    
     for test in test_cases:
         result = manager.is_valid_translation(
             test['translated_text'],
@@ -303,7 +304,7 @@ def test_validation_with_fuzzy_matching():
             test['token_mapping']
         )
         expected = test['expected']
-
+        
         if result == expected:
             print(f"[PASS] {test['name']}")
             print(f"  Valid: {result}")
@@ -315,27 +316,27 @@ def test_validation_with_fuzzy_matching():
             print(f"  Expected: {expected}")
             print(f"  Got:      {result}")
             failed += 1
-
+    
     print(f"\n{passed} passed, {failed} failed\n")
     return failed == 0
 
 
 def test_mbart50_bug_fix():
     print("\n=== Verifying MBART50 bug fix ===\n")
-
+    
     import re
-
+    
     models_file = os.path.join(os.path.dirname(__file__), '..', 'translate', 'models.py')
-
+    
     with open(models_file, 'r', encoding='utf-8') as f:
         content = f.read()
-
+    
     bug_pattern = r'generation_arguments\.update\(generation_arguments\)'
     correct_pattern = r'generation_arguments\.update\(generation_kwargs\)'
-
+    
     has_bug = re.search(bug_pattern, content)
     has_fix = re.search(correct_pattern, content)
-
+    
     if has_bug:
         print("[FAIL] Self-update bug still present in models.py")
         print("  Found: generation_arguments.update(generation_arguments)")
@@ -350,30 +351,30 @@ def test_mbart50_bug_fix():
 
 
 def run_all_tests():
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("  Token Replacement Fixes - Test Suite")
-    print("="*60)
-
+    print("=" * 60)
+    
     results = {
         'find_corrupted_token': test_find_corrupted_token(),
         'postprocess_translation': test_postprocess_translation(),
         'validation_with_fuzzy_matching': test_validation_with_fuzzy_matching(),
         'mbart50_bug_fix': test_mbart50_bug_fix()
     }
-
-    print("\n" + "="*60)
+    
+    print("\n" + "=" * 60)
     print("  Summary")
-    print("="*60)
-
+    print("=" * 60)
+    
     total = len(results)
     passed = sum(results.values())
-
+    
     for test_name, success in results.items():
         status = "[PASS]" if success else "[FAIL]"
         print(f"{status}: {test_name}")
-
+    
     print(f"\nOverall: {passed}/{total} test suites passed")
-
+    
     if passed == total:
         print("\n*** All tests passed! The fixes are working correctly. ***")
         return 0

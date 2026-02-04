@@ -8,8 +8,8 @@ from sentence_transformers.util import pytorch_cos_sim
 from translate.models import create_translator
 from translate.document import translate_document
 
-TEMP_DIR = os.path.join(os.path.dirname(__file__), "tests", "quality")
-DEFAULT_OUTPUT_PICKLE = os.path.join(os.path.dirname(__file__), "tests", "quality_test_results.pickle")
+TEMP_DIR = os.path.join(os.path.dirname(__file__), "eval_results", "quality")
+DEFAULT_OUTPUT_PICKLE = os.path.join(os.path.dirname(__file__), "eval_results", "quality_test_results.pickle")
 
 
 def load_testing_data(jsonl_path):

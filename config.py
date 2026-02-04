@@ -2,7 +2,7 @@ import os
 
 # folders
 DATA_DIR = "../Data"
-TRANSLATED_TEXT_DIR = "translations"
+TRANSLATED_TEXT_DIR = "_TRANSLATED_DOCUMENTS"
 
 # starting data
 PARSED_DOCS_DIR = os.path.join(DATA_DIR, "ParsedPublications")

@@ -4,10 +4,11 @@
 *.csv
 scratch.py
 console_output*.txt
-translations/
+_TRANSLATED_DOCUMENTS/
 *.pickle
 tests/paragraphs/
 tests/token_testing/
 quality_evaluation/tests/quality/
 quality_evaluation/tests/old/
 tests/temp_calcs.ipynb
+_BACKUP/
