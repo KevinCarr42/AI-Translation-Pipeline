@@ -253,7 +253,7 @@ class MBART50TranslationModel(BaseTranslationModel):
             "forced_bos_token_id": target_id,
         }
         if generation_kwargs:
-            generation_arguments.update(generation_arguments)
+            generation_arguments.update(generation_kwargs)
         
         output_token_ids = model.generate(**model_inputs, **generation_arguments)
         text_output = tokenizer.batch_decode(output_token_ids, skip_special_tokens=True)[0].strip()
