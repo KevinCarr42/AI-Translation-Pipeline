@@ -1,6 +1,7 @@
 .idea/
 .claude/
 *__pycache__*
+.pytest_cache/
 *.csv
 scratch.py
 console_output*.txt
@@ -12,3 +13,4 @@ quality_evaluation/tests/quality/
 quality_evaluation/tests/old/
 tests/temp_calcs.ipynb
 _BACKUP/
+.coverage

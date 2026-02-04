@@ -90,7 +90,7 @@ def test_find_corrupted_token():
             failed += 1
     
     print(f"\n{passed} passed, {failed} failed\n")
-    return failed == 0
+    assert failed == 0, f"{failed} test cases failed"
 
 
 def test_postprocess_translation():
@@ -224,7 +224,7 @@ def test_postprocess_translation():
             failed += 1
     
     print(f"\n{passed} passed, {failed} failed\n")
-    return failed == 0
+    assert failed == 0, f"{failed} test cases failed"
 
 
 def test_validation_with_fuzzy_matching():
@@ -318,7 +318,7 @@ def test_validation_with_fuzzy_matching():
             failed += 1
     
     print(f"\n{passed} passed, {failed} failed\n")
-    return failed == 0
+    assert failed == 0, f"{failed} test cases failed"
 
 
 def test_mbart50_bug_fix():
@@ -340,49 +340,10 @@ def test_mbart50_bug_fix():
     if has_bug:
         print("[FAIL] Self-update bug still present in models.py")
         print("  Found: generation_arguments.update(generation_arguments)")
-        return False
+        assert False, "Self-update bug still present"
     elif has_fix:
         print("[PASS] Bug is fixed")
         print("  Found correct pattern: generation_arguments.update(generation_kwargs)")
-        return True
     else:
         print("[UNCLEAR] Could not find either pattern in models.py")
-        return False
-
-
-def run_all_tests():
-    print("\n" + "=" * 60)
-    print("  Token Replacement Fixes - Test Suite")
-    print("=" * 60)
-    
-    results = {
-        'find_corrupted_token': test_find_corrupted_token(),
-        'postprocess_translation': test_postprocess_translation(),
-        'validation_with_fuzzy_matching': test_validation_with_fuzzy_matching(),
-        'mbart50_bug_fix': test_mbart50_bug_fix()
-    }
-    
-    print("\n" + "=" * 60)
-    print("  Summary")
-    print("=" * 60)
-    
-    total = len(results)
-    passed = sum(results.values())
-    
-    for test_name, success in results.items():
-        status = "[PASS]" if success else "[FAIL]"
-        print(f"{status}: {test_name}")
-    
-    print(f"\nOverall: {passed}/{total} test suites passed")
-    
-    if passed == total:
-        print("\n*** All tests passed! The fixes are working correctly. ***")
-        return 0
-    else:
-        print(f"\n*** {total - passed} test suite(s) failed. ***")
-        return 1
-
-
-if __name__ == '__main__':
-    exit_code = run_all_tests()
-    sys.exit(exit_code)
+        assert False, "Could not find either pattern in models.py"
