@@ -97,20 +97,22 @@ def preprocess_for_translation(text, translations_file, source_lang='fr'):
 def preserve_capitalization(original_text, replacement_text, is_sentence_start=False):
     if not original_text or not replacement_text:
         return replacement_text
-    
+
     if original_text.isupper():
         return replacement_text.upper()
-    if original_text.islower():
-        return replacement_text.lower()
     if is_sentence_start and replacement_text[0].islower():
         return replacement_text[0].upper() + replacement_text[1:]
-    
+    if original_text.islower():
+        return replacement_text.lower()
+
     return replacement_text
 
 
 def find_corrupted_token(text, token):
-    if token in text:
-        return (True, text.find(token), token)
+    exact_pattern = r'\b' + re.escape(token) + r'\b'
+    exact_match = re.search(exact_pattern, text)
+    if exact_match:
+        return (True, exact_match.start(), token)
 
     match = re.match(r'^([A-Z]+)(\d+)$', token)
     if not match:
