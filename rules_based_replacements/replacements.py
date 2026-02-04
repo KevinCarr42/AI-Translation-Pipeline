@@ -129,7 +129,8 @@ def postprocess_translation(translated_text, token_mapping):
             else:
                 replacement = mapping['original_text']
             
-            result_text = result_text.replace(token, replacement)
+            pattern = r'\b' + re.escape(token) + r'\b'
+            result_text = re.sub(pattern, replacement, result_text)
     
     return result_text
 
