@@ -365,12 +365,15 @@ class TranslationManager:
     def is_valid_translation(self, translated_text, original_text, token_mapping=None):
         if self.check_token_prefix_error(translated_text, original_text):
             return False
-        
+
         if token_mapping:
+            from rules_based_replacements.replacements import find_corrupted_token
+
             for key in token_mapping.keys():
-                if key not in translated_text:
+                found, _, _ = find_corrupted_token(translated_text, key)
+                if not found:
                     return False
-        
+
         return True
     
     def translate_single(self, text, model_name, source_lang="en", target_lang="fr",
