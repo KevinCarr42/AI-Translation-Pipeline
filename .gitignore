@@ -10,3 +10,4 @@ tests/paragraphs/
 tests/token_testing/
 quality_evaluation/tests/quality/
 quality_evaluation/tests/old/
+tests/temp_calcs.ipynb
