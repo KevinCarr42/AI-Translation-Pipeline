@@ -108,30 +108,54 @@ def preserve_capitalization(original_text, replacement_text, is_sentence_start=F
     return replacement_text
 
 
+def find_corrupted_token(text, token):
+    if token in text:
+        return (True, text.find(token), token)
+
+    match = re.match(r'^([A-Z]+)(\d+)$', token)
+    if not match:
+        return (False, None, None)
+
+    prefix, suffix = match.groups()
+
+    spaced_pattern = re.escape(prefix) + r'\s+' + re.escape(suffix)
+    spaced_match = re.search(spaced_pattern, text)
+    if spaced_match:
+        return (True, spaced_match.start(), spaced_match.group())
+
+    plural_pattern = r'\b' + re.escape(token) + r'e?s\b'
+    plural_match = re.search(plural_pattern, text)
+    if plural_match:
+        return (True, plural_match.start(), plural_match.group())
+
+    return (False, None, None)
+
+
 def postprocess_translation(translated_text, token_mapping):
     result_text = translated_text
-    
+
     for token in token_mapping.keys():
-        if token in result_text:
+        found, position, corrupted_form = find_corrupted_token(result_text, token)
+
+        if found:
             mapping = token_mapping[token]
-            
-            token_position = result_text.find(token)
+
             is_sentence_start = False
-            if token_position == 0:
+            if position == 0:
                 is_sentence_start = True
-            elif token_position > 0:
-                preceding_text = result_text[:token_position].rstrip()
+            elif position > 0:
+                preceding_text = result_text[:position].rstrip()
                 if preceding_text and preceding_text[-1] in '.!?':
                     is_sentence_start = True
-            
+
             if mapping['should_translate'] and mapping['translation'] and mapping['translation'] != 'None':
                 replacement = preserve_capitalization(mapping['original_text'], mapping['translation'], is_sentence_start)
             else:
                 replacement = mapping['original_text']
-            
-            pattern = r'\b' + re.escape(token) + r'\b'
-            result_text = re.sub(pattern, replacement, result_text)
-    
+
+            pattern = r'\b' + re.escape(corrupted_form) + r'\b'
+            result_text = re.sub(pattern, replacement, result_text, count=1)
+
     return result_text
 
 
