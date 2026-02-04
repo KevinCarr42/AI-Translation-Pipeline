@@ -265,7 +265,7 @@ class MBART50TranslationModel(BaseTranslationModel):
 
 
 class TranslationManager:
-    TOKEN_PREFIXES = ['NOMENCLATURE', 'TAXON', 'ACRONYM', 'SITE']
+    TOKEN_PREFIXES = ['NOMENCLATURE', 'TAXON', 'ACRONYM', 'SITE', 'NAME']
     
     def __init__(self, all_models, embedder=None, debug=False):
         self.all_models = all_models

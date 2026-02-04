@@ -1,9 +1,37 @@
 import re
+import spacy
 
 from rules_based_replacements.token_utils import (
     create_replacement_token, load_translations, get_search_patterns,
     get_translation_value, build_english_to_french_lookup
 )
+
+
+_spacy_models = {}
+
+
+def detect_person_names(text, source_lang):
+    model_name_map = {
+        'en': 'en_core_web_lg',
+        'fr': 'fr_core_news_lg'
+    }
+
+    model_name = model_name_map.get(source_lang)
+    if not model_name:
+        return []
+
+    if model_name not in _spacy_models:
+        _spacy_models[model_name] = spacy.load(model_name)
+
+    nlp = _spacy_models[model_name]
+    doc = nlp(text)
+
+    person_entities = []
+    for ent in doc.ents:
+        if ent.label_ == 'PER' or ent.label_ == 'PERSON':
+            person_entities.append((ent.start_char, ent.end_char, ent.text))
+
+    return sorted(person_entities, key=lambda x: x[0], reverse=True)
 
 
 def replace_whole_word(text, word, replacement):
@@ -47,10 +75,14 @@ def preprocess_for_translation(text, translations_file, source_lang='fr'):
     processed_text = text
     token_mapping = {}
     token_counters = {}
-    
+
     for category in translations.keys():
         token_counters[category] = 0
-    
+
+    token_counters['name'] = 0
+
+    replaced_spans = []
+
     for category, terms in patterns.items():
         for term in terms:
             if ' ' in term:
@@ -63,7 +95,9 @@ def preprocess_for_translation(text, translations_file, source_lang='fr'):
             for match in reversed(matches):
                 original_text = match.group()
                 start, end = match.span()
-                
+
+                replaced_spans.append((start, end))
+
                 if source_lang == 'en':
                     lookup_result = en_to_fr_lookup.get(term.lower())
                     if not lookup_result:
@@ -78,19 +112,41 @@ def preprocess_for_translation(text, translations_file, source_lang='fr'):
                             break
                     term_data = translations[category].get(translation_key) if translation_key else None
                     translation = get_translation_value(term_data) if term_data else None
-                
+
                 token_counters[category] += 1
                 token = create_replacement_token(category, token_counters[category])
-                
+
                 token_mapping[token] = {
                     'original_text': original_text,
                     'category': category,
                     'translation': translation,
                     'should_translate': True
                 }
-                
+
                 processed_text = processed_text[:start] + token + processed_text[end:]
-    
+
+    detected_names = detect_person_names(text, source_lang)
+
+    for name_start, name_end, name_text in detected_names:
+        has_overlap = False
+        for span_start, span_end in replaced_spans:
+            if not (name_end <= span_start or name_start >= span_end):
+                has_overlap = True
+                break
+
+        if not has_overlap:
+            token_counters['name'] += 1
+            token = create_replacement_token('name', token_counters['name'])
+
+            token_mapping[token] = {
+                'original_text': name_text,
+                'category': 'name',
+                'translation': None,
+                'should_translate': False
+            }
+
+            processed_text = processed_text[:name_start] + token + processed_text[name_end:]
+
     return processed_text, token_mapping
 
 
