@@ -380,3 +380,82 @@ def test_output_path_generation():
     
     print(f"\n{passed} passed, {failed} failed\n")
     assert failed == 0, f"{failed} test cases failed"
+
+
+def test_spacing_between_runs():
+    print("\n=== Testing spacing preserved between runs ===\n")
+    
+    test_cases = [
+        {
+            'name': 'Paragraph with multiple formatted runs preserves spacing',
+            'fixture': os.path.join(os.path.dirname(__file__), 'fixtures', 'test_document.docx'),
+        }
+    ]
+    
+    passed = 0
+    failed = 0
+    
+    for test in test_cases:
+        temp_output = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
+        temp_output.close()
+        output_path = temp_output.name
+        
+        try:
+            translation_manager = create_translator(
+                use_finetuned=False,
+                models_to_use=['mbart_large_50'],
+                use_embedder=False,
+                load_models=True
+            )
+            
+            translate_word_document(
+                input_docx_file=test['fixture'],
+                output_docx_file=output_path,
+                source_lang="en",
+                use_find_replace=False,
+                translation_manager=translation_manager
+            )
+            
+            translated_doc = Document(output_path)
+            
+            has_spacing_issue = False
+            problematic_text = None
+            for paragraph in translated_doc.paragraphs:
+                if len(paragraph.runs) > 1:
+                    text = paragraph.text
+                    if '[NOVALIDTRANSLATIONS]' in text or '[TRANSLATION FAILED]' in text:
+                        continue
+                    
+                    words = text.split()
+                    for word in words:
+                        if len(word) > 25:
+                            has_spacing_issue = True
+                            problematic_text = text
+                            print(f"  Found suspicious long word: {word[:50]}")
+                            print(f"  Full paragraph text: {text[:100]}")
+                            break
+                    if has_spacing_issue:
+                        break
+            
+            if not has_spacing_issue:
+                print(f"[PASS] {test['name']}")
+                print(f"  No spacing issues detected in multi-run paragraphs")
+                passed += 1
+            else:
+                print(f"[FAIL] {test['name']}")
+                print(f"  Spacing issues detected between runs")
+                if problematic_text:
+                    print(f"  Problem text: {problematic_text[:150]}")
+                failed += 1
+            
+            os.remove(output_path)
+        
+        except Exception as e:
+            print(f"[FAIL] {test['name']}")
+            print(f"  Exception: {str(e)}")
+            failed += 1
+            if os.path.exists(output_path):
+                os.remove(output_path)
+    
+    print(f"\n{passed} passed, {failed} failed\n")
+    assert failed == 0, f"{failed} test cases failed"

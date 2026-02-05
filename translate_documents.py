@@ -13,8 +13,8 @@ if __name__ == '__main__':
     use_finetuned = True
 
     file_list = (
-        ("example0.txt", "en"), ("example0_translated.txt", "fr"),
-        ("example1.txt", "en"), ("example1_translated.txt", "fr"),
+        # ("example0.txt", "en"), ("example0_translated.txt", "fr"),
+        # ("example1.txt", "en"), ("example1_translated.txt", "fr"),
         ("example2.docx", "en"), ("example2_translated.docx", "fr"),
         ("example3.docx", "en"), ("example3_translated.docx", "fr"),
     )
@@ -31,6 +31,11 @@ if __name__ == '__main__':
 
     for filename, source_lang in file_list:
         file_path = Path(config.TRANSLATED_TEXT_DIR) / filename
+
+        if not file_path.exists():
+            print(f"Skipping {filename}: file not found")
+            continue
+
         extension = file_path.suffix.lower()
 
         if 'doc' in extension:
@@ -41,7 +46,8 @@ if __name__ == '__main__':
                 models_to_use=None,
                 use_find_replace=True,
                 use_finetuned=None,
-                translation_manager=translation_manager
+                translation_manager=translation_manager,
+                include_timestamp=False
             )
         else:
             translate_txt_document(

@@ -225,7 +225,7 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
             translated_words = translated_text.split()
             current_pos = 0
             
-            for run, orig_length in zip(paragraph.runs, run_lengths):
+            for i, (run, orig_length) in enumerate(zip(paragraph.runs, run_lengths)):
                 proportion = orig_length / total_length
                 words_for_run = max(1, int(len(translated_words) * proportion))
                 
@@ -233,6 +233,10 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
                     words_for_run = len(translated_words) - current_pos
                 
                 run.text = ' '.join(translated_words[current_pos:current_pos + words_for_run])
+                
+                if i < len(paragraph.runs) - 1 and current_pos + words_for_run < len(translated_words):
+                    run.text += ' '
+                
                 current_pos += words_for_run
             
             if current_pos < len(translated_words):
@@ -265,7 +269,8 @@ def translate_word_document(
         models_to_use=None,
         use_find_replace=True,
         use_finetuned=True,
-        translation_manager=None
+        translation_manager=None,
+        include_timestamp=True
 ):
     import os
     from datetime import datetime
@@ -274,7 +279,10 @@ def translate_word_document(
     if not output_docx_file:
         base, ext = os.path.splitext(input_docx_file)
         date_str = datetime.now().strftime("%Y%m%d")
-        output_docx_file = f"{base}_translated_{date_str}.docx"
+        if include_timestamp:
+            output_docx_file = f"{base}_translated_{date_str}.docx"
+        else:
+            output_docx_file = f"{base}_translated.docx"
     
     if source_lang not in ["en", "fr"]:
         raise ValueError('source_lang must be either "fr" or "en"')
