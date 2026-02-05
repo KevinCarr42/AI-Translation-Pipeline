@@ -191,5 +191,166 @@ def translate_document(
     
     with open(output_text_file, 'w', encoding='utf-8') as f:
         f.write(translated_document)
-    
+
     return next_idx if translated_chunks else start_idx
+
+
+def translate_word_document(
+        input_docx_file,
+        output_docx_file=None,
+        source_lang="en",
+        models_to_use=None,
+        use_find_replace=True,
+        use_finetuned=True,
+        translation_manager=None
+):
+    import os
+    from datetime import datetime
+    from docx import Document
+
+    if not output_docx_file:
+        base, ext = os.path.splitext(input_docx_file)
+        date_str = datetime.now().strftime("%Y%m%d")
+        output_docx_file = f"{base}_translated_{date_str}.docx"
+
+    if source_lang not in ["en", "fr"]:
+        raise ValueError('source_lang must be either "fr" or "en"')
+
+    target_lang = "fr" if source_lang == "en" else "en"
+
+    if not translation_manager:
+        translation_manager = create_translator(
+            use_finetuned=use_finetuned,
+            models_to_use=models_to_use,
+            use_embedder=True,
+            load_models=True
+        )
+
+    document = Document(input_docx_file)
+    idx = 1
+
+    for paragraph in document.paragraphs:
+        if not paragraph.runs:
+            continue
+
+        run_texts = [run.text for run in paragraph.runs]
+        full_text = ''.join(run_texts)
+
+        if not full_text.strip():
+            continue
+
+        if len(full_text) <= 600:
+            result = translation_manager.translate_with_best_model(
+                text=full_text,
+                source_lang=source_lang,
+                target_lang=target_lang,
+                use_find_replace=use_find_replace,
+                idx=idx
+            )
+
+            translated_text = result.get("translated_text", "[TRANSLATION FAILED]")
+            translated_text = normalize_apostrophes(translated_text)
+            idx += 1
+
+            run_lengths = [len(text) for text in run_texts]
+            total_length = sum(run_lengths)
+
+            if total_length > 0:
+                translated_words = translated_text.split()
+                current_pos = 0
+
+                for run, orig_length in zip(paragraph.runs, run_lengths):
+                    proportion = orig_length / total_length
+                    words_for_run = max(1, int(len(translated_words) * proportion))
+
+                    if current_pos + words_for_run > len(translated_words):
+                        words_for_run = len(translated_words) - current_pos
+
+                    run.text = ' '.join(translated_words[current_pos:current_pos + words_for_run])
+                    current_pos += words_for_run
+
+                if current_pos < len(translated_words):
+                    paragraph.runs[-1].text += ' ' + ' '.join(translated_words[current_pos:])
+        else:
+            for run in paragraph.runs:
+                if not run.text.strip():
+                    continue
+
+                result = translation_manager.translate_with_best_model(
+                    text=run.text,
+                    source_lang=source_lang,
+                    target_lang=target_lang,
+                    use_find_replace=use_find_replace,
+                    idx=idx
+                )
+
+                translated_text = result.get("translated_text", "[TRANSLATION FAILED]")
+                translated_text = normalize_apostrophes(translated_text)
+                run.text = translated_text
+                idx += 1
+
+    for table in document.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    if not paragraph.runs:
+                        continue
+
+                    run_texts = [run.text for run in paragraph.runs]
+                    full_text = ''.join(run_texts)
+
+                    if not full_text.strip():
+                        continue
+
+                    if len(full_text) <= 600:
+                        result = translation_manager.translate_with_best_model(
+                            text=full_text,
+                            source_lang=source_lang,
+                            target_lang=target_lang,
+                            use_find_replace=use_find_replace,
+                            idx=idx
+                        )
+
+                        translated_text = result.get("translated_text", "[TRANSLATION FAILED]")
+                        translated_text = normalize_apostrophes(translated_text)
+                        idx += 1
+
+                        run_lengths = [len(text) for text in run_texts]
+                        total_length = sum(run_lengths)
+
+                        if total_length > 0:
+                            translated_words = translated_text.split()
+                            current_pos = 0
+
+                            for run, orig_length in zip(paragraph.runs, run_lengths):
+                                proportion = orig_length / total_length
+                                words_for_run = max(1, int(len(translated_words) * proportion))
+
+                                if current_pos + words_for_run > len(translated_words):
+                                    words_for_run = len(translated_words) - current_pos
+
+                                run.text = ' '.join(translated_words[current_pos:current_pos + words_for_run])
+                                current_pos += words_for_run
+
+                            if current_pos < len(translated_words):
+                                paragraph.runs[-1].text += ' ' + ' '.join(translated_words[current_pos:])
+                    else:
+                        for run in paragraph.runs:
+                            if not run.text.strip():
+                                continue
+
+                            result = translation_manager.translate_with_best_model(
+                                text=run.text,
+                                source_lang=source_lang,
+                                target_lang=target_lang,
+                                use_find_replace=use_find_replace,
+                                idx=idx
+                            )
+
+                            translated_text = result.get("translated_text", "[TRANSLATION FAILED]")
+                            translated_text = normalize_apostrophes(translated_text)
+                            run.text = translated_text
+                            idx += 1
+
+    document.save(output_docx_file)
+    return output_docx_file
