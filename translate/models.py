@@ -1,10 +1,23 @@
+import os
+os.environ['TRANSFORMERS_OFFLINE'] = '1'
+os.environ['HF_HUB_OFFLINE'] = '1'
+
 import config
 import logging
-import os
 import torch
 from sentence_transformers.util import pytorch_cos_sim
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, AutoModelForCausalLM, BitsAndBytesConfig
 from rules_based_replacements.preferential_translations import apply_preferential_translations, reverse_preferential_translations
+from huggingface_hub import try_to_load_from_cache
+
+
+def resolve_cached_model_path(model_id):
+    if os.path.isabs(model_id) or os.path.isdir(model_id):
+        return model_id
+    cached_config = try_to_load_from_cache(model_id, 'config.json')
+    if cached_config:
+        return os.path.dirname(cached_config)
+    return model_id
 
 
 class BaseTranslationModel:
@@ -50,6 +63,7 @@ class BaseTranslationModel:
     def load_tokenizer(self):
         if self.tokenizer is None:
             tokenizer_path = self.parameters.get("merged_model_path", self.base_model_id)
+            tokenizer_path = resolve_cached_model_path(tokenizer_path)
             
             self.tokenizer = AutoTokenizer.from_pretrained(
                 tokenizer_path, **self._tokenizer_kwargs()
@@ -65,6 +79,7 @@ class BaseTranslationModel:
             loader = AutoModelForSeq2SeqLM if self.model_type == "seq2seq" else AutoModelForCausalLM
             
             model_path = self.parameters.get("merged_model_path", self.base_model_id)
+            model_path = resolve_cached_model_path(model_path)
             
             self.model = loader.from_pretrained(
                 model_path, **self._model_kwargs(allow_device_map=True)
@@ -125,6 +140,7 @@ class OpusTranslationModel(BaseTranslationModel):
         
         merged_path = self.parameters.get(f"merged_model_path_{source_language}_{target_language}")
         model_id = merged_path if merged_path else self._directional_model_id(source_language, target_language)
+        model_id = resolve_cached_model_path(model_id)
         
         tokenizer = AutoTokenizer.from_pretrained(model_id, **self._tokenizer_kwargs())
         model = AutoModelForSeq2SeqLM.from_pretrained(
@@ -213,6 +229,7 @@ class MBART50TranslationModel(BaseTranslationModel):
             return self.directional_cache[cache_key]
         
         model_path = self._get_directional_model_path(source_language, target_language)
+        model_path = resolve_cached_model_path(model_path)
         
         tokenizer = AutoTokenizer.from_pretrained(model_path, **self._tokenizer_kwargs())
         if getattr(tokenizer, "pad_token", None) is None and getattr(tokenizer, "eos_token", None):
@@ -567,7 +584,8 @@ def create_translator(use_finetuned=True, models_to_use=None, use_embedder=True,
     
     embedder = None
     if use_embedder:
-        embedder = SentenceTransformer('sentence-transformers/LaBSE')
+        model_path = resolve_cached_model_path('sentence-transformers/LaBSE')
+        embedder = SentenceTransformer(model_path, local_files_only=True)
     
     manager = TranslationManager(all_models, embedder, debug=debug)
     
