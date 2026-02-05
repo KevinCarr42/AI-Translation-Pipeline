@@ -6,7 +6,7 @@ from sentence_transformers import SentenceTransformer
 from sentence_transformers.util import pytorch_cos_sim
 
 from translate.models import create_translator
-from translate.document import translate_document
+from translate.document import translate_txt_document
 
 TEMP_DIR = os.path.join(os.path.dirname(__file__), "eval_results", "quality")
 DEFAULT_OUTPUT_PICKLE = os.path.join(os.path.dirname(__file__), "eval_results", "quality_test_results.pickle")
@@ -92,7 +92,7 @@ def run_quality_evaluation(
                 suffix = "fr" if fr_option else "nofr"
                 output_file = os.path.join(TEMP_DIR, f"output_{model_name}_{suffix}_{idx}.txt")
                 
-                translate_document(
+                translate_txt_document(
                     input_text_file=input_file,
                     output_text_file=output_file,
                     source_lang=source_lang,

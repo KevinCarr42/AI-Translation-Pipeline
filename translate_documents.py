@@ -1,7 +1,7 @@
 import config
 import os
 import time
-from translate.document import translate_document
+from translate.document import translate_txt_document, translate_word_document
 from translate.models import create_translator
 
 if __name__ == '__main__':
@@ -30,7 +30,7 @@ if __name__ == '__main__':
         loop_prev_time = init_done_time
     
     for filename, source_lang in file_list:
-        translate_document(
+        translate_txt_document(
             input_text_file=os.path.join(config.TRANSLATED_TEXT_DIR, filename),
             output_text_file=None,
             source_lang=source_lang,

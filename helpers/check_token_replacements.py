@@ -3,7 +3,7 @@ import json
 import os
 import random
 import re
-from translate.document import translate_document
+from translate.document import translate_txt_document
 from translate.models import create_translator
 from create_training_data.language_classifier.language_classifier import LanguageClassifier
 from create_training_data.match_languages import clean_text
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     
     global_idx = 0
     for filepath, source_lang in file_list:
-        global_idx = translate_document(
+        global_idx = translate_txt_document(
             input_text_file=filepath,
             output_text_file=None,
             source_lang=source_lang,
