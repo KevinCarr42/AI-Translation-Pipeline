@@ -205,9 +205,33 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
     if not full_text.strip():
         return idx
     
-    if len(full_text) <= 600:
+    for run in paragraph.runs:
+        if not run.text.strip():
+            continue
+        
+        leading_ws = ''
+        trailing_ws = ''
+        text_to_translate = run.text
+        
+        if text_to_translate and text_to_translate[0].isspace():
+            i = 0
+            while i < len(text_to_translate) and text_to_translate[i].isspace():
+                i += 1
+            leading_ws = text_to_translate[:i]
+            text_to_translate = text_to_translate[i:]
+        
+        if text_to_translate and text_to_translate[-1].isspace():
+            i = len(text_to_translate) - 1
+            while i >= 0 and text_to_translate[i].isspace():
+                i -= 1
+            trailing_ws = text_to_translate[i+1:]
+            text_to_translate = text_to_translate[:i+1]
+        
+        if not text_to_translate:
+            continue
+        
         result = translation_manager.translate_with_best_model(
-            text=full_text,
+            text=text_to_translate,
             source_lang=source_lang,
             target_lang=target_lang,
             use_find_replace=use_find_replace,
@@ -216,48 +240,8 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
         
         translated_text = result.get("translated_text", "[TRANSLATION FAILED]")
         translated_text = normalize_apostrophes(translated_text)
+        run.text = leading_ws + translated_text + trailing_ws
         idx += 1
-        
-        run_lengths = [len(text) for text in run_texts]
-        total_length = sum(run_lengths)
-        
-        if total_length > 0:
-            translated_words = translated_text.split()
-            current_pos = 0
-            
-            for i, (run, orig_length) in enumerate(zip(paragraph.runs, run_lengths)):
-                proportion = orig_length / total_length
-                words_for_run = max(1, int(len(translated_words) * proportion))
-                
-                if current_pos + words_for_run > len(translated_words):
-                    words_for_run = len(translated_words) - current_pos
-                
-                run.text = ' '.join(translated_words[current_pos:current_pos + words_for_run])
-                
-                if i < len(paragraph.runs) - 1 and current_pos + words_for_run < len(translated_words):
-                    run.text += ' '
-                
-                current_pos += words_for_run
-            
-            if current_pos < len(translated_words):
-                paragraph.runs[-1].text += ' ' + ' '.join(translated_words[current_pos:])
-    else:
-        for run in paragraph.runs:
-            if not run.text.strip():
-                continue
-            
-            result = translation_manager.translate_with_best_model(
-                text=run.text,
-                source_lang=source_lang,
-                target_lang=target_lang,
-                use_find_replace=use_find_replace,
-                idx=idx
-            )
-            
-            translated_text = result.get("translated_text", "[TRANSLATION FAILED]")
-            translated_text = normalize_apostrophes(translated_text)
-            run.text = translated_text
-            idx += 1
     
     return idx
 
