@@ -459,3 +459,85 @@ def test_spacing_between_runs():
     
     print(f"\n{passed} passed, {failed} failed\n")
     assert failed == 0, f"{failed} test cases failed"
+
+
+def test_mid_paragraph_formatting():
+    print("\n=== Testing mid-paragraph formatting preservation ===\n")
+    
+    passed = 0
+    failed = 0
+    
+    temp_input = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
+    temp_input.close()
+    input_path = temp_input.name
+    
+    temp_output = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
+    temp_output.close()
+    output_path = temp_output.name
+    
+    try:
+        # Create a document with mid-paragraph bold text
+        doc = Document()
+        para = doc.add_paragraph()
+        run1 = para.add_run("This is ")
+        run2 = para.add_run("bold")
+        run2.bold = True
+        run3 = para.add_run(" text in the middle.")
+        doc.save(input_path)
+        
+        # Verify the input has the expected format
+        input_doc = Document(input_path)
+        input_para = input_doc.paragraphs[0]
+        input_bold_runs = [r for r in input_para.runs if r.bold and r.text.strip()]
+        
+        print(f"  Input paragraph runs: {[(r.text, r.bold) for r in input_para.runs]}")
+        print(f"  Input bold runs count: {len(input_bold_runs)}")
+        
+        translation_manager = create_translator(
+            use_finetuned=False,
+            models_to_use=['facebook/mbart-large-50-many-to-many-mmt'],
+            use_embedder=False,
+            load_models=True
+        )
+        
+        translate_word_document(
+            input_docx_file=input_path,
+            output_docx_file=output_path,
+            source_lang="en",
+            use_find_replace=False,
+            translation_manager=translation_manager
+        )
+        
+        # Check output preserves bold formatting
+        output_doc = Document(output_path)
+        output_para = output_doc.paragraphs[0]
+        output_bold_runs = [r for r in output_para.runs if r.bold and r.text.strip()]
+        
+        print(f"  Output paragraph runs: {[(r.text, r.bold) for r in output_para.runs]}")
+        print(f"  Output bold runs count: {len(output_bold_runs)}")
+        
+        # The output should have at least one bold run (the middle segment)
+        if len(output_bold_runs) >= 1:
+            print(f"[PASS] Mid-paragraph bold formatting preserved")
+            print(f"  Bold text preserved: '{output_bold_runs[0].text}'")
+            passed += 1
+        else:
+            print(f"[FAIL] Mid-paragraph bold formatting lost")
+            print(f"  Expected: At least 1 bold run")
+            print(f"  Got: {len(output_bold_runs)} bold runs")
+            failed += 1
+    
+    except Exception as e:
+        print(f"[FAIL] Exception during test: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        failed += 1
+    
+    finally:
+        if os.path.exists(input_path):
+            os.remove(input_path)
+        if os.path.exists(output_path):
+            os.remove(output_path)
+    
+    print(f"\n{passed} passed, {failed} failed\n")
+    assert failed == 0, f"{failed} test cases failed"

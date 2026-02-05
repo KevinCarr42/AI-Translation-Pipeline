@@ -195,6 +195,86 @@ def translate_txt_document(
     return next_idx if translated_chunks else start_idx
 
 
+def _get_run_format_key(run):
+    font_color = None
+    if run.font.color and run.font.color.rgb:
+        font_color = str(run.font.color.rgb)
+    
+    return (
+        run.bold,
+        run.italic,
+        run.underline,
+        run.font.name,
+        run.font.size,
+        font_color
+    )
+
+
+def _merge_identical_runs(paragraph):
+    if len(paragraph.runs) <= 1:
+        return
+    
+    # Build list of (run, format_key) pairs for runs with content
+    run_info = []
+    for run in paragraph.runs:
+        if run.text:
+            run_info.append((run, _get_run_format_key(run)))
+    
+    if len(run_info) <= 1:
+        return
+    
+    # Merge adjacent runs with identical formatting
+    i = 0
+    while i < len(run_info) - 1:
+        current_run, current_key = run_info[i]
+        next_run, next_key = run_info[i + 1]
+        
+        if current_key == next_key:
+            current_run.text += next_run.text
+            next_run.text = ''
+            run_info.pop(i + 1)
+        else:
+            i += 1
+
+
+def _build_format_segments(paragraph):
+    segments = []
+    current_segment_runs = []
+    current_format_key = None
+    
+    for run in paragraph.runs:
+        if not run.text:
+            continue
+        
+        format_key = _get_run_format_key(run)
+        
+        if current_format_key is None:
+            current_format_key = format_key
+            current_segment_runs = [run]
+        elif format_key == current_format_key:
+            current_segment_runs.append(run)
+        else:
+            if current_segment_runs:
+                segments.append(current_segment_runs)
+            current_format_key = format_key
+            current_segment_runs = [run]
+    
+    if current_segment_runs:
+        segments.append(current_segment_runs)
+    
+    return segments
+
+
+def _has_formatting_differences(paragraph):
+    format_keys = set()
+    for run in paragraph.runs:
+        if run.text.strip():
+            format_keys.add(_get_run_format_key(run))
+            if len(format_keys) > 1:
+                return True
+    return False
+
+
 def _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx):
     if not paragraph.runs:
         return idx
@@ -205,13 +285,15 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
     if not full_text.strip():
         return idx
     
-    for run in paragraph.runs:
-        if not run.text.strip():
-            continue
-        
+    # Clean up invisible run boundaries by merging identical adjacent runs
+    _merge_identical_runs(paragraph)
+    
+    # Check if paragraph has actual formatting differences
+    if not _has_formatting_differences(paragraph):
+        # No formatting differences - translate as single unit (original simple approach)
         leading_ws = ''
         trailing_ws = ''
-        text_to_translate = run.text
+        text_to_translate = full_text
         
         if text_to_translate and text_to_translate[0].isspace():
             i = 0
@@ -224,8 +306,71 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
             i = len(text_to_translate) - 1
             while i >= 0 and text_to_translate[i].isspace():
                 i -= 1
-            trailing_ws = text_to_translate[i+1:]
-            text_to_translate = text_to_translate[:i+1]
+            trailing_ws = text_to_translate[i + 1:]
+            text_to_translate = text_to_translate[:i + 1]
+        
+        if not text_to_translate:
+            return idx
+        
+        result = translation_manager.translate_with_best_model(
+            text=text_to_translate,
+            source_lang=source_lang,
+            target_lang=target_lang,
+            use_find_replace=use_find_replace,
+            idx=idx
+        )
+        
+        translated_text = result.get("translated_text", "[TRANSLATION FAILED]")
+        translated_text = normalize_apostrophes(translated_text)
+        
+        first_content_run = None
+        for run in paragraph.runs:
+            if run.text.strip():
+                first_content_run = run
+                break
+        
+        if first_content_run:
+            first_content_run.text = leading_ws + translated_text + trailing_ws
+            found_first = False
+            for run in paragraph.runs:
+                if run.text.strip():
+                    if found_first:
+                        run.text = ''
+                    else:
+                        found_first = True
+        
+        return idx + 1
+    
+    # Has formatting differences - use segment-based translation
+    segments = _build_format_segments(paragraph)
+    
+    if not segments:
+        return idx
+    
+    for segment_idx, segment_runs in enumerate(segments):
+        segment_text = ''.join(run.text for run in segment_runs)
+        
+        if not segment_text.strip():
+            continue
+        
+        # Handle leading/trailing whitespace for segment
+        leading_ws = ''
+        trailing_ws = ''
+        text_to_translate = segment_text
+        
+        if text_to_translate and text_to_translate[0].isspace():
+            i = 0
+            while i < len(text_to_translate) and text_to_translate[i].isspace():
+                i += 1
+            leading_ws = text_to_translate[:i]
+            text_to_translate = text_to_translate[i:]
+        
+        if text_to_translate and text_to_translate[-1].isspace():
+            i = len(text_to_translate) - 1
+            while i >= 0 and text_to_translate[i].isspace():
+                i -= 1
+            trailing_ws = text_to_translate[i + 1:]
+            text_to_translate = text_to_translate[:i + 1]
         
         if not text_to_translate:
             continue
@@ -240,7 +385,12 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
         
         translated_text = result.get("translated_text", "[TRANSLATION FAILED]")
         translated_text = normalize_apostrophes(translated_text)
-        run.text = leading_ws + translated_text + trailing_ws
+        
+        # Put translated text in first run of segment, clear others
+        segment_runs[0].text = leading_ws + translated_text + trailing_ws
+        for run in segment_runs[1:]:
+            run.text = ''
+        
         idx += 1
     
     return idx

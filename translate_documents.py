@@ -15,9 +15,9 @@ if __name__ == '__main__':
     file_list = (
         # ("example0.txt", "en"), ("example0_translated.txt", "fr"),
         # ("example1.txt", "en"), ("example1_translated.txt", "fr"),
-        # ("example2.docx", "en"), ("example2_translated.docx", "fr"),
-        # ("example3.docx", "en"), ("example3_translated.docx", "fr"),  # TODO: two words concat?
-        ("example4.txt", "en"), ("example4_translated.txt", "fr"),
+        ("example2.docx", "en"), ("example2_translated.docx", "fr"),
+        ("example3.docx", "en"), ("example3_translated.docx", "fr"),  # FIXME: two words concat?
+        # ("example4.txt", "en"), ("example4_translated.txt", "fr"),  # dosn't happen in txt only translation
     )
 
     translation_manager = create_translator(
