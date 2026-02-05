@@ -225,6 +225,7 @@ terminology preservation to deliver high-quality scientific translations.
 - Performance monitoring and quality metrics
 - Support for multiple model configurations
 - Ensemble model option for highest quality translations
+- Microsoft Word document support with formatting preservation
 
 ### Best-of-Ensemble Combined Model
 
@@ -249,6 +250,30 @@ The pipeline processes documents through the following stages:
 6. **Fallback:** If any tokens were not replaced properly, fall back to
    translating without find and replace
 6. **Post-processing:** Format and return translated document
+
+### Word Document Translation
+
+The system supports translating Microsoft Word documents (.docx) while preserving formatting such as bold, italic, font sizes, colors, tables, and document structure.
+
+**Usage Example:**
+
+```python
+from translate.document import translate_word_document
+from translate.models import create_translator
+
+# Create translation manager
+translation_manager = create_translator(use_finetuned=True)
+
+# Translate a Word document
+translate_word_document(
+    input_docx_file="path/to/input.docx",
+    output_docx_file="path/to/output.docx",  # Optional: auto-generated if not specified
+    source_lang="en",
+    translation_manager=translation_manager
+)
+```
+
+The translated document maintains the original formatting while translating the text content. Output files are automatically named with `_translated_{date}` suffix when no output path is specified.
 
 ## Other Considerations
 
@@ -288,7 +313,6 @@ These impacts are deemed to be negligible.
 ### Potential Future Enhancements
 
 - Deployed web application
-- Microsoft Word document support
 - Back-translation quality checker
 - AI-powered proofreading with multiple strictness levels
 - Translation comparison and validation tools
