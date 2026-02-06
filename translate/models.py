@@ -1,4 +1,5 @@
 import os
+
 os.environ['TRANSFORMERS_OFFLINE'] = '1'
 os.environ['HF_HUB_OFFLINE'] = '1'
 
@@ -343,7 +344,7 @@ class TranslationManager:
             if self.is_valid_translation(translated, text, token_mapping):
                 if i:
                     print(f"\tValid translation following {i} retries.")
-
+                
                 if self.debug and retry_log and debug_key:
                     print(f'entry added (success after {i + 1}):', model_name)
                     self.token_retry_debug[debug_key] = {
@@ -353,9 +354,9 @@ class TranslationManager:
                         "model_name": model_name,
                         "original_text": text
                     }
-
+                
                 return translated, i, params
-
+            
             if single_attempt:
                 return None, 1, None
         
@@ -373,6 +374,9 @@ class TranslationManager:
         return None, len(param_variations), None
     
     def check_token_prefix_error(self, translated_text, original_text):
+        if translated_text is None:
+            return True
+        
         for token_prefix in self.TOKEN_PREFIXES:
             if token_prefix in translated_text:
                 if not original_text or token_prefix not in original_text:
@@ -380,22 +384,38 @@ class TranslationManager:
         return False
     
     def is_valid_translation(self, translated_text, original_text, token_mapping=None):
+        if translated_text is None:
+            return False
+        
         if self.check_token_prefix_error(translated_text, original_text):
             return False
-
+        
         if token_mapping:
             from rules_based_replacements.replacements import find_corrupted_token
-
+            
             for key in token_mapping.keys():
                 found, _, _ = find_corrupted_token(translated_text, key)
                 if not found:
                     return False
-
+        
         return True
     
     def translate_single(self, text, model_name, source_lang="en", target_lang="fr",
                          use_find_replace=True, generation_kwargs=None, idx=None,
                          target_text=None, debug=False, single_attempt=False):
+        
+        if not text or not text.strip():
+            print(f"Skipping empty/whitespace text for model {model_name}")
+            return {
+                "find_replace_error": False,
+                "token_prefix_error": False,
+                "translated_text": text,
+                "similarity_of_original_translation": None,
+                "similarity_vs_source": None,
+                "similarity_vs_target": None,
+                "model_name": model_name,
+                "retry_attempts": 0,
+            }
         
         model = self.loaded_models[model_name]
         
@@ -419,6 +439,20 @@ class TranslationManager:
                 translated_text = reverse_preferential_translations(
                     translated_with_tokens, token_mapping
                 )
+                if translated_text is None:
+                    find_replace_error = True
+                    self.find_replace_errors[f"{model_name}_{idx}"] = {
+                        "original_text": text,
+                        "preprocessed_text": preprocessed_text,
+                        "translated_with_tokens": translated_with_tokens,
+                        "token_mapping": token_mapping,
+                        "retry_attempts": retry_attempts,
+                        "final_retry_params": retry_params,
+                        "error_type": "reverse_translation_validation_failed",
+                    }
+                    translated_text = model.translate_text(
+                        text, source_lang, target_lang, generation_kwargs
+                    )
             else:
                 find_replace_error = True
                 self.find_replace_errors[f"{model_name}_{idx}"] = {
@@ -453,6 +487,11 @@ class TranslationManager:
                 "retry_attempts": retry_attempts,
                 "final_retry_params": retry_params,
             }
+        
+        if translated_text is None:
+            print(f"Warning: Translation returned None for model {model_name} (idx={idx}). Using original text: '{text}'")
+            translated_text = text
+            token_prefix_error = False
         
         if self.embedder:
             source_embedding = self.embedder.encode(text, convert_to_tensor=True)
