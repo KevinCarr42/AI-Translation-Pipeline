@@ -137,7 +137,7 @@ def translate_txt_document(
         translation_manager=None,
         start_idx=0,
         single_attempt=False,
-        cached=True
+        use_cache=True
 ):
     if not output_text_file:
         import os
@@ -178,7 +178,7 @@ def translate_txt_document(
             use_find_replace=use_find_replace,
             idx=i,
             single_attempt=single_attempt,
-            use_cache=cached
+            use_cache=use_cache
         )
         
         translated_text = result.get("translated_text", "[TRANSLATION FAILED]")
@@ -322,10 +322,10 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
             idx=idx,
             use_cache=use_cache
         )
-
+        
         translated_text = result.get("translated_text", "[TRANSLATION FAILED]")
         translated_text = normalize_apostrophes(translated_text)
-
+        
         first_content_run = None
         for run in paragraph.runs:
             if run.text.strip():
@@ -386,10 +386,10 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
             idx=idx,
             use_cache=use_cache
         )
-
+        
         translated_text = result.get("translated_text", "[TRANSLATION FAILED]")
         translated_text = normalize_apostrophes(translated_text)
-
+        
         # Put translated text in first run of segment, clear others
         segment_runs[0].text = leading_ws + translated_text + trailing_ws
         for run in segment_runs[1:]:
@@ -409,7 +409,7 @@ def translate_word_document(
         use_finetuned=True,
         translation_manager=None,
         include_timestamp=True,
-        cached=True
+        use_cache=True
 ):
     import os
     from datetime import datetime
@@ -440,16 +440,16 @@ def translate_word_document(
     idx = 1
     
     for paragraph in document.paragraphs:
-        idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=cached)
+        idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache)
     
     for table in document.tables:
         for row in table.rows:
             for cell in row.cells:
                 for paragraph in cell.paragraphs:
-                    idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=cached)
+                    idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache)
     
     translated_hf_ids = set()
-
+    
     header_footer_attrs = [
         'header', 'footer',
         'first_page_header', 'first_page_footer',
@@ -465,12 +465,12 @@ def translate_word_document(
                 continue
             translated_hf_ids.add(id(hf._element))
             for paragraph in hf.paragraphs:
-                idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=cached)
+                idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache)
             for table in hf.tables:
                 for row in table.rows:
                     for cell in row.cells:
                         for paragraph in cell.paragraphs:
-                            idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=cached)
+                            idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache)
     
     document.save(output_docx_file)
     return output_docx_file
