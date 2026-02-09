@@ -293,6 +293,7 @@ class TranslationManager:
         self.find_replace_errors = {}
         self.extra_token_errors = {}
         self.token_retry_debug = {}
+        self.translation_cache = {}
     
     def load_models(self, model_names=None):
         if model_names is None:
@@ -564,8 +565,14 @@ class TranslationManager:
         
         return all_results
     
-    def translate_with_best_model(self, *args, **kwargs):
-        return self.translate_with_all_models(*args, **kwargs)["best_model"]
+    def translate_with_best_model(self, *args, use_cache=True, **kwargs):
+        text = args[0] if args else kwargs.get("text")
+        if use_cache and text in self.translation_cache:
+            return self.translation_cache[text]
+        result = self.translate_with_all_models(*args, **kwargs)["best_model"]
+        if use_cache:
+            self.translation_cache[text] = result
+        return result
     
     def get_error_summary(self):
         return {
@@ -579,6 +586,7 @@ class TranslationManager:
         self.extra_token_errors.clear()
         self.find_replace_errors.clear()
         self.token_retry_debug.clear()
+        self.translation_cache.clear()
 
 
 def get_model_config(use_finetuned=True, models_to_use=None):

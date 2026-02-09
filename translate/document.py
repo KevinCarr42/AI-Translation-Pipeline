@@ -136,7 +136,8 @@ def translate_txt_document(
         use_finetuned=True,
         translation_manager=None,
         start_idx=0,
-        single_attempt=False
+        single_attempt=False,
+        cached=True
 ):
     if not output_text_file:
         import os
@@ -176,7 +177,8 @@ def translate_txt_document(
             target_lang=target_lang,
             use_find_replace=use_find_replace,
             idx=i,
-            single_attempt=single_attempt
+            single_attempt=single_attempt,
+            use_cache=cached
         )
         
         translated_text = result.get("translated_text", "[TRANSLATION FAILED]")
@@ -275,7 +277,7 @@ def _has_formatting_differences(paragraph):
     return False
 
 
-def _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx):
+def _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=True):
     if not paragraph.runs:
         return idx
     
@@ -317,12 +319,13 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
             source_lang=source_lang,
             target_lang=target_lang,
             use_find_replace=use_find_replace,
-            idx=idx
+            idx=idx,
+            use_cache=use_cache
         )
-        
+
         translated_text = result.get("translated_text", "[TRANSLATION FAILED]")
         translated_text = normalize_apostrophes(translated_text)
-        
+
         first_content_run = None
         for run in paragraph.runs:
             if run.text.strip():
@@ -380,12 +383,13 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
             source_lang=source_lang,
             target_lang=target_lang,
             use_find_replace=use_find_replace,
-            idx=idx
+            idx=idx,
+            use_cache=use_cache
         )
-        
+
         translated_text = result.get("translated_text", "[TRANSLATION FAILED]")
         translated_text = normalize_apostrophes(translated_text)
-        
+
         # Put translated text in first run of segment, clear others
         segment_runs[0].text = leading_ws + translated_text + trailing_ws
         for run in segment_runs[1:]:
@@ -404,7 +408,8 @@ def translate_word_document(
         use_find_replace=True,
         use_finetuned=True,
         translation_manager=None,
-        include_timestamp=True
+        include_timestamp=True,
+        cached=True
 ):
     import os
     from datetime import datetime
@@ -435,13 +440,13 @@ def translate_word_document(
     idx = 1
     
     for paragraph in document.paragraphs:
-        idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx)
+        idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=cached)
     
     for table in document.tables:
         for row in table.rows:
             for cell in row.cells:
                 for paragraph in cell.paragraphs:
-                    idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx)
+                    idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=cached)
     
     translated_hf_ids = set()
 
@@ -460,12 +465,12 @@ def translate_word_document(
                 continue
             translated_hf_ids.add(id(hf._element))
             for paragraph in hf.paragraphs:
-                idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx)
+                idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=cached)
             for table in hf.tables:
                 for row in table.rows:
                     for cell in row.cells:
                         for paragraph in cell.paragraphs:
-                            idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx)
+                            idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=cached)
     
     document.save(output_docx_file)
     return output_docx_file

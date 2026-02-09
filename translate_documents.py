@@ -13,11 +13,7 @@ if __name__ == '__main__':
     use_finetuned = True
 
     file_list = (
-        # ("1432_en.docx", "en"), ("1466_fr.docx", "fr"),
-        ("test_document_formatting_en.docx", "en"),
-        ("test_document_formatting_fr.docx", "fr"),
-        ("test_document_structure_en.docx", "en"),
-        ("test_document_structure_fr.docx", "fr"),
+        ("1432_en.docx", "en"), ("1466_fr.docx", "fr"),
     )
 
     translation_manager = create_translator(
@@ -30,6 +26,7 @@ if __name__ == '__main__':
         loop_prev_time = init_done_time
 
     for filename, source_lang in file_list:
+        translation_manager.clear_errors()
         file_path = Path(config.TRANSLATED_TEXT_DIR) / filename
 
         if not file_path.exists():
