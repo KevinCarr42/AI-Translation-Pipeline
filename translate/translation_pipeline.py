@@ -1,4 +1,4 @@
-from translate.document import translate_document
+from translate.document import translate_txt_document
 
 
 def translation_pipeline(input_text_file, output_text_file, with_preferential_translation=True,
@@ -20,7 +20,7 @@ def translation_pipeline(input_text_file, output_text_file, with_preferential_tr
     print(f"Chunk strategy: {chunk_by}")
     print(f"Using fine-tuned models: {use_finetuned}\n")
     
-    translate_document(
+    translate_txt_document(
         input_text_file=input_text_file,
         output_text_file=output_text_file,
         source_lang=source_lang,

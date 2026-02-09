@@ -323,20 +323,20 @@ def test_validation_with_fuzzy_matching():
 
 def test_mbart50_bug_fix():
     print("\n=== Verifying MBART50 bug fix ===\n")
-
+    
     import re
-
+    
     models_file = os.path.join(os.path.dirname(__file__), '..', 'translate', 'models.py')
-
+    
     with open(models_file, 'r', encoding='utf-8') as f:
         content = f.read()
-
+    
     bug_pattern = r'generation_arguments\.update\(generation_arguments\)'
     correct_pattern = r'generation_arguments\.update\(generation_kwargs\)'
-
+    
     has_bug = re.search(bug_pattern, content)
     has_fix = re.search(correct_pattern, content)
-
+    
     if has_bug:
         print("[FAIL] Self-update bug still present in models.py")
         print("  Found: generation_arguments.update(generation_arguments)")
@@ -351,7 +351,7 @@ def test_mbart50_bug_fix():
 
 def test_name_token_not_translated():
     print("\n=== Testing NAME token with should_translate=False ===\n")
-
+    
     test_cases = [
         {
             'name': 'Person name restored to original',
@@ -399,14 +399,14 @@ def test_name_token_not_translated():
             'expected': 'The researcher Robert Williams published findings'
         }
     ]
-
+    
     passed = 0
     failed = 0
-
+    
     for test in test_cases:
         result = postprocess_translation(test['translated_text'], test['token_mapping'])
         expected = test['expected']
-
+        
         if result == expected:
             print(f"[PASS] {test['name']}")
             print(f"  Result: {result}")
@@ -417,14 +417,14 @@ def test_name_token_not_translated():
             print(f"  Expected: {expected}")
             print(f"  Got:      {result}")
             failed += 1
-
+    
     print(f"\n{passed} passed, {failed} failed\n")
     assert failed == 0, f"{failed} test cases failed"
 
 
 def test_name_token_sentence_start_verbatim():
     print("\n=== Testing NAME token at sentence start ===\n")
-
+    
     test_cases = [
         {
             'name': 'Name at text start restored verbatim',
@@ -492,14 +492,14 @@ def test_name_token_sentence_start_verbatim():
             'expected': 'van Gogh is a historical figure'
         }
     ]
-
+    
     passed = 0
     failed = 0
-
+    
     for test in test_cases:
         result = postprocess_translation(test['translated_text'], test['token_mapping'])
         expected = test['expected']
-
+        
         if result == expected:
             print(f"[PASS] {test['name']}")
             print(f"  Result: {result}")
@@ -510,14 +510,14 @@ def test_name_token_sentence_start_verbatim():
             print(f"  Expected: {expected}")
             print(f"  Got:      {result}")
             failed += 1
-
+    
     print(f"\n{passed} passed, {failed} failed\n")
     assert failed == 0, f"{failed} test cases failed"
 
 
 def test_corrupted_name_token_recovery():
     print("\n=== Testing corrupted NAME token recovery ===\n")
-
+    
     test_cases = [
         {
             'name': 'Space-separated NAME token',
@@ -591,14 +591,14 @@ def test_corrupted_name_token_recovery():
             'expected': 'Maria Curie was a pioneer in the field'
         }
     ]
-
+    
     passed = 0
     failed = 0
-
+    
     for test in test_cases:
         result = postprocess_translation(test['translated_text'], test['token_mapping'])
         expected = test['expected']
-
+        
         if result == expected:
             print(f"[PASS] {test['name']}")
             print(f"  Result: {result}")
@@ -609,14 +609,14 @@ def test_corrupted_name_token_recovery():
             print(f"  Expected: {expected}")
             print(f"  Got:      {result}")
             failed += 1
-
+    
     print(f"\n{passed} passed, {failed} failed\n")
     assert failed == 0, f"{failed} test cases failed"
 
 
 def test_integration_name_and_nomenclature():
     print("\n=== Testing integration of NAME and NOMENCLATURE tokens ===\n")
-
+    
     test_cases = [
         {
             'name': 'NAME and NOMENCLATURE both preserved correctly',
@@ -732,14 +732,14 @@ def test_integration_name_and_nomenclature():
             'expected': 'James Brown preserved water samples'
         }
     ]
-
+    
     passed = 0
     failed = 0
-
+    
     for test in test_cases:
         result = postprocess_translation(test['translated_text'], test['token_mapping'])
         expected = test['expected']
-
+        
         if result == expected:
             print(f"[PASS] {test['name']}")
             print(f"  Result: {result}")
@@ -750,6 +750,6 @@ def test_integration_name_and_nomenclature():
             print(f"  Expected: {expected}")
             print(f"  Got:      {result}")
             failed += 1
-
+    
     print(f"\n{passed} passed, {failed} failed\n")
     assert failed == 0, f"{failed} test cases failed"
