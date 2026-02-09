@@ -454,11 +454,11 @@ def translate_word_document(
     for section in document.sections:
         for attr in header_footer_attrs:
             hf = getattr(section, attr)
-            if id(hf) in translated_hf_ids:
+            if id(hf._element) in translated_hf_ids:
                 continue
             if hf.is_linked_to_previous:
                 continue
-            translated_hf_ids.add(id(hf))
+            translated_hf_ids.add(id(hf._element))
             for paragraph in hf.paragraphs:
                 idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx)
             for table in hf.tables:
