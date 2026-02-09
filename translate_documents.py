@@ -13,7 +13,11 @@ if __name__ == '__main__':
     use_finetuned = True
 
     file_list = (
-        ("1432_en.docx", "en"), ("1466_fr.docx", "fr"),
+        # ("1432_en.docx", "en"), ("1466_fr.docx", "fr"),
+        ("test_document_formatting_en.docx", "en"),
+        ("test_document_formatting_fr.docx", "fr"),
+        ("test_document_structure_en.docx", "en"),
+        ("test_document_structure_fr.docx", "fr"),
     )
 
     translation_manager = create_translator(

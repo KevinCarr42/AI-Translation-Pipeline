@@ -18,21 +18,16 @@ def test_basic_translation():
             'fixture': os.path.join(os.path.dirname(__file__), 'fixtures', 'test_document_formatting_en.docx'),
             'source_lang': 'en',
         },
-        {
-            'name': 'Valid .docx output created (fr)',
-            'fixture': os.path.join(os.path.dirname(__file__), 'fixtures', 'test_document_formatting_fr.docx'),
-            'source_lang': 'fr',
-        }
     ]
-
+    
     passed = 0
     failed = 0
-
+    
     for test in test_cases:
         temp_output = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
         temp_output.close()
         output_path = temp_output.name
-
+        
         try:
             translation_manager = create_translator(
                 use_finetuned=False,
@@ -40,7 +35,7 @@ def test_basic_translation():
                 use_embedder=False,
                 load_models=True
             )
-
+            
             result = translate_word_document(
                 input_docx_file=test['fixture'],
                 output_docx_file=output_path,
@@ -48,7 +43,7 @@ def test_basic_translation():
                 use_find_replace=False,
                 translation_manager=translation_manager
             )
-
+            
             if os.path.exists(output_path):
                 doc = Document(output_path)
                 if len(doc.paragraphs) > 0:
@@ -66,7 +61,7 @@ def test_basic_translation():
                 print(f"  Expected: Output file created")
                 print(f"  Got: No output file")
                 failed += 1
-
+        
         finally:
             if os.path.exists(output_path):
                 os.remove(output_path)

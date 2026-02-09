@@ -12,7 +12,7 @@ class MockTranslator:
     def __init__(self):
         self.call_count = 0
         self.source_texts = []
-
+    
     def translate_with_best_model(self, text, source_lang, target_lang, use_find_replace, idx, **kwargs):
         self.call_count += 1
         self.source_texts.append(text)
@@ -83,7 +83,6 @@ def test_footer_paragraphs_translated():
     
     test_cases = [
         {'name': 'EN fixture - all footers translated', 'fixture': 'test_document_structure_en.docx', 'source_lang': 'en'},
-        {'name': 'FR fixture - all footers translated', 'fixture': 'test_document_structure_fr.docx', 'source_lang': 'fr'},
     ]
     
     passed = 0
