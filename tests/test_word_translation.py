@@ -15,18 +15,24 @@ def test_basic_translation():
     test_cases = [
         {
             'name': 'Valid .docx output created',
-            'fixture': os.path.join(os.path.dirname(__file__), 'fixtures', 'test_document.docx'),
+            'fixture': os.path.join(os.path.dirname(__file__), 'fixtures', 'test_document_formatting_en.docx'),
+            'source_lang': 'en',
+        },
+        {
+            'name': 'Valid .docx output created (fr)',
+            'fixture': os.path.join(os.path.dirname(__file__), 'fixtures', 'test_document_formatting_fr.docx'),
+            'source_lang': 'fr',
         }
     ]
-    
+
     passed = 0
     failed = 0
-    
+
     for test in test_cases:
         temp_output = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
         temp_output.close()
         output_path = temp_output.name
-        
+
         try:
             translation_manager = create_translator(
                 use_finetuned=False,
@@ -34,15 +40,15 @@ def test_basic_translation():
                 use_embedder=False,
                 load_models=True
             )
-            
+
             result = translate_word_document(
                 input_docx_file=test['fixture'],
                 output_docx_file=output_path,
-                source_lang="en",
+                source_lang=test['source_lang'],
                 use_find_replace=False,
                 translation_manager=translation_manager
             )
-            
+
             if os.path.exists(output_path):
                 doc = Document(output_path)
                 if len(doc.paragraphs) > 0:
@@ -60,7 +66,7 @@ def test_basic_translation():
                 print(f"  Expected: Output file created")
                 print(f"  Got: No output file")
                 failed += 1
-        
+
         finally:
             if os.path.exists(output_path):
                 os.remove(output_path)
@@ -75,7 +81,7 @@ def test_bold_preservation():
     test_cases = [
         {
             'name': 'Bold formatting preserved',
-            'fixture': os.path.join(os.path.dirname(__file__), 'fixtures', 'test_document.docx'),
+            'fixture': os.path.join(os.path.dirname(__file__), 'fixtures', 'test_document_formatting_en.docx'),
             'paragraph_idx': 1,
             'expected_bold_runs': True
         }
@@ -135,7 +141,7 @@ def test_italic_preservation():
     test_cases = [
         {
             'name': 'Italic formatting preserved',
-            'fixture': os.path.join(os.path.dirname(__file__), 'fixtures', 'test_document.docx'),
+            'fixture': os.path.join(os.path.dirname(__file__), 'fixtures', 'test_document_formatting_en.docx'),
             'paragraph_idx': 2,
             'expected_italic_runs': True
         }
@@ -195,7 +201,7 @@ def test_table_translation():
     test_cases = [
         {
             'name': 'Table structure preserved',
-            'fixture': os.path.join(os.path.dirname(__file__), 'fixtures', 'test_document.docx'),
+            'fixture': os.path.join(os.path.dirname(__file__), 'fixtures', 'test_document_formatting_en.docx'),
             'expected_tables': 1,
             'expected_rows': 3,
             'expected_cols': 2
@@ -275,7 +281,7 @@ def test_empty_runs_skipped():
     test_cases = [
         {
             'name': 'Empty paragraphs handled without error',
-            'fixture': os.path.join(os.path.dirname(__file__), 'fixtures', 'test_document.docx'),
+            'fixture': os.path.join(os.path.dirname(__file__), 'fixtures', 'test_document_formatting_en.docx'),
         }
     ]
     
@@ -334,7 +340,7 @@ def test_output_path_generation():
     test_cases = [
         {
             'name': 'Output file auto-named when not specified',
-            'fixture': os.path.join(os.path.dirname(__file__), 'fixtures', 'test_document.docx'),
+            'fixture': os.path.join(os.path.dirname(__file__), 'fixtures', 'test_document_formatting_en.docx'),
             'expected_pattern': '_translated_'
         }
     ]
@@ -388,7 +394,7 @@ def test_spacing_between_runs():
     test_cases = [
         {
             'name': 'Paragraph with multiple formatted runs preserves spacing',
-            'fixture': os.path.join(os.path.dirname(__file__), 'fixtures', 'test_document.docx'),
+            'fixture': os.path.join(os.path.dirname(__file__), 'fixtures', 'test_document_formatting_en.docx'),
         }
     ]
     
