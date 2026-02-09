@@ -456,6 +456,8 @@ def translate_word_document(
             hf = getattr(section, attr)
             if id(hf) in translated_hf_ids:
                 continue
+            if hf.is_linked_to_previous:
+                continue
             translated_hf_ids.add(id(hf))
             for paragraph in hf.paragraphs:
                 idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx)
