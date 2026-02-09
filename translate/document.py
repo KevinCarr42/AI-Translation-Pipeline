@@ -459,6 +459,11 @@ def translate_word_document(
             translated_hf_ids.add(id(hf))
             for paragraph in hf.paragraphs:
                 idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx)
+            for table in hf.tables:
+                for row in table.rows:
+                    for cell in row.cells:
+                        for paragraph in cell.paragraphs:
+                            idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx)
     
     document.save(output_docx_file)
     return output_docx_file
