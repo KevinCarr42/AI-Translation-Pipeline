@@ -443,5 +443,17 @@ def translate_word_document(
                 for paragraph in cell.paragraphs:
                     idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx)
     
+    header_footer_attrs = [
+        'header', 'footer',
+        'first_page_header', 'first_page_footer',
+        'even_page_header', 'even_page_footer',
+    ]
+    
+    for section in document.sections:
+        for attr in header_footer_attrs:
+            hf = getattr(section, attr)
+            for paragraph in hf.paragraphs:
+                idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx)
+    
     document.save(output_docx_file)
     return output_docx_file
