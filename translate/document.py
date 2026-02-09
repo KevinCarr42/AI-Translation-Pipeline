@@ -443,6 +443,8 @@ def translate_word_document(
                 for paragraph in cell.paragraphs:
                     idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx)
     
+    translated_hf_ids = set()
+
     header_footer_attrs = [
         'header', 'footer',
         'first_page_header', 'first_page_footer',
@@ -452,6 +454,9 @@ def translate_word_document(
     for section in document.sections:
         for attr in header_footer_attrs:
             hf = getattr(section, attr)
+            if id(hf) in translated_hf_ids:
+                continue
+            translated_hf_ids.add(id(hf))
             for paragraph in hf.paragraphs:
                 idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx)
     
