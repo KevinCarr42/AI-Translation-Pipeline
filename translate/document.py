@@ -280,6 +280,43 @@ def _has_formatting_differences(paragraph):
     return False
 
 
+def _distribute_text_to_runs(translated_text, content_runs, original_lengths):
+    total_original = sum(original_lengths)
+    split_points = []
+    cumulative = 0
+    for length in original_lengths[:-1]:
+        cumulative += length
+        ratio = cumulative / total_original
+        raw_offset = int(ratio * len(translated_text))
+        # Walk forward to nearest space, then fall back to walking backward
+        forward = raw_offset
+        while forward < len(translated_text) and translated_text[forward] != ' ':
+            forward += 1
+        backward = raw_offset
+        while backward > 0 and translated_text[backward] != ' ':
+            backward -= 1
+        if forward < len(translated_text):
+            boundary = forward
+        else:
+            boundary = backward
+        split_points.append(boundary)
+
+    pieces = []
+    previous = 0
+    for point in split_points:
+        pieces.append(translated_text[previous:point].strip())
+        previous = point
+    pieces.append(translated_text[previous:].strip())
+
+    # Fall back if any content run would be left empty while others have text
+    non_empty_pieces = [p for p in pieces if p]
+    if len(non_empty_pieces) < len(content_runs) and len(non_empty_pieces) > 0:
+        pieces = [translated_text] + [''] * (len(content_runs) - 1)
+
+    for run, piece in zip(content_runs, pieces):
+        run.text = piece
+
+
 def _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=True):
     if not paragraph.runs:
         return idx
@@ -347,60 +384,30 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
         
         return idx + 1
     
-    # Has formatting differences - use segment-based translation
-    segments = _build_format_segments(paragraph)
-    
-    if not segments:
+    # Has formatting differences - translate as single unit and remap proportionally
+    content_runs = [run for run in paragraph.runs if run.text.strip()]
+    full_text = ''.join(run.text for run in paragraph.runs)
+    original_lengths = [len(run.text) for run in content_runs]
+
+    text_to_translate = full_text.strip()
+    if not text_to_translate:
         return idx
-    
-    for segment_idx, segment_runs in enumerate(segments):
-        segment_text = ''.join(run.text for run in segment_runs)
-        
-        if not segment_text.strip():
-            continue
-        
-        # Handle leading/trailing whitespace for segment
-        leading_ws = ''
-        trailing_ws = ''
-        text_to_translate = segment_text
-        
-        if text_to_translate and text_to_translate[0].isspace():
-            i = 0
-            while i < len(text_to_translate) and text_to_translate[i].isspace():
-                i += 1
-            leading_ws = text_to_translate[:i]
-            text_to_translate = text_to_translate[i:]
-        
-        if text_to_translate and text_to_translate[-1].isspace():
-            i = len(text_to_translate) - 1
-            while i >= 0 and text_to_translate[i].isspace():
-                i -= 1
-            trailing_ws = text_to_translate[i + 1:]
-            text_to_translate = text_to_translate[:i + 1]
-        
-        if not text_to_translate:
-            continue
-        
-        result = translation_manager.translate_with_best_model(
-            text=text_to_translate,
-            source_lang=source_lang,
-            target_lang=target_lang,
-            use_find_replace=use_find_replace,
-            idx=idx,
-            use_cache=use_cache
-        )
-        
-        translated_text = result.get("translated_text", "[TRANSLATION FAILED]")
-        translated_text = normalize_apostrophes(translated_text)
-        
-        # Put translated text in first run of segment, clear others
-        segment_runs[0].text = leading_ws + translated_text + trailing_ws
-        for run in segment_runs[1:]:
-            run.text = ''
-        
-        idx += 1
-    
-    return idx
+
+    result = translation_manager.translate_with_best_model(
+        text=text_to_translate,
+        source_lang=source_lang,
+        target_lang=target_lang,
+        use_find_replace=use_find_replace,
+        idx=idx,
+        use_cache=use_cache
+    )
+
+    translated_text = result.get("translated_text", "[TRANSLATION FAILED]")
+    translated_text = normalize_apostrophes(translated_text)
+
+    _distribute_text_to_runs(translated_text, content_runs, original_lengths)
+
+    return idx + 1
 
 
 def translate_word_document(
