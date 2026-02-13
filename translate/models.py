@@ -168,14 +168,14 @@ class OpusTranslationModel(BaseTranslationModel):
         model_inputs = {k: (v.to(model.device) if hasattr(v, "to") else v) for k, v in model_inputs.items()}
         
         generation_arguments = {
-            "max_new_tokens": 256,
+            "max_new_tokens": 512,
             "num_beams": 4,
             "do_sample": False,
             "pad_token_id": tokenizer.pad_token_id,
         }
         if generation_kwargs:
             generation_arguments.update(generation_kwargs)
-        
+
         output_token_ids = model.generate(**model_inputs, **generation_arguments)
         text_output = tokenizer.batch_decode(output_token_ids, skip_special_tokens=True)[0].strip()
         return self.clean_output(text_output)
@@ -196,7 +196,7 @@ class M2M100TranslationModel(BaseTranslationModel):
         model_inputs = {k: (v.to(model.device) if hasattr(v, "to") else v) for k, v in model_inputs.items()}
         
         generation_arguments = {
-            "max_new_tokens": 256,
+            "max_new_tokens": 512,
             "num_beams": 4,
             "do_sample": False,
             "pad_token_id": tokenizer.pad_token_id,
@@ -264,7 +264,7 @@ class MBART50TranslationModel(BaseTranslationModel):
             target_id = tokenizer.convert_tokens_to_ids(target_code)
         
         generation_arguments = {
-            "max_new_tokens": 256,
+            "max_new_tokens": 512,
             "num_beams": 4,
             "do_sample": False,
             "pad_token_id": tokenizer.pad_token_id,
