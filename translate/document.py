@@ -201,6 +201,9 @@ def _get_run_format_key(run):
     font_color = None
     if run.font.color and run.font.color.rgb:
         font_color = str(run.font.color.rgb)
+    # Explicit black is visually identical to inherited (None)
+    if font_color == '000000':
+        font_color = None
     
     return (
         run.bold,

@@ -14,3 +14,5 @@ quality_evaluation/tests/old/
 tests/temp_calcs.ipynb
 _BACKUP/
 .coverage
+*.pdf
+*.docx
