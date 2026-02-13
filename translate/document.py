@@ -376,12 +376,12 @@ def _build_format_segments(paragraph):
     current_segment_runs = []
     current_format_key = None
     
-    for run in paragraph.runs:
+    for run, _ in _get_all_runs(paragraph):
         if not run.text:
             continue
-        
+
         format_key = _get_run_format_key(run)
-        
+
         if current_format_key is None:
             current_format_key = format_key
             current_segment_runs = [run]
@@ -401,8 +401,8 @@ def _build_format_segments(paragraph):
 
 def _has_formatting_differences(paragraph):
     format_keys = set()
-    for run in paragraph.runs:
-        if run.text.strip():
+    for run, _ in _get_all_runs(paragraph):
+        if run.text and run.text.strip():
             format_keys.add(_get_run_format_key(run))
             if len(format_keys) > 1:
                 return True
