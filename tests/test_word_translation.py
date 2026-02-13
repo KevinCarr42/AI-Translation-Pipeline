@@ -473,6 +473,13 @@ def test_mid_paragraph_formatting():
     passed = 0
     failed = 0
     
+    class MockTranslationManager:
+        def translate_with_best_model(self, text, source_lang, target_lang,
+                                      use_find_replace, idx, use_cache=True):
+            return {"translated_text": "TRANSLATED: " + text}
+    
+    mock_manager = MockTranslationManager()
+    
     temp_input = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
     temp_input.close()
     input_path = temp_input.name
@@ -499,19 +506,12 @@ def test_mid_paragraph_formatting():
         print(f"  Input paragraph runs: {[(r.text, r.bold) for r in input_para.runs]}")
         print(f"  Input bold runs count: {len(input_bold_runs)}")
         
-        translation_manager = create_translator(
-            use_finetuned=False,
-            models_to_use=['facebook/mbart-large-50-many-to-many-mmt'],
-            use_embedder=False,
-            load_models=True
-        )
-        
         translate_word_document(
             input_docx_file=input_path,
             output_docx_file=output_path,
             source_lang="en",
             use_find_replace=False,
-            translation_manager=translation_manager
+            translation_manager=mock_manager
         )
         
         # Check output preserves bold formatting
@@ -544,25 +544,25 @@ def test_mid_paragraph_formatting():
             os.remove(input_path)
         if os.path.exists(output_path):
             os.remove(output_path)
-
+    
     print(f"\n{passed} passed, {failed} failed\n")
     assert failed == 0, f"{failed} test cases failed"
 
 
 def test_color_normalization():
     print("\n=== Testing explicit black vs inherited color normalization ===\n")
-
+    
     passed = 0
     failed = 0
-
+    
     doc = Document()
     para = doc.add_paragraph()
     run1 = para.add_run("Explicit black ")
     run1.font.color.rgb = RGBColor(0, 0, 0)
     run2 = para.add_run("inherited color")
-
+    
     has_diff = _has_formatting_differences(para)
-
+    
     if not has_diff:
         print("[PASS] Explicit black and inherited color treated as identical")
         passed += 1
@@ -571,34 +571,34 @@ def test_color_normalization():
         print(f"  Expected: False (no formatting differences)")
         print(f"  Got: {has_diff}")
         failed += 1
-
+    
     print(f"\n{passed} passed, {failed} failed\n")
     assert failed == 0, f"{failed} test cases failed"
 
 
 def test_long_paragraph_chunking():
     print("\n=== Testing long paragraph chunking (>600 chars) ===\n")
-
+    
     passed = 0
     failed = 0
-
+    
     class MockTranslationManager:
         def translate_with_best_model(self, text, source_lang, target_lang,
-                                       use_find_replace, idx, use_cache=True):
+                                      use_find_replace, idx, use_cache=True):
             return {"translated_text": "TRANSLATED: " + text}
-
+    
     mock_manager = MockTranslationManager()
-
+    
     # Build a paragraph with >600 chars of text across a single run
     long_text = "This is a test sentence. " * 30  # ~750 chars
     doc = Document()
     para = doc.add_paragraph()
     para.add_run(long_text.strip())
-
+    
     original_length = len(long_text.strip())
-
+    
     _translate_paragraph(para, mock_manager, "en", "fr", False, 1)
-
+    
     output_text = para.text
     # The mock prefixes each chunk with "TRANSLATED: " so output should be longer than original
     if len(output_text) >= original_length:
@@ -612,7 +612,7 @@ def test_long_paragraph_chunking():
         print(f"  Output length: {len(output_text)}")
         print(f"  Output: {output_text[:200]}...")
         failed += 1
-
+    
     print(f"\n{passed} passed, {failed} failed\n")
     assert failed == 0, f"{failed} test cases failed"
 
@@ -662,17 +662,17 @@ def _paragraph_has_hyperlink_relationship(paragraph):
 # hyperlink text to be invisible to the translation pipeline.
 def test_hyperlink_in_paragraph():
     print("\n=== Testing hyperlink text preserved in correct position after translation ===\n")
-
+    
     passed = 0
     failed = 0
-
+    
     class MockTranslationManager:
         def translate_with_best_model(self, text, source_lang, target_lang,
-                                       use_find_replace, idx, use_cache=True):
+                                      use_find_replace, idx, use_cache=True):
             return {"translated_text": "TRANSLATED: " + text}
-
+    
     mock_manager = MockTranslationManager()
-
+    
     test_cases = [
         {
             'name': 'Hyperlink at START of sentence',
@@ -690,21 +690,21 @@ def test_hyperlink_in_paragraph():
             'expected_link_text': 'the official page',
         },
     ]
-
+    
     for test in test_cases:
         temp_input = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
         temp_input.close()
         input_path = temp_input.name
-
+        
         temp_output = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
         temp_output.close()
         output_path = temp_output.name
-
+        
         try:
             doc = Document()
             test['build'](doc)
             doc.save(input_path)
-
+            
             # Verify input was built correctly
             input_doc = Document(input_path)
             input_para = input_doc.paragraphs[0]
@@ -712,7 +712,7 @@ def test_hyperlink_in_paragraph():
             print(f"  [{test['name']}] Input full text: {input_full_text}")
             print(f"  [{test['name']}] Input paragraph.text: {input_para.text}")
             print(f"  [{test['name']}] Input runs (paragraph.runs): {[r.text for r in input_para.runs]}")
-
+            
             translate_word_document(
                 input_docx_file=input_path,
                 output_docx_file=output_path,
@@ -720,22 +720,22 @@ def test_hyperlink_in_paragraph():
                 use_find_replace=False,
                 translation_manager=mock_manager
             )
-
+            
             output_doc = Document(output_path)
             output_para = output_doc.paragraphs[0]
             output_full_text = _get_full_paragraph_text(output_para)
-
+            
             print(f"  [{test['name']}] Output full text (including hyperlink XML): {output_full_text}")
             print(f"  [{test['name']}] Output paragraph.text: {output_para.text}")
-
+            
             link_text = test['expected_link_text']
             case_failed = False
-
+            
             # Check 1: hyperlink text must appear within the full paragraph text
             if link_text not in output_full_text:
                 print(f"[FAIL] {test['name']} - hyperlink text '{link_text}' missing from output entirely")
                 case_failed = True
-
+            
             # Check 2: the translated content should include the hyperlink text as part of
             # the translated sentence, not as an orphan. The mock prepends "TRANSLATED: "
             # so we should see both the translated marker and the link text.
@@ -745,7 +745,7 @@ def test_hyperlink_in_paragraph():
                     print(f"[FAIL] {test['name']} - no translated content found in output")
                     print(f"  Output: {output_full_text}")
                     case_failed = True
-
+            
             # Check 3: hyperlink text must NOT be stranded after sentence-ending punctuation.
             # The bug causes output like "TRANSLATED: Visit for details.Our Website"
             if not case_failed:
@@ -754,14 +754,14 @@ def test_hyperlink_in_paragraph():
                     print(f"[FAIL] {test['name']} - hyperlink text orphaned after sentence-ending punctuation")
                     print(f"  Output: {output_full_text}")
                     case_failed = True
-
+            
             # Check 4: hyperlink relationship must still exist in the XML
             if not case_failed:
                 has_hyperlink = _paragraph_has_hyperlink_relationship(output_para)
                 if not has_hyperlink:
                     print(f"[FAIL] {test['name']} - hyperlink relationship lost after translation")
                     case_failed = True
-
+            
             # Check 5: the hyperlink text should have been included in what was sent to
             # the translator. Since mock returns "TRANSLATED: <input>", we can verify the
             # link text was part of the input by checking if it appears after "TRANSLATED: "
@@ -774,19 +774,19 @@ def test_hyperlink_in_paragraph():
                         print(f"  Translated portion: {translated_portion}")
                         print(f"  Expected to contain: {link_text}")
                         case_failed = True
-
+            
             if case_failed:
                 failed += 1
             else:
                 print(f"[PASS] {test['name']}")
                 passed += 1
-
+        
         finally:
             if os.path.exists(input_path):
                 os.remove(input_path)
             if os.path.exists(output_path):
                 os.remove(output_path)
-
+    
     print(f"\n{passed} passed, {failed} failed\n")
     assert failed == 0, f"{failed} test cases failed"
 
