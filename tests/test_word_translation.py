@@ -3,9 +3,10 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from translate.document import translate_word_document
+from translate.document import translate_word_document, _has_formatting_differences
 from translate.models import create_translator
 from docx import Document
+from docx.shared import RGBColor
 import tempfile
 
 
@@ -539,6 +540,33 @@ def test_mid_paragraph_formatting():
             os.remove(input_path)
         if os.path.exists(output_path):
             os.remove(output_path)
-    
+
+    print(f"\n{passed} passed, {failed} failed\n")
+    assert failed == 0, f"{failed} test cases failed"
+
+
+def test_color_normalization():
+    print("\n=== Testing explicit black vs inherited color normalization ===\n")
+
+    passed = 0
+    failed = 0
+
+    doc = Document()
+    para = doc.add_paragraph()
+    run1 = para.add_run("Explicit black ")
+    run1.font.color.rgb = RGBColor(0, 0, 0)
+    run2 = para.add_run("inherited color")
+
+    has_diff = _has_formatting_differences(para)
+
+    if not has_diff:
+        print("[PASS] Explicit black and inherited color treated as identical")
+        passed += 1
+    else:
+        print("[FAIL] Explicit black and inherited color treated as different")
+        print(f"  Expected: False (no formatting differences)")
+        print(f"  Got: {has_diff}")
+        failed += 1
+
     print(f"\n{passed} passed, {failed} failed\n")
     assert failed == 0, f"{failed} test cases failed"
