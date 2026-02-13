@@ -486,69 +486,75 @@ def _chunk_and_translate(text, translation_manager, source_lang, target_lang, us
 
 
 def _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=True):
-    if not paragraph.runs:
+    all_runs = _get_all_runs(paragraph)
+    if not all_runs:
         return idx
-    
-    run_texts = [run.text for run in paragraph.runs]
+
+    runs = [r for r, _ in all_runs]
+    run_texts = [run.text or '' for run in runs]
     full_text = ''.join(run_texts)
-    
+
     if not full_text.strip():
         return idx
-    
+
     # Clean up invisible run boundaries by merging identical adjacent runs
     _merge_identical_runs(paragraph)
-    
+
+    # Re-fetch after merge since runs may have changed
+    all_runs = _get_all_runs(paragraph)
+    runs = [r for r, _ in all_runs]
+
     # Check if paragraph has actual formatting differences
     if not _has_formatting_differences(paragraph):
         # No formatting differences - translate as single unit (original simple approach)
         leading_ws = ''
         trailing_ws = ''
         text_to_translate = full_text
-        
+
         if text_to_translate and text_to_translate[0].isspace():
             i = 0
             while i < len(text_to_translate) and text_to_translate[i].isspace():
                 i += 1
             leading_ws = text_to_translate[:i]
             text_to_translate = text_to_translate[i:]
-        
+
         if text_to_translate and text_to_translate[-1].isspace():
             i = len(text_to_translate) - 1
             while i >= 0 and text_to_translate[i].isspace():
                 i -= 1
             trailing_ws = text_to_translate[i + 1:]
             text_to_translate = text_to_translate[:i + 1]
-        
+
         if not text_to_translate:
             return idx
-        
+
         translated_text = _chunk_and_translate(
             text_to_translate, translation_manager, source_lang, target_lang,
             use_find_replace, idx, use_cache
         )
         translated_text = normalize_apostrophes(translated_text)
-        
+
         first_content_run = None
-        for run in paragraph.runs:
-            if run.text.strip():
+        for run in runs:
+            if run.text and run.text.strip():
                 first_content_run = run
                 break
-        
+
         if first_content_run:
             first_content_run.text = leading_ws + translated_text + trailing_ws
             found_first = False
-            for run in paragraph.runs:
-                if run.text.strip():
+            for run in runs:
+                if run.text and run.text.strip():
                     if found_first:
                         run.text = ''
                     else:
                         found_first = True
-        
+
         return idx + 1
-    
+
     # Has formatting differences - translate as single unit and remap proportionally
-    content_runs = [run for run in paragraph.runs if run.text.strip()]
-    full_text = ''.join(run.text for run in paragraph.runs)
+    content_runs = [run for run in runs if run.text and run.text.strip()]
+    full_text = ''.join(run.text or '' for run in runs)
     original_lengths = [len(run.text) for run in content_runs]
 
     text_to_translate = full_text.strip()
