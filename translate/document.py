@@ -197,6 +197,117 @@ def translate_txt_document(
     return next_idx if translated_chunks else start_idx
 
 
+class HyperlinkRunWrapper:
+
+    _nsmap = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
+    _wns = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+
+    # Attributes like val/ascii may be namespaced ({w:}val) or plain (val)
+    # depending on whether the document was built by python-docx or Microsoft Word.
+    @staticmethod
+    def _get_attr(elem, attr_name, ns):
+        val = elem.get(f'{{{ns}}}{attr_name}')
+        if val is None:
+            val = elem.get(attr_name)
+        return val
+
+    class _Font:
+
+        class _Color:
+            def __init__(self, rpr, nsmap, wns):
+                self._rpr = rpr
+                self._nsmap = nsmap
+                self._wns = wns
+
+            @property
+            def rgb(self):
+                if self._rpr is None:
+                    return None
+                color_elem = self._rpr.find('w:color', self._nsmap)
+                if color_elem is None:
+                    return None
+                return HyperlinkRunWrapper._get_attr(color_elem, 'val', self._wns)
+
+        def __init__(self, rpr, nsmap, wns):
+            self._rpr = rpr
+            self._nsmap = nsmap
+            self._wns = wns
+            self.color = self._Color(rpr, nsmap, wns)
+
+        @property
+        def name(self):
+            if self._rpr is None:
+                return None
+            rfonts = self._rpr.find('w:rFonts', self._nsmap)
+            if rfonts is None:
+                return None
+            return HyperlinkRunWrapper._get_attr(rfonts, 'ascii', self._wns)
+
+        @property
+        def size(self):
+            if self._rpr is None:
+                return None
+            sz = self._rpr.find('w:sz', self._nsmap)
+            if sz is None:
+                return None
+            val = HyperlinkRunWrapper._get_attr(sz, 'val', self._wns)
+            if val is None:
+                return None
+            return int(val)
+
+    def __init__(self, r_element):
+        self._r = r_element
+        self._rpr = r_element.find('w:rPr', self._nsmap)
+        self.font = self._Font(self._rpr, self._nsmap, self._wns)
+
+    @property
+    def text(self):
+        t_elem = self._r.find('w:t', self._nsmap)
+        if t_elem is None:
+            return None
+        return t_elem.text
+
+    @text.setter
+    def text(self, value):
+        from lxml import etree
+        t_elem = self._r.find('w:t', self._nsmap)
+        if t_elem is None:
+            t_elem = etree.SubElement(self._r, f'{{{self._nsmap["w"]}}}t')
+        t_elem.text = value
+
+    def _get_bool_prop(self, tag):
+        if self._rpr is None:
+            return None
+        elem = self._rpr.find(f'w:{tag}', self._nsmap)
+        if elem is None:
+            return None
+        val = self._get_attr(elem, 'val', self._wns)
+        if val is None:
+            return True
+        if val in ('1', 'true'):
+            return True
+        if val in ('0', 'false'):
+            return False
+        return True
+
+    @property
+    def bold(self):
+        return self._get_bool_prop('b')
+
+    @property
+    def italic(self):
+        return self._get_bool_prop('i')
+
+    @property
+    def underline(self):
+        if self._rpr is None:
+            return None
+        u_elem = self._rpr.find('w:u', self._nsmap)
+        if u_elem is None:
+            return None
+        return self._get_attr(u_elem, 'val', self._wns)
+
+
 def _get_run_format_key(run):
     font_color = None
     if run.font.color and run.font.color.rgb:
