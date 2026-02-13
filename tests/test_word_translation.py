@@ -3,7 +3,7 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from translate.document import translate_word_document, _has_formatting_differences, _translate_paragraph
+from translate.document import translate_word_document, _has_formatting_differences, _translate_paragraph, _get_all_runs, HyperlinkRunWrapper
 from translate.models import create_translator
 from docx import Document
 from docx.shared import RGBColor
@@ -811,3 +811,71 @@ def _build_para_link_end(doc):
     para.add_run('For more information visit ')
     _add_hyperlink(para, 'https://example.com/info', 'the official page')
     return para
+
+
+def test_get_all_runs():
+    print("\n=== Testing _get_all_runs() returns hyperlink runs in document order ===\n")
+
+    passed = 0
+    failed = 0
+
+    # Test 1: mixed paragraph with plain run, hyperlink, plain run
+    doc = Document()
+    para = doc.add_paragraph()
+    para.add_run('Before ')
+    _add_hyperlink(para, 'https://example.com', 'Link Text')
+    para.add_run(' after.')
+
+    all_runs = _get_all_runs(para)
+    texts = [(r.text, is_hl) for r, is_hl in all_runs]
+    expected = [('Before ', False), ('Link Text', True), (' after.', False)]
+
+    if texts == expected:
+        print(f"[PASS] Document order correct: {texts}")
+        passed += 1
+    else:
+        print(f"[FAIL] Document order wrong")
+        print(f"  Expected: {expected}")
+        print(f"  Got: {texts}")
+        failed += 1
+
+    # Test 2: hyperlink wrapper is correct type
+    hyperlink_entries = [(r, is_hl) for r, is_hl in all_runs if is_hl]
+    if len(hyperlink_entries) == 1 and isinstance(hyperlink_entries[0][0], HyperlinkRunWrapper):
+        print(f"[PASS] Hyperlink run is HyperlinkRunWrapper instance")
+        passed += 1
+    else:
+        print(f"[FAIL] Hyperlink run type wrong")
+        failed += 1
+
+    # Test 3: mutating wrapper.text changes the underlying XML
+    wrapper = hyperlink_entries[0][0]
+    wrapper.text = 'Modified'
+    nsmap = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
+    hyperlinks = para._element.findall(ns.qn('w:hyperlink'))
+    xml_text = hyperlinks[0].findall('.//w:t', nsmap)[0].text
+
+    if xml_text == 'Modified':
+        print(f"[PASS] Wrapper .text setter mutates underlying XML")
+        passed += 1
+    else:
+        print(f"[FAIL] Wrapper .text setter did not mutate XML")
+        print(f"  Expected: 'Modified'")
+        print(f"  Got: '{xml_text}'")
+        failed += 1
+
+    # Test 4: paragraph with no hyperlinks returns same as paragraph.runs
+    doc2 = Document()
+    para2 = doc2.add_paragraph()
+    para2.add_run('Plain text only.')
+    all_runs2 = _get_all_runs(para2)
+
+    if len(all_runs2) == 1 and all_runs2[0][1] is False and all_runs2[0][0].text == 'Plain text only.':
+        print(f"[PASS] Plain paragraph returns runs with is_hyperlink=False")
+        passed += 1
+    else:
+        print(f"[FAIL] Plain paragraph result unexpected: {[(r.text, hl) for r, hl in all_runs2]}")
+        failed += 1
+
+    print(f"\n{passed} passed, {failed} failed\n")
+    assert failed == 0, f"{failed} test cases failed"
