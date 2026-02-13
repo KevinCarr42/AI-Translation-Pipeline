@@ -3,7 +3,7 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from translate.document import translate_word_document, _has_formatting_differences
+from translate.document import translate_word_document, _has_formatting_differences, _translate_paragraph
 from translate.models import create_translator
 from docx import Document
 from docx.shared import RGBColor
@@ -566,6 +566,47 @@ def test_color_normalization():
         print("[FAIL] Explicit black and inherited color treated as different")
         print(f"  Expected: False (no formatting differences)")
         print(f"  Got: {has_diff}")
+        failed += 1
+
+    print(f"\n{passed} passed, {failed} failed\n")
+    assert failed == 0, f"{failed} test cases failed"
+
+
+def test_long_paragraph_chunking():
+    print("\n=== Testing long paragraph chunking (>600 chars) ===\n")
+
+    passed = 0
+    failed = 0
+
+    class MockTranslationManager:
+        def translate_with_best_model(self, text, source_lang, target_lang,
+                                       use_find_replace, idx, use_cache=True):
+            return {"translated_text": "TRANSLATED: " + text}
+
+    mock_manager = MockTranslationManager()
+
+    # Build a paragraph with >600 chars of text across a single run
+    long_text = "This is a test sentence. " * 30  # ~750 chars
+    doc = Document()
+    para = doc.add_paragraph()
+    para.add_run(long_text.strip())
+
+    original_length = len(long_text.strip())
+
+    _translate_paragraph(para, mock_manager, "en", "fr", False, 1)
+
+    output_text = para.text
+    # The mock prefixes each chunk with "TRANSLATED: " so output should be longer than original
+    if len(output_text) >= original_length:
+        print(f"[PASS] Long paragraph not truncated")
+        print(f"  Input length: {original_length}")
+        print(f"  Output length: {len(output_text)}")
+        passed += 1
+    else:
+        print(f"[FAIL] Long paragraph appears truncated")
+        print(f"  Input length: {original_length}")
+        print(f"  Output length: {len(output_text)}")
+        print(f"  Output: {output_text[:200]}...")
         failed += 1
 
     print(f"\n{passed} passed, {failed} failed\n")
