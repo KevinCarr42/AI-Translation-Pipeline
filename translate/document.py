@@ -1,5 +1,8 @@
+import logging
 import re
 from translate.models import create_translator
+
+logger = logging.getLogger(__name__)
 
 
 def split_by_sentences(text):
@@ -443,6 +446,8 @@ def _distribute_text_to_runs(translated_text, content_runs, original_lengths):
         pieces = [translated_text] + [''] * (len(content_runs) - 1)
 
     for run, piece in zip(content_runs, pieces):
+        if not piece and isinstance(run, HyperlinkRunWrapper):
+            logger.warning("Hyperlink run received empty text after proportional distribution")
         run.text = piece
 
 
