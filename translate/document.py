@@ -344,25 +344,26 @@ def _get_run_format_key(run):
 
 
 def _merge_identical_runs(paragraph):
-    if len(paragraph.runs) <= 1:
+    all_runs = _get_all_runs(paragraph)
+    if len(all_runs) <= 1:
         return
-    
-    # Build list of (run, format_key) pairs for runs with content
+
+    # Build list of (run, format_key, is_hyperlink) for runs with content
     run_info = []
-    for run in paragraph.runs:
+    for run, is_hyperlink in all_runs:
         if run.text:
-            run_info.append((run, _get_run_format_key(run)))
-    
+            run_info.append((run, _get_run_format_key(run), is_hyperlink))
+
     if len(run_info) <= 1:
         return
-    
-    # Merge adjacent runs with identical formatting
+
+    # Merge adjacent runs with identical formatting, but never across hyperlink boundaries
     i = 0
     while i < len(run_info) - 1:
-        current_run, current_key = run_info[i]
-        next_run, next_key = run_info[i + 1]
-        
-        if current_key == next_key:
+        current_run, current_key, current_hl = run_info[i]
+        next_run, next_key, next_hl = run_info[i + 1]
+
+        if current_key == next_key and current_hl == next_hl:
             current_run.text += next_run.text
             next_run.text = ''
             run_info.pop(i + 1)
