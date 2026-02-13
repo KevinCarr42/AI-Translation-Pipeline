@@ -308,6 +308,23 @@ class HyperlinkRunWrapper:
         return self._get_attr(u_elem, 'val', self._wns)
 
 
+# paragraph.runs only returns direct w:r children of w:p, silently skipping
+# w:r elements nested inside w:hyperlink elements. This helper walks the XML
+# in document order so hyperlink text is included in translation.
+def _get_all_runs(paragraph):
+    from docx.text.run import Run
+    from docx.oxml.ns import qn
+
+    results = []
+    for child in paragraph._element:
+        if child.tag == qn('w:r'):
+            results.append((Run(child, paragraph), False))
+        elif child.tag == qn('w:hyperlink'):
+            for r_elem in child.findall(qn('w:r')):
+                results.append((HyperlinkRunWrapper(r_elem), True))
+    return results
+
+
 def _get_run_format_key(run):
     font_color = None
     if run.font.color and run.font.color.rgb:
