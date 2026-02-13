@@ -317,6 +317,46 @@ def _distribute_text_to_runs(translated_text, content_runs, original_lengths):
         run.text = piece
 
 
+def _chunk_and_translate(text, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=True):
+    MAX_CHAR = 600
+    if len(text) <= MAX_CHAR:
+        result = translation_manager.translate_with_best_model(
+            text=text,
+            source_lang=source_lang,
+            target_lang=target_lang,
+            use_find_replace=use_find_replace,
+            idx=idx,
+            use_cache=use_cache
+        )
+        return result.get("translated_text", "[TRANSLATION FAILED]")
+
+    sentences = re.split(r'(?<=[.!?])\s+', text)
+    chunks = []
+    current_chunk = ''
+    for sentence in sentences:
+        if len(current_chunk) + len(sentence) + 1 <= MAX_CHAR:
+            current_chunk += (' ' if current_chunk else '') + sentence
+        else:
+            if current_chunk:
+                chunks.append(current_chunk)
+            current_chunk = sentence
+    if current_chunk:
+        chunks.append(current_chunk)
+
+    translated_parts = []
+    for chunk in chunks:
+        result = translation_manager.translate_with_best_model(
+            text=chunk,
+            source_lang=source_lang,
+            target_lang=target_lang,
+            use_find_replace=use_find_replace,
+            idx=idx,
+            use_cache=use_cache
+        )
+        translated_parts.append(result.get("translated_text", "[TRANSLATION FAILED]"))
+    return ' '.join(translated_parts)
+
+
 def _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=True):
     if not paragraph.runs:
         return idx
@@ -354,16 +394,10 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
         if not text_to_translate:
             return idx
         
-        result = translation_manager.translate_with_best_model(
-            text=text_to_translate,
-            source_lang=source_lang,
-            target_lang=target_lang,
-            use_find_replace=use_find_replace,
-            idx=idx,
-            use_cache=use_cache
+        translated_text = _chunk_and_translate(
+            text_to_translate, translation_manager, source_lang, target_lang,
+            use_find_replace, idx, use_cache
         )
-        
-        translated_text = result.get("translated_text", "[TRANSLATION FAILED]")
         translated_text = normalize_apostrophes(translated_text)
         
         first_content_run = None
@@ -393,16 +427,10 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
     if not text_to_translate:
         return idx
 
-    result = translation_manager.translate_with_best_model(
-        text=text_to_translate,
-        source_lang=source_lang,
-        target_lang=target_lang,
-        use_find_replace=use_find_replace,
-        idx=idx,
-        use_cache=use_cache
+    translated_text = _chunk_and_translate(
+        text_to_translate, translation_manager, source_lang, target_lang,
+        use_find_replace, idx, use_cache
     )
-
-    translated_text = result.get("translated_text", "[TRANSLATION FAILED]")
     translated_text = normalize_apostrophes(translated_text)
 
     _distribute_text_to_runs(translated_text, content_runs, original_lengths)
