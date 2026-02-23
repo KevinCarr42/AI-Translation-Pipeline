@@ -7,6 +7,7 @@ from translate.document import translate_word_document, _has_formatting_differen
 from translate.models import create_translator
 from docx import Document
 from docx.shared import RGBColor
+from docx.enum.text import WD_COLOR_INDEX
 import tempfile
 import re
 from docx.opc.constants import RELATIONSHIP_TYPE as RT
@@ -1010,6 +1011,122 @@ def test_split_into_sentences():
             print(f"  Expected: {test['expected']}")
             print(f"  Got:      {result}")
             failed += 1
+
+    print(f"\n{passed} passed, {failed} failed\n")
+    assert failed == 0, f"{failed} test cases failed"
+
+
+def test_hyperlink_stripping_and_records():
+    print("\n=== Testing hyperlink stripping, cyan highlighting, and records collection ===\n")
+
+    passed = 0
+    failed = 0
+
+    class MockTranslationManager:
+        def translate_with_best_model(self, text, source_lang, target_lang,
+                                      use_find_replace, idx, use_cache=True):
+            return {"translated_text": "TRANSLATED: " + text}
+
+    mock_manager = MockTranslationManager()
+
+    # --- Test: paragraph WITH hyperlink ---
+    temp_file = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
+    temp_file.close()
+    temp_path = temp_file.name
+
+    try:
+        doc = Document()
+        para = doc.add_paragraph()
+        para.add_run('Visit ')
+        _add_hyperlink(para, 'https://example.com', 'our site')
+        para.add_run(' for details.')
+        doc.save(temp_path)
+
+        # Re-open so relationship IDs are properly persisted
+        doc = Document(temp_path)
+        para = doc.paragraphs[0]
+
+        hyperlink_records = []
+        _translate_paragraph(para, mock_manager, 'en', 'fr', False, 1, hyperlink_records=hyperlink_records)
+
+        # Check 1: no w:hyperlink elements remain
+        hyperlinks_remaining = para._element.findall(ns.qn('w:hyperlink'))
+        if len(hyperlinks_remaining) == 0:
+            print("[PASS] Hyperlink XML stripped from paragraph")
+            passed += 1
+        else:
+            print(f"[FAIL] Hyperlink XML not stripped — {len(hyperlinks_remaining)} w:hyperlink elements remain")
+            failed += 1
+
+        # Check 2: cyan highlighting applied to all runs
+        all_runs_after = _get_all_runs(para)
+        all_have_cyan = all(
+            run.font.highlight_color == WD_COLOR_INDEX.TURQUOISE
+            for run, _ in all_runs_after
+            if run.text and run.text.strip()
+        )
+        if all_have_cyan:
+            print("[PASS] Cyan (turquoise) highlighting applied to all runs")
+            passed += 1
+        else:
+            highlight_values = [(run.text, run.font.highlight_color) for run, _ in all_runs_after]
+            print(f"[FAIL] Not all runs have cyan highlighting: {highlight_values}")
+            failed += 1
+
+        # Check 3: hyperlink_records populated correctly
+        if len(hyperlink_records) == 1:
+            record = hyperlink_records[0]
+            record_ok = True
+
+            if record['original_text'] != 'our site':
+                print(f"[FAIL] Record original_text wrong: '{record['original_text']}'")
+                record_ok = False
+
+            if record['url'] != 'https://example.com':
+                print(f"[FAIL] Record url wrong: '{record['url']}'")
+                record_ok = False
+
+            if 'Visit' not in record['full_sentence'] or 'our site' not in record['full_sentence']:
+                print(f"[FAIL] Record full_sentence missing expected text: '{record['full_sentence']}'")
+                record_ok = False
+
+            if record_ok:
+                print(f"[PASS] hyperlink_records populated correctly: {record}")
+                passed += 1
+            else:
+                failed += 1
+        else:
+            print(f"[FAIL] Expected 1 hyperlink record, got {len(hyperlink_records)}")
+            failed += 1
+
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+    # --- Test: paragraph WITHOUT hyperlink should NOT get cyan highlighting ---
+    try:
+        doc2 = Document()
+        para2 = doc2.add_paragraph()
+        para2.add_run('Plain text without any links.')
+
+        hyperlink_records_plain = []
+        _translate_paragraph(para2, mock_manager, 'en', 'fr', False, 1, hyperlink_records=hyperlink_records_plain)
+
+        all_runs_plain = _get_all_runs(para2)
+        any_cyan = any(
+            hasattr(run, 'font') and hasattr(run.font, 'highlight_color') and run.font.highlight_color == WD_COLOR_INDEX.TURQUOISE
+            for run, _ in all_runs_plain
+        )
+        if not any_cyan:
+            print("[PASS] No cyan highlighting on paragraph without hyperlinks")
+            passed += 1
+        else:
+            print("[FAIL] Cyan highlighting incorrectly applied to paragraph without hyperlinks")
+            failed += 1
+
+    except Exception as e:
+        print(f"[FAIL] Exception in no-hyperlink test: {e}")
+        failed += 1
 
     print(f"\n{passed} passed, {failed} failed\n")
     assert failed == 0, f"{failed} test cases failed"

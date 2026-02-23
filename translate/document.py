@@ -524,10 +524,46 @@ def _chunk_and_translate(text, translation_manager, source_lang, target_lang, us
     return ' '.join(translated_parts)
 
 
-def _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=True):
+def _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=True, hyperlink_records=None):
     all_runs = _get_all_runs(paragraph)
     if not all_runs:
         return idx
+
+    _apply_cyan = False
+    has_hyperlinks = any(is_hl for _, is_hl in all_runs)
+
+    if hyperlink_records is not None and has_hyperlinks:
+        from docx.oxml.ns import qn
+
+        full_text = _join_run_texts(all_runs)
+
+        # Collect hyperlink records before stripping
+        for run, is_hl in all_runs:
+            if not is_hl:
+                continue
+            hyperlink_elem = run._r.getparent()
+            r_id = hyperlink_elem.get(qn('r:id'))
+            if r_id and r_id in paragraph.part.rels:
+                url = paragraph.part.rels[r_id].target_ref
+            else:
+                url = ''
+            hyperlink_records.append({
+                'original_text': run.text or '',
+                'full_sentence': full_text,
+                'url': url,
+            })
+
+        # Strip hyperlink XML wrappers — move w:r elements up into w:p
+        p_elem = paragraph._element
+        for child in list(p_elem):
+            if child.tag == qn('w:hyperlink'):
+                parent = child
+                for r_elem in list(parent.findall(qn('w:r'))):
+                    p_elem.insert(list(p_elem).index(parent), r_elem)
+                p_elem.remove(parent)
+
+        all_runs = _get_all_runs(paragraph)
+        _apply_cyan = True
 
     runs = [r for r, _ in all_runs]
     full_text = _join_run_texts(all_runs)
@@ -588,6 +624,12 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
                     else:
                         found_first = True
 
+        if _apply_cyan:
+            from docx.enum.text import WD_COLOR_INDEX
+            for run, _ in _get_all_runs(paragraph):
+                if hasattr(run, 'font') and hasattr(run.font, 'highlight_color'):
+                    run.font.highlight_color = WD_COLOR_INDEX.TURQUOISE
+
         return idx + 1
 
     # Has formatting differences - translate as single unit and remap proportionally
@@ -606,6 +648,12 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
     translated_text = normalize_apostrophes(translated_text)
 
     _distribute_text_to_runs(translated_text, content_runs, original_lengths)
+
+    if _apply_cyan:
+        from docx.enum.text import WD_COLOR_INDEX
+        for run, _ in _get_all_runs(paragraph):
+            if hasattr(run, 'font') and hasattr(run.font, 'highlight_color'):
+                run.font.highlight_color = WD_COLOR_INDEX.TURQUOISE
 
     return idx + 1
 
@@ -648,24 +696,25 @@ def translate_word_document(
     
     document = Document(input_docx_file)
     idx = 1
-    
+    hyperlink_records = []
+
     for paragraph in document.paragraphs:
-        idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache)
-    
+        idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records)
+
     for table in document.tables:
         for row in table.rows:
             for cell in row.cells:
                 for paragraph in cell.paragraphs:
-                    idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache)
-    
+                    idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records)
+
     translated_hf_ids = set()
-    
+
     header_footer_attrs = [
         'header', 'footer',
         'first_page_header', 'first_page_footer',
         'even_page_header', 'even_page_footer',
     ]
-    
+
     for section in document.sections:
         for attr in header_footer_attrs:
             hf = getattr(section, attr)
@@ -675,12 +724,18 @@ def translate_word_document(
                 continue
             translated_hf_ids.add(id(hf._element))
             for paragraph in hf.paragraphs:
-                idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache)
+                idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records)
             for table in hf.tables:
                 for row in table.rows:
                     for cell in row.cells:
                         for paragraph in cell.paragraphs:
-                            idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache)
-    
+                            idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records)
+
     document.save(output_docx_file)
+
+    if hyperlink_records:
+        from translate.hyperlink_notes import write_hyperlink_notes
+        notes_path = os.path.splitext(output_docx_file)[0] + '_translation_notes.docx'
+        write_hyperlink_notes(hyperlink_records, notes_path)
+
     return output_docx_file
