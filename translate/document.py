@@ -658,6 +658,24 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
     return idx + 1
 
 
+def _set_proofing_language(document, target_lang):
+    from docx.oxml.ns import qn
+    from lxml import etree
+
+    locale_map = {'fr': 'fr-CA', 'en': 'en-CA'}
+    locale_code = locale_map[target_lang]
+
+    for r_elem in document.element.iter(qn('w:r')):
+        rPr = r_elem.find(qn('w:rPr'))
+        if rPr is None:
+            rPr = etree.SubElement(r_elem, qn('w:rPr'))
+            r_elem.insert(0, rPr)
+        lang = rPr.find(qn('w:lang'))
+        if lang is None:
+            lang = etree.SubElement(rPr, qn('w:lang'))
+        lang.set(qn('w:val'), locale_code)
+
+
 def translate_word_document(
         input_docx_file,
         output_docx_file=None,
@@ -731,6 +749,7 @@ def translate_word_document(
                         for paragraph in cell.paragraphs:
                             idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records)
 
+    _set_proofing_language(document, target_lang)
     document.save(output_docx_file)
 
     if hyperlink_records:

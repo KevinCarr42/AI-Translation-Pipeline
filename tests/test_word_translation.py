@@ -3,7 +3,7 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from translate.document import translate_word_document, _has_formatting_differences, _translate_paragraph, _get_all_runs, _join_run_texts, _split_into_sentences, HyperlinkRunWrapper
+from translate.document import translate_word_document, _has_formatting_differences, _translate_paragraph, _get_all_runs, _join_run_texts, _split_into_sentences, _set_proofing_language, HyperlinkRunWrapper
 from translate.models import create_translator
 from docx import Document
 from docx.shared import RGBColor
@@ -1206,6 +1206,96 @@ def test_write_hyperlink_notes():
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
+
+    print(f"\n{passed} passed, {failed} failed\n")
+    assert failed == 0, f"{failed} test cases failed"
+
+
+def test_proofing_language_set():
+    print("\n=== Testing proofing language set on translated documents ===\n")
+
+    passed = 0
+    failed = 0
+
+    class MockTranslationManager:
+        def translate_with_best_model(self, text, source_lang, target_lang,
+                                      use_find_replace, idx, use_cache=True):
+            return {"translated_text": "TRANSLATED: " + text}
+
+    mock_manager = MockTranslationManager()
+
+    test_cases = [
+        {
+            'name': 'English to French sets fr-CA',
+            'source_lang': 'en',
+            'expected_locale': 'fr-CA',
+        },
+        {
+            'name': 'French to English sets en-CA',
+            'source_lang': 'fr',
+            'expected_locale': 'en-CA',
+        },
+    ]
+
+    for test in test_cases:
+        temp_input = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
+        temp_input.close()
+        input_path = temp_input.name
+
+        temp_output = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
+        temp_output.close()
+        output_path = temp_output.name
+
+        try:
+            doc = Document()
+            doc.add_paragraph("This is a test sentence.")
+            doc.save(input_path)
+
+            translate_word_document(
+                input_docx_file=input_path,
+                output_docx_file=output_path,
+                source_lang=test['source_lang'],
+                use_find_replace=False,
+                translation_manager=mock_manager
+            )
+
+            output_doc = Document(output_path)
+            all_r_elements = list(output_doc.element.iter(ns.qn('w:r')))
+
+            if not all_r_elements:
+                print(f"[FAIL] {test['name']} - no w:r elements found in output")
+                failed += 1
+                continue
+
+            all_correct = True
+            for r_elem in all_r_elements:
+                rPr = r_elem.find(ns.qn('w:rPr'))
+                if rPr is None:
+                    print(f"[FAIL] {test['name']} - w:r element missing rPr")
+                    all_correct = False
+                    break
+                lang = rPr.find(ns.qn('w:lang'))
+                if lang is None:
+                    print(f"[FAIL] {test['name']} - rPr missing w:lang element")
+                    all_correct = False
+                    break
+                val = lang.get(ns.qn('w:val'))
+                if val != test['expected_locale']:
+                    print(f"[FAIL] {test['name']} - expected w:val='{test['expected_locale']}', got '{val}'")
+                    all_correct = False
+                    break
+
+            if all_correct:
+                print(f"[PASS] {test['name']} - all {len(all_r_elements)} runs have w:lang w:val='{test['expected_locale']}'")
+                passed += 1
+            else:
+                failed += 1
+
+        finally:
+            if os.path.exists(input_path):
+                os.remove(input_path)
+            if os.path.exists(output_path):
+                os.remove(output_path)
 
     print(f"\n{passed} passed, {failed} failed\n")
     assert failed == 0, f"{failed} test cases failed"
