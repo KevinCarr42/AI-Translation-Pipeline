@@ -3,7 +3,7 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from translate.document import translate_word_document, _has_formatting_differences, _translate_paragraph, _get_all_runs, _join_run_texts, HyperlinkRunWrapper
+from translate.document import translate_word_document, _has_formatting_differences, _translate_paragraph, _get_all_runs, _join_run_texts, _split_into_sentences, HyperlinkRunWrapper
 from translate.models import create_translator
 from docx import Document
 from docx.shared import RGBColor
@@ -956,6 +956,60 @@ def test_join_run_texts():
     else:
         print(f"[FAIL] Expected '', got '{result}'")
         failed += 1
+
+    print(f"\n{passed} passed, {failed} failed\n")
+    assert failed == 0, f"{failed} test cases failed"
+
+
+def test_split_into_sentences():
+    print("\n=== Testing _split_into_sentences ===\n")
+
+    passed = 0
+    failed = 0
+
+    test_cases = [
+        {
+            'name': 'Figure label not split',
+            'input': 'Figure 1. Map showing the area.',
+            'expected': ['Figure 1. Map showing the area.'],
+        },
+        {
+            'name': 'Fig abbreviation protected, normal boundary works',
+            'input': 'Fig. 3 shows results. The data is clear.',
+            'expected': ['Fig. 3 shows results.', 'The data is clear.'],
+        },
+        {
+            'name': 'French Tableau label not split',
+            'input': 'Tableau 2. Les résultats montrent que...',
+            'expected': ['Tableau 2. Les résultats montrent que...'],
+        },
+        {
+            'name': 'Table label protected, normal boundary works',
+            'input': 'Table 1. First sentence. Second sentence.',
+            'expected': ['Table 1. First sentence.', 'Second sentence.'],
+        },
+        {
+            'name': 'Normal sentence splitting still works',
+            'input': 'Hello world. Goodbye world.',
+            'expected': ['Hello world.', 'Goodbye world.'],
+        },
+        {
+            'name': 'No split points returns single item',
+            'input': 'No periods here',
+            'expected': ['No periods here'],
+        },
+    ]
+
+    for test in test_cases:
+        result = _split_into_sentences(test['input'])
+        if result == test['expected']:
+            print(f"[PASS] {test['name']}")
+            passed += 1
+        else:
+            print(f"[FAIL] {test['name']}")
+            print(f"  Expected: {test['expected']}")
+            print(f"  Got:      {result}")
+            failed += 1
 
     print(f"\n{passed} passed, {failed} failed\n")
     assert failed == 0, f"{failed} test cases failed"

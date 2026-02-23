@@ -21,7 +21,7 @@ def split_by_sentences(text):
             })
             continue
         
-        sentences = re.split(r'(?<=[.!?])\s+', line)
+        sentences = _split_into_sentences(line)
         for sent_idx, sentence in enumerate(sentences):
             sentence = sentence.strip()
             if sentence:
@@ -82,7 +82,7 @@ def split_by_paragraphs(text):
                 'is_empty': False
             })
         else:
-            sentences = re.split(r'(?<=[.!?])\s+', line)
+            sentences = _split_into_sentences(line)
             line_chunks = []
             current_chunk = ''
             
@@ -126,7 +126,28 @@ def reassemble_paragraphs(translated_chunks, chunk_metadata):
 
 
 def normalize_apostrophes(text):
-    return text.replace("’", "'").replace("‘", "'")
+    return text.replace("'", "'").replace("'", "'")
+
+
+_PROTECTED_LABEL_PATTERN = re.compile(
+    r'\b(?:Figure|Fig|Table|Tableau)\.?\s*\d+\.?', re.IGNORECASE
+)
+_PLACEHOLDER = '\x00'
+
+
+def _split_into_sentences(text):
+    protected_positions = []
+    for match in _PROTECTED_LABEL_PATTERN.finditer(text):
+        for i, ch in enumerate(match.group()):
+            if ch == '.':
+                protected_positions.append(match.start() + i)
+
+    chars = list(text)
+    for pos in protected_positions:
+        chars[pos] = _PLACEHOLDER
+
+    sentences = re.split(r'(?<=[.!?])\s+', ''.join(chars))
+    return [s.replace(_PLACEHOLDER, '.') for s in sentences]
 
 
 def translate_txt_document(
@@ -476,7 +497,7 @@ def _chunk_and_translate(text, translation_manager, source_lang, target_lang, us
         )
         return result.get("translated_text", "[TRANSLATION FAILED]")
 
-    sentences = re.split(r'(?<=[.!?])\s+', text)
+    sentences = _split_into_sentences(text)
     chunks = []
     current_chunk = ''
     for sentence in sentences:
