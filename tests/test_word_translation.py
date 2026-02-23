@@ -889,38 +889,50 @@ def test_join_run_texts():
         def __init__(self, text):
             self.text = text
 
-    def make_all_runs(texts):
+    def make_runs(texts):
         return [(FakeRun(t), False) for t in texts]
 
-    # Test 1: no boundary whitespace — space should be inserted
-    result = _join_run_texts(make_all_runs(['Region', 'du', 'Québec']))
-    if result == 'Region du Québec':
-        print("[PASS] Space inserted between runs with no boundary whitespace")
+    def make_mixed_runs(entries):
+        return [(FakeRun(t), is_hl) for t, is_hl in entries]
+
+    # Test 1: same-type runs with no whitespace — NO space inserted (Word mid-word splits)
+    result = _join_run_texts(make_runs(['N', 'ewfoundland']))
+    if result == 'Newfoundland':
+        print("[PASS] Same-type runs joined without space (mid-word split)")
         passed += 1
     else:
-        print(f"[FAIL] Expected 'Region du Québec', got '{result}'")
+        print(f"[FAIL] Expected 'Newfoundland', got '{result}'")
         failed += 1
 
-    # Test 2: first run ends with space — no double space
-    result = _join_run_texts(make_all_runs(['Region ', 'du']))
+    # Test 2: same-type runs with existing whitespace preserved
+    result = _join_run_texts(make_runs(['Region ', 'du']))
     if result == 'Region du':
-        print("[PASS] No double space when first run ends with space")
+        print("[PASS] Existing whitespace preserved between same-type runs")
         passed += 1
     else:
         print(f"[FAIL] Expected 'Region du', got '{result}'")
         failed += 1
 
-    # Test 3: second run starts with space — no double space
-    result = _join_run_texts(make_all_runs(['Region', ' du']))
-    if result == 'Region du':
-        print("[PASS] No double space when second run starts with space")
+    # Test 3: hyperlink boundary — space inserted when no whitespace
+    result = _join_run_texts(make_mixed_runs([('Visit', False), ('Link', True)]))
+    if result == 'Visit Link':
+        print("[PASS] Space inserted at hyperlink boundary")
         passed += 1
     else:
-        print(f"[FAIL] Expected 'Region du', got '{result}'")
+        print(f"[FAIL] Expected 'Visit Link', got '{result}'")
         failed += 1
 
-    # Test 4: single run — no change
-    result = _join_run_texts(make_all_runs(['Hello world']))
+    # Test 4: hyperlink boundary — no double space when whitespace exists
+    result = _join_run_texts(make_mixed_runs([('Visit ', False), ('Link', True)]))
+    if result == 'Visit Link':
+        print("[PASS] No double space at hyperlink boundary with existing whitespace")
+        passed += 1
+    else:
+        print(f"[FAIL] Expected 'Visit Link', got '{result}'")
+        failed += 1
+
+    # Test 5: single run — no change
+    result = _join_run_texts(make_runs(['Hello world']))
     if result == 'Hello world':
         print("[PASS] Single run unchanged")
         passed += 1
@@ -928,16 +940,16 @@ def test_join_run_texts():
         print(f"[FAIL] Expected 'Hello world', got '{result}'")
         failed += 1
 
-    # Test 5: empty text runs
-    result = _join_run_texts(make_all_runs(['Hello', '', 'world']))
-    if result == 'Hello world':
-        print("[PASS] Empty runs handled correctly")
+    # Test 6: empty text runs between same-type — no spaces injected
+    result = _join_run_texts(make_runs(['Hello', '', 'world']))
+    if result == 'Helloworld':
+        print("[PASS] Same-type empty runs joined without space")
         passed += 1
     else:
-        print(f"[FAIL] Expected 'Hello world', got '{result}'")
+        print(f"[FAIL] Expected 'Helloworld', got '{result}'")
         failed += 1
 
-    # Test 6: None text runs
+    # Test 7: None text runs
     result = _join_run_texts([(FakeRun(None), False), (FakeRun('text'), False)])
     if result == 'text':
         print("[PASS] None text runs handled correctly")
@@ -946,7 +958,7 @@ def test_join_run_texts():
         print(f"[FAIL] Expected 'text', got '{result}'")
         failed += 1
 
-    # Test 7: empty list
+    # Test 8: empty list
     result = _join_run_texts([])
     if result == '':
         print("[PASS] Empty list returns empty string")

@@ -350,14 +350,24 @@ def _get_all_runs(paragraph):
 
 
 def _join_run_texts(all_runs):
-    parts = [run.text or '' for run, _ in all_runs]
-    if not parts:
+    if not all_runs:
         return ''
-    result = parts[0]
+    parts = [(run.text or '', is_hl) for run, is_hl in all_runs]
+    result = parts[0][0]
+    prev_is_hl = parts[0][1]
     for i in range(1, len(parts)):
-        if parts[i] and result and not result[-1].isspace() and not parts[i][0].isspace():
+        text, is_hl = parts[i]
+        # Only insert a space at hyperlink boundaries, never between same-type runs.
+        # Word routinely splits single words across runs for internal reasons
+        # (spell-check, proofing marks), so same-type runs must be joined without spaces.
+        boundary_crosses_hyperlink = (prev_is_hl != is_hl)
+        if (text and result
+                and not result[-1].isspace() and not text[0].isspace()
+                and boundary_crosses_hyperlink):
             result += ' '
-        result += parts[i]
+        result += text
+        if text:
+            prev_is_hl = is_hl
     return result
 
 
