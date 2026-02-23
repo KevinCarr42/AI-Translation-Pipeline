@@ -328,6 +328,18 @@ def _get_all_runs(paragraph):
     return results
 
 
+def _join_run_texts(all_runs):
+    parts = [run.text or '' for run, _ in all_runs]
+    if not parts:
+        return ''
+    result = parts[0]
+    for i in range(1, len(parts)):
+        if parts[i] and result and not result[-1].isspace() and not parts[i][0].isspace():
+            result += ' '
+        result += parts[i]
+    return result
+
+
 def _get_run_format_key(run):
     font_color = None
     if run.font.color and run.font.color.rgb:
@@ -497,8 +509,7 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
         return idx
 
     runs = [r for r, _ in all_runs]
-    run_texts = [run.text or '' for run in runs]
-    full_text = ''.join(run_texts)
+    full_text = _join_run_texts(all_runs)
 
     if not full_text.strip():
         return idx
@@ -560,7 +571,7 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
 
     # Has formatting differences - translate as single unit and remap proportionally
     content_runs = [run for run in runs if run.text and run.text.strip()]
-    full_text = ''.join(run.text or '' for run in runs)
+    full_text = _join_run_texts(all_runs)
     original_lengths = [len(run.text) for run in content_runs]
 
     text_to_translate = full_text.strip()

@@ -3,7 +3,7 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from translate.document import translate_word_document, _has_formatting_differences, _translate_paragraph, _get_all_runs, HyperlinkRunWrapper
+from translate.document import translate_word_document, _has_formatting_differences, _translate_paragraph, _get_all_runs, _join_run_texts, HyperlinkRunWrapper
 from translate.models import create_translator
 from docx import Document
 from docx.shared import RGBColor
@@ -875,6 +875,86 @@ def test_get_all_runs():
         passed += 1
     else:
         print(f"[FAIL] Plain paragraph result unexpected: {[(r.text, hl) for r, hl in all_runs2]}")
+        failed += 1
+
+    print(f"\n{passed} passed, {failed} failed\n")
+    assert failed == 0, f"{failed} test cases failed"
+
+
+def test_join_run_texts():
+    print("\n=== Testing _join_run_texts boundary spacing ===\n")
+
+    passed = 0
+    failed = 0
+
+    class FakeRun:
+        def __init__(self, text):
+            self.text = text
+
+    def make_all_runs(texts):
+        return [(FakeRun(t), False) for t in texts]
+
+    # Test 1: no boundary whitespace — space should be inserted
+    result = _join_run_texts(make_all_runs(['Region', 'du', 'Québec']))
+    if result == 'Region du Québec':
+        print("[PASS] Space inserted between runs with no boundary whitespace")
+        passed += 1
+    else:
+        print(f"[FAIL] Expected 'Region du Québec', got '{result}'")
+        failed += 1
+
+    # Test 2: first run ends with space — no double space
+    result = _join_run_texts(make_all_runs(['Region ', 'du']))
+    if result == 'Region du':
+        print("[PASS] No double space when first run ends with space")
+        passed += 1
+    else:
+        print(f"[FAIL] Expected 'Region du', got '{result}'")
+        failed += 1
+
+    # Test 3: second run starts with space — no double space
+    result = _join_run_texts(make_all_runs(['Region', ' du']))
+    if result == 'Region du':
+        print("[PASS] No double space when second run starts with space")
+        passed += 1
+    else:
+        print(f"[FAIL] Expected 'Region du', got '{result}'")
+        failed += 1
+
+    # Test 4: single run — no change
+    result = _join_run_texts(make_all_runs(['Hello world']))
+    if result == 'Hello world':
+        print("[PASS] Single run unchanged")
+        passed += 1
+    else:
+        print(f"[FAIL] Expected 'Hello world', got '{result}'")
+        failed += 1
+
+    # Test 5: empty text runs
+    result = _join_run_texts(make_all_runs(['Hello', '', 'world']))
+    if result == 'Hello world':
+        print("[PASS] Empty runs handled correctly")
+        passed += 1
+    else:
+        print(f"[FAIL] Expected 'Hello world', got '{result}'")
+        failed += 1
+
+    # Test 6: None text runs
+    result = _join_run_texts([(FakeRun(None), False), (FakeRun('text'), False)])
+    if result == 'text':
+        print("[PASS] None text runs handled correctly")
+        passed += 1
+    else:
+        print(f"[FAIL] Expected 'text', got '{result}'")
+        failed += 1
+
+    # Test 7: empty list
+    result = _join_run_texts([])
+    if result == '':
+        print("[PASS] Empty list returns empty string")
+        passed += 1
+    else:
+        print(f"[FAIL] Expected '', got '{result}'")
         failed += 1
 
     print(f"\n{passed} passed, {failed} failed\n")
