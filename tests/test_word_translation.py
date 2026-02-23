@@ -658,9 +658,6 @@ def _paragraph_has_hyperlink_relationship(paragraph):
     return len(hyperlinks) > 0
 
 
-# This test is expected to FAIL with the current code. It documents the bug where
-# paragraph.runs does not include runs inside <w:hyperlink> elements, causing
-# hyperlink text to be invisible to the translation pipeline.
 def test_hyperlink_in_paragraph():
     print("\n=== Testing hyperlink text preserved in correct position after translation ===\n")
     
@@ -756,11 +753,11 @@ def test_hyperlink_in_paragraph():
                     print(f"  Output: {output_full_text}")
                     case_failed = True
             
-            # Check 4: hyperlink relationship must still exist in the XML
+            # Check 4: hyperlink XML should be stripped after translation
             if not case_failed:
                 has_hyperlink = _paragraph_has_hyperlink_relationship(output_para)
-                if not has_hyperlink:
-                    print(f"[FAIL] {test['name']} - hyperlink relationship lost after translation")
+                if has_hyperlink:
+                    print(f"[FAIL] {test['name']} - hyperlink XML was not stripped after translation")
                     case_failed = True
             
             # Check 5: the hyperlink text should have been included in what was sent to
@@ -1127,6 +1124,88 @@ def test_hyperlink_stripping_and_records():
     except Exception as e:
         print(f"[FAIL] Exception in no-hyperlink test: {e}")
         failed += 1
+
+    print(f"\n{passed} passed, {failed} failed\n")
+    assert failed == 0, f"{failed} test cases failed"
+
+
+def test_write_hyperlink_notes():
+    print("\n=== Testing write_hyperlink_notes creates valid notes document ===\n")
+
+    from translate.hyperlink_notes import write_hyperlink_notes
+
+    passed = 0
+    failed = 0
+
+    records = [
+        {'original_text': 'Example Link', 'full_sentence': 'Visit Example Link for details.', 'url': 'https://example.com'},
+        {'original_text': 'Another', 'full_sentence': 'See Another for more.', 'url': 'https://another.com'},
+    ]
+
+    temp_file = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
+    temp_file.close()
+    temp_path = temp_file.name
+
+    try:
+        write_hyperlink_notes(records, temp_path)
+
+        doc = Document(temp_path)
+
+        # Check 1: document has at least one table
+        if len(doc.tables) >= 1:
+            print("[PASS] Document contains at least one table")
+            passed += 1
+        else:
+            print(f"[FAIL] Expected at least 1 table, got {len(doc.tables)}")
+            failed += 1
+
+        table = doc.tables[0]
+
+        # Check 2: table has 3 columns
+        num_cols = len(table.rows[0].cells) if table.rows else 0
+        if num_cols == 3:
+            print("[PASS] Table has 3 columns")
+            passed += 1
+        else:
+            print(f"[FAIL] Expected 3 columns, got {num_cols}")
+            failed += 1
+
+        # Check 3: table has 3 rows (1 header + 2 data)
+        num_rows = len(table.rows)
+        if num_rows == 3:
+            print("[PASS] Table has 3 rows (1 header + 2 data)")
+            passed += 1
+        else:
+            print(f"[FAIL] Expected 3 rows, got {num_rows}")
+            failed += 1
+
+        # Check 4: header row contains correct labels
+        header_texts = [cell.text for cell in table.rows[0].cells]
+        expected_headers = ['Original Text', 'Full Sentence', 'URL']
+        if header_texts == expected_headers:
+            print(f"[PASS] Header row correct: {header_texts}")
+            passed += 1
+        else:
+            print(f"[FAIL] Header row wrong")
+            print(f"  Expected: {expected_headers}")
+            print(f"  Got: {header_texts}")
+            failed += 1
+
+        # Check 5: first data row contains correct values
+        first_row_texts = [cell.text for cell in table.rows[1].cells]
+        expected_first_row = ['Example Link', 'Visit Example Link for details.', 'https://example.com']
+        if first_row_texts == expected_first_row:
+            print(f"[PASS] First data row correct: {first_row_texts}")
+            passed += 1
+        else:
+            print(f"[FAIL] First data row wrong")
+            print(f"  Expected: {expected_first_row}")
+            print(f"  Got: {first_row_texts}")
+            failed += 1
+
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
     print(f"\n{passed} passed, {failed} failed\n")
     assert failed == 0, f"{failed} test cases failed"
