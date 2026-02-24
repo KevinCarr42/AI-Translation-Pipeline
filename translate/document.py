@@ -450,7 +450,6 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
 
     # Re-fetch after merge since runs may have changed
     all_runs = _get_all_runs(paragraph)
-    runs = all_runs
 
     # Check if paragraph has actual formatting differences
     if not _has_formatting_differences(paragraph):
@@ -483,7 +482,7 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
         translated_text = normalize_apostrophes(translated_text)
 
         first_content_run = None
-        for run in runs:
+        for run in all_runs:
             if run.text and run.text.strip():
                 first_content_run = run
                 break
@@ -491,37 +490,30 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
         if first_content_run:
             first_content_run.text = leading_ws + translated_text + trailing_ws
             found_first = False
-            for run in runs:
+            for run in all_runs:
                 if run.text and run.text.strip():
                     if found_first:
                         run.text = ''
                     else:
                         found_first = True
 
-        if _apply_cyan:
-            from docx.enum.text import WD_COLOR_INDEX
-            for run in _get_all_runs(paragraph):
-                if hasattr(run, 'font') and hasattr(run.font, 'highlight_color'):
-                    run.font.highlight_color = WD_COLOR_INDEX.TURQUOISE
+    else:
+        # Has formatting differences - translate as single unit and remap proportionally
+        content_runs = [run for run in all_runs if run.text and run.text.strip()]
+        full_text = _join_run_texts(all_runs)
+        original_lengths = [len(run.text) for run in content_runs]
 
-        return idx + 1
+        text_to_translate = full_text.strip()
+        if not text_to_translate:
+            return idx
 
-    # Has formatting differences - translate as single unit and remap proportionally
-    content_runs = [run for run in runs if run.text and run.text.strip()]
-    full_text = _join_run_texts(all_runs)
-    original_lengths = [len(run.text) for run in content_runs]
+        translated_text = _chunk_and_translate(
+            text_to_translate, translation_manager, source_lang, target_lang,
+            use_find_replace, idx, use_cache
+        )
+        translated_text = normalize_apostrophes(translated_text)
 
-    text_to_translate = full_text.strip()
-    if not text_to_translate:
-        return idx
-
-    translated_text = _chunk_and_translate(
-        text_to_translate, translation_manager, source_lang, target_lang,
-        use_find_replace, idx, use_cache
-    )
-    translated_text = normalize_apostrophes(translated_text)
-
-    _distribute_text_to_runs(translated_text, content_runs, original_lengths)
+        _distribute_text_to_runs(translated_text, content_runs, original_lengths)
 
     if _apply_cyan:
         from docx.enum.text import WD_COLOR_INDEX
