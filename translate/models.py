@@ -310,14 +310,16 @@ class TranslationManager:
                                model_name=None, idx=None, single_attempt=False):
         param_variations = [
             {"num_beams": 4},
-            {"num_beams": 2},
-            {"num_beams": 5},
             {"num_beams": 6},
-            {"num_beams": 7},
             {"num_beams": 8},
-            {"num_beams": 4, "length_penalty": 0.8},
-            {"num_beams": 4, "length_penalty": 1.2},
-            {"num_beams": 4, "repetition_penalty": 1.1},
+            
+            # NOTE: more attempts is rarely successful, just try 3x for now
+            # {"num_beams": 2},
+            # {"num_beams": 5},
+            # {"num_beams": 7},
+            # {"num_beams": 4, "length_penalty": 0.8},
+            # {"num_beams": 4, "length_penalty": 1.2},
+            # {"num_beams": 4, "repetition_penalty": 1.1},
         ]
         
         base_kwargs = base_generation_kwargs or {}
@@ -343,7 +345,7 @@ class TranslationManager:
                     })
             
             if self.is_valid_translation(translated, text, token_mapping):
-                if i:
+                if i and self.debug:
                     print(f"\tValid translation following {i} retries.")
                 
                 if self.debug and retry_log and debug_key:
@@ -371,7 +373,8 @@ class TranslationManager:
                 "original_text": text
             }
         
-        print(f"\tNo valid translations found following {i} attempted configs.")
+        if self.debug:
+            print(f"\tNo valid translations found following {i} attempted configs.")
         return None, len(param_variations), None
     
     def check_token_prefix_error(self, translated_text, original_text):
@@ -406,7 +409,8 @@ class TranslationManager:
                          target_text=None, debug=False, single_attempt=False):
         
         if not text or not text.strip():
-            print(f"Skipping empty/whitespace text for model {model_name}")
+            if self.debug:
+                print(f"Skipping empty/whitespace text for model {model_name}")
             return {
                 "find_replace_error": False,
                 "token_prefix_error": False,
@@ -490,7 +494,8 @@ class TranslationManager:
             }
         
         if translated_text is None:
-            print(f"Warning: Translation returned None for model {model_name} (idx={idx}). Using original text: '{text}'")
+            if self.debug:
+                print(f"Warning: Translation returned None for model {model_name} (idx={idx}). Using original text: '{text}'")
             translated_text = text
             token_prefix_error = False
         

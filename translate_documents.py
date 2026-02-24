@@ -16,11 +16,12 @@ if __name__ == '__main__':
     
     file_list = (
         ("1432_en.docx", "en"),
-        ("1466_fr.docx", "fr"),
+        # ("1466_fr.docx", "fr"),
     )
     
     translation_manager = create_translator(
         use_finetuned=use_finetuned,
+        debug = True
     )
     
     if print_timing:

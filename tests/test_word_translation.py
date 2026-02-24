@@ -3,7 +3,7 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from translate.document import translate_word_document, _has_formatting_differences, _translate_paragraph, _get_all_runs, _join_run_texts, _split_into_sentences, _set_proofing_language, HyperlinkRunWrapper
+from translate.document import translate_word_document, _has_formatting_differences, _translate_paragraph, _get_all_runs, _join_run_texts, _split_into_sentences, _set_proofing_language
 from translate.models import create_translator
 from docx import Document
 from docx.shared import RGBColor
@@ -812,67 +812,61 @@ def _build_para_link_end(doc):
 
 
 def test_get_all_runs():
-    print("\n=== Testing _get_all_runs() returns hyperlink runs in document order ===\n")
+    print("\n=== Testing _get_all_runs() returns direct w:r children only ===\n")
 
     passed = 0
     failed = 0
 
-    # Test 1: mixed paragraph with plain run, hyperlink, plain run
+    # Test 1: plain paragraph returns all runs
     doc = Document()
     para = doc.add_paragraph()
-    para.add_run('Before ')
-    _add_hyperlink(para, 'https://example.com', 'Link Text')
-    para.add_run(' after.')
+    para.add_run('Hello ')
+    para.add_run('world.')
 
     all_runs = _get_all_runs(para)
-    texts = [(r.text, is_hl) for r, is_hl in all_runs]
-    expected = [('Before ', False), ('Link Text', True), (' after.', False)]
+    texts = [r.text for r in all_runs]
+    expected = ['Hello ', 'world.']
 
     if texts == expected:
-        print(f"[PASS] Document order correct: {texts}")
+        print(f"[PASS] Plain runs returned correctly: {texts}")
         passed += 1
     else:
-        print(f"[FAIL] Document order wrong")
+        print(f"[FAIL] Plain runs wrong")
         print(f"  Expected: {expected}")
         print(f"  Got: {texts}")
         failed += 1
 
-    # Test 2: hyperlink wrapper is correct type
-    hyperlink_entries = [(r, is_hl) for r, is_hl in all_runs if is_hl]
-    if len(hyperlink_entries) == 1 and isinstance(hyperlink_entries[0][0], HyperlinkRunWrapper):
-        print(f"[PASS] Hyperlink run is HyperlinkRunWrapper instance")
-        passed += 1
-    else:
-        print(f"[FAIL] Hyperlink run type wrong")
-        failed += 1
-
-    # Test 3: mutating wrapper.text changes the underlying XML
-    wrapper = hyperlink_entries[0][0]
-    wrapper.text = 'Modified'
-    nsmap = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
-    hyperlinks = para._element.findall(ns.qn('w:hyperlink'))
-    xml_text = hyperlinks[0].findall('.//w:t', nsmap)[0].text
-
-    if xml_text == 'Modified':
-        print(f"[PASS] Wrapper .text setter mutates underlying XML")
-        passed += 1
-    else:
-        print(f"[FAIL] Wrapper .text setter did not mutate XML")
-        print(f"  Expected: 'Modified'")
-        print(f"  Got: '{xml_text}'")
-        failed += 1
-
-    # Test 4: paragraph with no hyperlinks returns same as paragraph.runs
+    # Test 2: paragraph with hyperlinks only returns direct w:r children (skips hyperlink-nested runs)
     doc2 = Document()
     para2 = doc2.add_paragraph()
-    para2.add_run('Plain text only.')
-    all_runs2 = _get_all_runs(para2)
+    para2.add_run('Before ')
+    _add_hyperlink(para2, 'https://example.com', 'Link Text')
+    para2.add_run(' after.')
 
-    if len(all_runs2) == 1 and all_runs2[0][1] is False and all_runs2[0][0].text == 'Plain text only.':
-        print(f"[PASS] Plain paragraph returns runs with is_hyperlink=False")
+    all_runs2 = _get_all_runs(para2)
+    texts2 = [r.text for r in all_runs2]
+    expected2 = ['Before ', ' after.']
+
+    if texts2 == expected2:
+        print(f"[PASS] Hyperlink-nested runs correctly skipped: {texts2}")
         passed += 1
     else:
-        print(f"[FAIL] Plain paragraph result unexpected: {[(r.text, hl) for r, hl in all_runs2]}")
+        print(f"[FAIL] Expected hyperlink runs to be skipped")
+        print(f"  Expected: {expected2}")
+        print(f"  Got: {texts2}")
+        failed += 1
+
+    # Test 3: single run paragraph
+    doc3 = Document()
+    para3 = doc3.add_paragraph()
+    para3.add_run('Plain text only.')
+    all_runs3 = _get_all_runs(para3)
+
+    if len(all_runs3) == 1 and all_runs3[0].text == 'Plain text only.':
+        print(f"[PASS] Single run paragraph works correctly")
+        passed += 1
+    else:
+        print(f"[FAIL] Single run paragraph result unexpected: {[r.text for r in all_runs3]}")
         failed += 1
 
     print(f"\n{passed} passed, {failed} failed\n")
@@ -880,7 +874,7 @@ def test_get_all_runs():
 
 
 def test_join_run_texts():
-    print("\n=== Testing _join_run_texts boundary spacing ===\n")
+    print("\n=== Testing _join_run_texts concatenation ===\n")
 
     passed = 0
     failed = 0
@@ -890,48 +884,27 @@ def test_join_run_texts():
             self.text = text
 
     def make_runs(texts):
-        return [(FakeRun(t), False) for t in texts]
+        return [FakeRun(t) for t in texts]
 
-    def make_mixed_runs(entries):
-        return [(FakeRun(t), is_hl) for t, is_hl in entries]
-
-    # Test 1: same-type runs with no whitespace — NO space inserted (Word mid-word splits)
+    # Test 1: runs concatenated directly (Word mid-word splits)
     result = _join_run_texts(make_runs(['N', 'ewfoundland']))
     if result == 'Newfoundland':
-        print("[PASS] Same-type runs joined without space (mid-word split)")
+        print("[PASS] Runs concatenated directly (mid-word split)")
         passed += 1
     else:
         print(f"[FAIL] Expected 'Newfoundland', got '{result}'")
         failed += 1
 
-    # Test 2: same-type runs with existing whitespace preserved
+    # Test 2: existing whitespace preserved
     result = _join_run_texts(make_runs(['Region ', 'du']))
     if result == 'Region du':
-        print("[PASS] Existing whitespace preserved between same-type runs")
+        print("[PASS] Existing whitespace preserved between runs")
         passed += 1
     else:
         print(f"[FAIL] Expected 'Region du', got '{result}'")
         failed += 1
 
-    # Test 3: hyperlink boundary — space inserted when no whitespace
-    result = _join_run_texts(make_mixed_runs([('Visit', False), ('Link', True)]))
-    if result == 'Visit Link':
-        print("[PASS] Space inserted at hyperlink boundary")
-        passed += 1
-    else:
-        print(f"[FAIL] Expected 'Visit Link', got '{result}'")
-        failed += 1
-
-    # Test 4: hyperlink boundary — no double space when whitespace exists
-    result = _join_run_texts(make_mixed_runs([('Visit ', False), ('Link', True)]))
-    if result == 'Visit Link':
-        print("[PASS] No double space at hyperlink boundary with existing whitespace")
-        passed += 1
-    else:
-        print(f"[FAIL] Expected 'Visit Link', got '{result}'")
-        failed += 1
-
-    # Test 5: single run — no change
+    # Test 3: single run — no change
     result = _join_run_texts(make_runs(['Hello world']))
     if result == 'Hello world':
         print("[PASS] Single run unchanged")
@@ -940,17 +913,17 @@ def test_join_run_texts():
         print(f"[FAIL] Expected 'Hello world', got '{result}'")
         failed += 1
 
-    # Test 6: empty text runs between same-type — no spaces injected
+    # Test 4: empty text runs — no spaces injected
     result = _join_run_texts(make_runs(['Hello', '', 'world']))
     if result == 'Helloworld':
-        print("[PASS] Same-type empty runs joined without space")
+        print("[PASS] Empty runs joined without space")
         passed += 1
     else:
         print(f"[FAIL] Expected 'Helloworld', got '{result}'")
         failed += 1
 
-    # Test 7: None text runs
-    result = _join_run_texts([(FakeRun(None), False), (FakeRun('text'), False)])
+    # Test 5: None text runs
+    result = _join_run_texts([FakeRun(None), FakeRun('text')])
     if result == 'text':
         print("[PASS] None text runs handled correctly")
         passed += 1
@@ -958,7 +931,7 @@ def test_join_run_texts():
         print(f"[FAIL] Expected 'text', got '{result}'")
         failed += 1
 
-    # Test 8: empty list
+    # Test 6: empty list
     result = _join_run_texts([])
     if result == '':
         print("[PASS] Empty list returns empty string")
@@ -1071,14 +1044,14 @@ def test_hyperlink_stripping_and_records():
         all_runs_after = _get_all_runs(para)
         all_have_cyan = all(
             run.font.highlight_color == WD_COLOR_INDEX.TURQUOISE
-            for run, _ in all_runs_after
+            for run in all_runs_after
             if run.text and run.text.strip()
         )
         if all_have_cyan:
             print("[PASS] Cyan (turquoise) highlighting applied to all runs")
             passed += 1
         else:
-            highlight_values = [(run.text, run.font.highlight_color) for run, _ in all_runs_after]
+            highlight_values = [(run.text, run.font.highlight_color) for run in all_runs_after]
             print(f"[FAIL] Not all runs have cyan highlighting: {highlight_values}")
             failed += 1
 
@@ -1124,7 +1097,7 @@ def test_hyperlink_stripping_and_records():
         all_runs_plain = _get_all_runs(para2)
         any_cyan = any(
             hasattr(run, 'font') and hasattr(run.font, 'highlight_color') and run.font.highlight_color == WD_COLOR_INDEX.TURQUOISE
-            for run, _ in all_runs_plain
+            for run in all_runs_plain
         )
         if not any_cyan:
             print("[PASS] No cyan highlighting on paragraph without hyperlinks")

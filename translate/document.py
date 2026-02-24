@@ -221,154 +221,12 @@ def translate_txt_document(
     return next_idx if translated_chunks else start_idx
 
 
-class HyperlinkRunWrapper:
-
-    _nsmap = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
-    _wns = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
-
-    # Attributes like val/ascii may be namespaced ({w:}val) or plain (val)
-    # depending on whether the document was built by python-docx or Microsoft Word.
-    @staticmethod
-    def _get_attr(elem, attr_name, ns):
-        val = elem.get(f'{{{ns}}}{attr_name}')
-        if val is None:
-            val = elem.get(attr_name)
-        return val
-
-    class _Font:
-
-        class _Color:
-            def __init__(self, rpr, nsmap, wns):
-                self._rpr = rpr
-                self._nsmap = nsmap
-                self._wns = wns
-
-            @property
-            def rgb(self):
-                if self._rpr is None:
-                    return None
-                color_elem = self._rpr.find('w:color', self._nsmap)
-                if color_elem is None:
-                    return None
-                return HyperlinkRunWrapper._get_attr(color_elem, 'val', self._wns)
-
-        def __init__(self, rpr, nsmap, wns):
-            self._rpr = rpr
-            self._nsmap = nsmap
-            self._wns = wns
-            self.color = self._Color(rpr, nsmap, wns)
-
-        @property
-        def name(self):
-            if self._rpr is None:
-                return None
-            rfonts = self._rpr.find('w:rFonts', self._nsmap)
-            if rfonts is None:
-                return None
-            return HyperlinkRunWrapper._get_attr(rfonts, 'ascii', self._wns)
-
-        @property
-        def size(self):
-            if self._rpr is None:
-                return None
-            sz = self._rpr.find('w:sz', self._nsmap)
-            if sz is None:
-                return None
-            val = HyperlinkRunWrapper._get_attr(sz, 'val', self._wns)
-            if val is None:
-                return None
-            return int(val)
-
-    def __init__(self, r_element):
-        self._r = r_element
-        self._rpr = r_element.find('w:rPr', self._nsmap)
-        self.font = self._Font(self._rpr, self._nsmap, self._wns)
-
-    @property
-    def text(self):
-        t_elem = self._r.find('w:t', self._nsmap)
-        if t_elem is None:
-            return None
-        return t_elem.text
-
-    @text.setter
-    def text(self, value):
-        from lxml import etree
-        t_elem = self._r.find('w:t', self._nsmap)
-        if t_elem is None:
-            t_elem = etree.SubElement(self._r, f'{{{self._nsmap["w"]}}}t')
-        t_elem.text = value
-
-    def _get_bool_prop(self, tag):
-        if self._rpr is None:
-            return None
-        elem = self._rpr.find(f'w:{tag}', self._nsmap)
-        if elem is None:
-            return None
-        val = self._get_attr(elem, 'val', self._wns)
-        if val is None:
-            return True
-        if val in ('1', 'true'):
-            return True
-        if val in ('0', 'false'):
-            return False
-        return True
-
-    @property
-    def bold(self):
-        return self._get_bool_prop('b')
-
-    @property
-    def italic(self):
-        return self._get_bool_prop('i')
-
-    @property
-    def underline(self):
-        if self._rpr is None:
-            return None
-        u_elem = self._rpr.find('w:u', self._nsmap)
-        if u_elem is None:
-            return None
-        return self._get_attr(u_elem, 'val', self._wns)
-
-
-# paragraph.runs only returns direct w:r children of w:p, silently skipping
-# w:r elements nested inside w:hyperlink elements. This helper walks the XML
-# in document order so hyperlink text is included in translation.
 def _get_all_runs(paragraph):
-    from docx.text.run import Run
-    from docx.oxml.ns import qn
-
-    results = []
-    for child in paragraph._element:
-        if child.tag == qn('w:r'):
-            results.append((Run(child, paragraph), False))
-        elif child.tag == qn('w:hyperlink'):
-            for r_elem in child.findall(qn('w:r')):
-                results.append((HyperlinkRunWrapper(r_elem), True))
-    return results
+    return list(paragraph.runs)
 
 
 def _join_run_texts(all_runs):
-    if not all_runs:
-        return ''
-    parts = [(run.text or '', is_hl) for run, is_hl in all_runs]
-    result = parts[0][0]
-    prev_is_hl = parts[0][1]
-    for i in range(1, len(parts)):
-        text, is_hl = parts[i]
-        # Only insert a space at hyperlink boundaries, never between same-type runs.
-        # Word routinely splits single words across runs for internal reasons
-        # (spell-check, proofing marks), so same-type runs must be joined without spaces.
-        boundary_crosses_hyperlink = (prev_is_hl != is_hl)
-        if (text and result
-                and not result[-1].isspace() and not text[0].isspace()
-                and boundary_crosses_hyperlink):
-            result += ' '
-        result += text
-        if text:
-            prev_is_hl = is_hl
-    return result
+    return ''.join(run.text or '' for run in all_runs)
 
 
 def _get_run_format_key(run):
@@ -394,22 +252,20 @@ def _merge_identical_runs(paragraph):
     if len(all_runs) <= 1:
         return
 
-    # Build list of (run, format_key, is_hyperlink) for runs with content
     run_info = []
-    for run, is_hyperlink in all_runs:
+    for run in all_runs:
         if run.text:
-            run_info.append((run, _get_run_format_key(run), is_hyperlink))
+            run_info.append((run, _get_run_format_key(run)))
 
     if len(run_info) <= 1:
         return
 
-    # Merge adjacent runs with identical formatting, but never across hyperlink boundaries
     i = 0
     while i < len(run_info) - 1:
-        current_run, current_key, current_hl = run_info[i]
-        next_run, next_key, next_hl = run_info[i + 1]
+        current_run, current_key = run_info[i]
+        next_run, next_key = run_info[i + 1]
 
-        if current_key == next_key and current_hl == next_hl:
+        if current_key == next_key:
             current_run.text += next_run.text
             next_run.text = ''
             run_info.pop(i + 1)
@@ -422,7 +278,7 @@ def _build_format_segments(paragraph):
     current_segment_runs = []
     current_format_key = None
     
-    for run, _ in _get_all_runs(paragraph):
+    for run in _get_all_runs(paragraph):
         if not run.text:
             continue
 
@@ -447,7 +303,7 @@ def _build_format_segments(paragraph):
 
 def _has_formatting_differences(paragraph):
     format_keys = set()
-    for run, _ in _get_all_runs(paragraph):
+    for run in _get_all_runs(paragraph):
         if run.text and run.text.strip():
             format_keys.add(_get_run_format_key(run))
             if len(format_keys) > 1:
@@ -489,8 +345,6 @@ def _distribute_text_to_runs(translated_text, content_runs, original_lengths):
         pieces = [translated_text] + [''] * (len(content_runs) - 1)
 
     for run, piece in zip(content_runs, pieces):
-        if not piece and isinstance(run, HyperlinkRunWrapper):
-            logger.warning("Hyperlink run received empty text after proportional distribution")
         run.text = piece
 
 
@@ -535,47 +389,57 @@ def _chunk_and_translate(text, translation_manager, source_lang, target_lang, us
 
 
 def _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=True, hyperlink_records=None):
-    all_runs = _get_all_runs(paragraph)
-    if not all_runs:
-        return idx
+    from docx.oxml.ns import qn
 
     _apply_cyan = False
-    has_hyperlinks = any(is_hl for _, is_hl in all_runs)
+    p_elem = paragraph._element
+    hyperlink_elems = p_elem.findall(qn('w:hyperlink'))
+    has_hyperlinks = len(hyperlink_elems) > 0
 
     if hyperlink_records is not None and has_hyperlinks:
-        from docx.oxml.ns import qn
-
-        full_text = _join_run_texts(all_runs)
+        wns = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+        # Build full paragraph text for context (including hyperlink run text)
+        all_text_parts = []
+        for child in p_elem:
+            if child.tag == qn('w:r'):
+                t_elem = child.find(f'{{{wns}}}t')
+                if t_elem is not None and t_elem.text:
+                    all_text_parts.append(t_elem.text)
+            elif child.tag == qn('w:hyperlink'):
+                for r_elem in child.findall(f'{{{wns}}}r'):
+                    t_elem = r_elem.find(f'{{{wns}}}t')
+                    if t_elem is not None and t_elem.text:
+                        all_text_parts.append(t_elem.text)
+        full_paragraph_text = ''.join(all_text_parts)
 
         # Collect hyperlink records before stripping
-        for run, is_hl in all_runs:
-            if not is_hl:
-                continue
-            hyperlink_elem = run._r.getparent()
-            r_id = hyperlink_elem.get(qn('r:id'))
+        for hl_elem in hyperlink_elems:
+            r_id = hl_elem.get(qn('r:id'))
             if r_id and r_id in paragraph.part.rels:
                 url = paragraph.part.rels[r_id].target_ref
             else:
                 url = ''
-            hyperlink_records.append({
-                'original_text': run.text or '',
-                'full_sentence': full_text,
-                'url': url,
-            })
+            for r_elem in hl_elem.findall(f'{{{wns}}}r'):
+                t_elem = r_elem.find(f'{{{wns}}}t')
+                original_text = t_elem.text if t_elem is not None and t_elem.text else ''
+                hyperlink_records.append({
+                    'original_text': original_text,
+                    'full_sentence': full_paragraph_text,
+                    'url': url,
+                })
 
         # Strip hyperlink XML wrappers — move w:r elements up into w:p
-        p_elem = paragraph._element
-        for child in list(p_elem):
-            if child.tag == qn('w:hyperlink'):
-                parent = child
-                for r_elem in list(parent.findall(qn('w:r'))):
-                    p_elem.insert(list(p_elem).index(parent), r_elem)
-                p_elem.remove(parent)
+        for hl_elem in list(p_elem.findall(qn('w:hyperlink'))):
+            for r_elem in list(hl_elem.findall(qn('w:r'))):
+                p_elem.insert(list(p_elem).index(hl_elem), r_elem)
+            p_elem.remove(hl_elem)
 
-        all_runs = _get_all_runs(paragraph)
         _apply_cyan = True
 
-    runs = [r for r, _ in all_runs]
+    all_runs = _get_all_runs(paragraph)
+    if not all_runs:
+        return idx
+
     full_text = _join_run_texts(all_runs)
 
     if not full_text.strip():
@@ -586,7 +450,7 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
 
     # Re-fetch after merge since runs may have changed
     all_runs = _get_all_runs(paragraph)
-    runs = [r for r, _ in all_runs]
+    runs = all_runs
 
     # Check if paragraph has actual formatting differences
     if not _has_formatting_differences(paragraph):
@@ -636,7 +500,7 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
 
         if _apply_cyan:
             from docx.enum.text import WD_COLOR_INDEX
-            for run, _ in _get_all_runs(paragraph):
+            for run in _get_all_runs(paragraph):
                 if hasattr(run, 'font') and hasattr(run.font, 'highlight_color'):
                     run.font.highlight_color = WD_COLOR_INDEX.TURQUOISE
 
@@ -661,7 +525,7 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
 
     if _apply_cyan:
         from docx.enum.text import WD_COLOR_INDEX
-        for run, _ in _get_all_runs(paragraph):
+        for run in _get_all_runs(paragraph):
             if hasattr(run, 'font') and hasattr(run.font, 'highlight_color'):
                 run.font.highlight_color = WD_COLOR_INDEX.TURQUOISE
 
