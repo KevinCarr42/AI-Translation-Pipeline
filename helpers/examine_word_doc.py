@@ -116,21 +116,21 @@ def print_document_details(document_name, root_directory, display_sections, disp
     include_all = not kwargs["only_include_format_changes"]
     
     if display_sections:
-        print_block(f"sections ({len(document.sections)})", level=0)
+        print_block(f"sections ({len(document.sections)})", level=1)
         print_section_details(document)
         
     if display_paragraphs:
-        print_block(f"paragraphs ({len(document.paragraphs)})", level=0)
+        print_block(f"paragraphs ({len(document.paragraphs)})", level=1)
         for i, paragraph in enumerate(document.paragraphs):
             print_paragraph_details(paragraph, p_index=i, **kwargs)
         
     if display_tables:
-        print_block(f"tables ({len(document.tables)})", level=0)
+        print_block(f"tables ({len(document.tables)})", level=1)
         for n, table in enumerate(document.tables):
-            print_block(f"table {n}")
+            print_block(f"table {n}", level=2)
             for i, row in enumerate(table.rows):
                 if include_all:
-                    print_block(f"row {i}", level=2)
+                    print_block(f"row {i}", level=3)
                 for j, cell in enumerate(row.cells):
                     if include_all:
                         print_block(f"cell {j}", level=3)
