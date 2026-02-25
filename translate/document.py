@@ -141,11 +141,11 @@ def _split_into_sentences(text):
         for i, ch in enumerate(match.group()):
             if ch == '.':
                 protected_positions.append(match.start() + i)
-
+    
     chars = list(text)
     for pos in protected_positions:
         chars[pos] = _PLACEHOLDER
-
+    
     sentences = re.split(r'(?<=[.!?])\s+', ''.join(chars))
     return [s.replace(_PLACEHOLDER, '.') for s in sentences]
 
@@ -251,20 +251,20 @@ def _merge_identical_runs(paragraph):
     all_runs = _get_all_runs(paragraph)
     if len(all_runs) <= 1:
         return
-
+    
     run_info = []
     for run in all_runs:
         if run.text:
             run_info.append((run, _get_run_format_key(run)))
-
+    
     if len(run_info) <= 1:
         return
-
+    
     i = 0
     while i < len(run_info) - 1:
         current_run, current_key = run_info[i]
         next_run, next_key = run_info[i + 1]
-
+        
         if current_key == next_key:
             current_run.text += next_run.text
             next_run.text = ''
@@ -281,9 +281,9 @@ def _build_format_segments(paragraph):
     for run in _get_all_runs(paragraph):
         if not run.text:
             continue
-
+        
         format_key = _get_run_format_key(run)
-
+        
         if current_format_key is None:
             current_format_key = format_key
             current_segment_runs = [run]
@@ -331,19 +331,19 @@ def _distribute_text_to_runs(translated_text, content_runs, original_lengths):
         else:
             boundary = backward
         split_points.append(boundary)
-
+    
     pieces = []
     previous = 0
     for point in split_points:
         pieces.append(translated_text[previous:point].strip())
         previous = point
     pieces.append(translated_text[previous:].strip())
-
+    
     # Fall back if any content run would be left empty while others have text
     non_empty_pieces = [p for p in pieces if p]
     if len(non_empty_pieces) < len(content_runs) and len(non_empty_pieces) > 0:
         pieces = [translated_text] + [''] * (len(content_runs) - 1)
-
+    
     for run, piece in zip(content_runs, pieces):
         run.text = piece
 
@@ -360,7 +360,7 @@ def _chunk_and_translate(text, translation_manager, source_lang, target_lang, us
             use_cache=use_cache
         )
         return result.get("translated_text", "[TRANSLATION FAILED]")
-
+    
     sentences = _split_into_sentences(text)
     chunks = []
     current_chunk = ''
@@ -373,7 +373,7 @@ def _chunk_and_translate(text, translation_manager, source_lang, target_lang, us
             current_chunk = sentence
     if current_chunk:
         chunks.append(current_chunk)
-
+    
     translated_parts = []
     for chunk in chunks:
         result = translation_manager.translate_with_best_model(
@@ -390,12 +390,12 @@ def _chunk_and_translate(text, translation_manager, source_lang, target_lang, us
 
 def _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=True, hyperlink_records=None):
     from docx.oxml.ns import qn
-
+    
     _apply_cyan = False
     p_elem = paragraph._element
     hyperlink_elems = p_elem.findall(qn('w:hyperlink'))
     has_hyperlinks = len(hyperlink_elems) > 0
-
+    
     if hyperlink_records is not None and has_hyperlinks:
         wns = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
         # Build full paragraph text for context (including hyperlink run text)
@@ -411,7 +411,7 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
                     if t_elem is not None and t_elem.text:
                         all_text_parts.append(t_elem.text)
         full_paragraph_text = ''.join(all_text_parts)
-
+        
         # Collect hyperlink records before stripping
         for hl_elem in hyperlink_elems:
             r_id = hl_elem.get(qn('r:id'))
@@ -427,66 +427,66 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
                     'full_sentence': full_paragraph_text,
                     'url': url,
                 })
-
+        
         # Strip hyperlink XML wrappers — move w:r elements up into w:p
         for hl_elem in list(p_elem.findall(qn('w:hyperlink'))):
             for r_elem in list(hl_elem.findall(qn('w:r'))):
                 p_elem.insert(list(p_elem).index(hl_elem), r_elem)
             p_elem.remove(hl_elem)
-
+        
         _apply_cyan = True
-
+    
     all_runs = _get_all_runs(paragraph)
     if not all_runs:
         return idx
-
+    
     full_text = _join_run_texts(all_runs)
-
+    
     if not full_text.strip():
         return idx
-
+    
     # Clean up invisible run boundaries by merging identical adjacent runs
     _merge_identical_runs(paragraph)
-
+    
     # Re-fetch after merge since runs may have changed
     all_runs = _get_all_runs(paragraph)
-
+    
     # Check if paragraph has actual formatting differences
     if not _has_formatting_differences(paragraph):
         # No formatting differences - translate as single unit (original simple approach)
         leading_ws = ''
         trailing_ws = ''
         text_to_translate = full_text
-
+        
         if text_to_translate and text_to_translate[0].isspace():
             i = 0
             while i < len(text_to_translate) and text_to_translate[i].isspace():
                 i += 1
             leading_ws = text_to_translate[:i]
             text_to_translate = text_to_translate[i:]
-
+        
         if text_to_translate and text_to_translate[-1].isspace():
             i = len(text_to_translate) - 1
             while i >= 0 and text_to_translate[i].isspace():
                 i -= 1
             trailing_ws = text_to_translate[i + 1:]
             text_to_translate = text_to_translate[:i + 1]
-
+        
         if not text_to_translate:
             return idx
-
+        
         translated_text = _chunk_and_translate(
             text_to_translate, translation_manager, source_lang, target_lang,
             use_find_replace, idx, use_cache
         )
         translated_text = normalize_apostrophes(translated_text)
-
+        
         first_content_run = None
         for run in all_runs:
             if run.text and run.text.strip():
                 first_content_run = run
                 break
-
+        
         if first_content_run:
             first_content_run.text = leading_ws + translated_text + trailing_ws
             found_first = False
@@ -496,41 +496,41 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
                         run.text = ''
                     else:
                         found_first = True
-
+    
     else:
         # Has formatting differences - translate as single unit and remap proportionally
         content_runs = [run for run in all_runs if run.text and run.text.strip()]
         full_text = _join_run_texts(all_runs)
         original_lengths = [len(run.text) for run in content_runs]
-
+        
         text_to_translate = full_text.strip()
         if not text_to_translate:
             return idx
-
+        
         translated_text = _chunk_and_translate(
             text_to_translate, translation_manager, source_lang, target_lang,
             use_find_replace, idx, use_cache
         )
         translated_text = normalize_apostrophes(translated_text)
-
+        
         _distribute_text_to_runs(translated_text, content_runs, original_lengths)
-
+    
     if _apply_cyan:
         from docx.enum.text import WD_COLOR_INDEX
         for run in _get_all_runs(paragraph):
             if hasattr(run, 'font') and hasattr(run.font, 'highlight_color'):
                 run.font.highlight_color = WD_COLOR_INDEX.TURQUOISE
-
+    
     return idx + 1
 
 
 def _set_proofing_language(document, target_lang):
     from docx.oxml.ns import qn
     from lxml import etree
-
+    
     locale_map = {'fr': 'fr-CA', 'en': 'en-CA'}
     locale_code = locale_map[target_lang]
-
+    
     for r_elem in document.element.iter(qn('w:r')):
         rPr = r_elem.find(qn('w:rPr'))
         if rPr is None:
@@ -581,24 +581,24 @@ def translate_word_document(
     document = Document(input_docx_file)
     idx = 1
     hyperlink_records = []
-
+    
     for paragraph in document.paragraphs:
         idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records)
-
+    
     for table in document.tables:
         for row in table.rows:
             for cell in row.cells:
                 for paragraph in cell.paragraphs:
                     idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records)
-
+    
     translated_hf_ids = set()
-
+    
     header_footer_attrs = [
         'header', 'footer',
         'first_page_header', 'first_page_footer',
         'even_page_header', 'even_page_footer',
     ]
-
+    
     for section in document.sections:
         for attr in header_footer_attrs:
             hf = getattr(section, attr)
@@ -614,13 +614,13 @@ def translate_word_document(
                     for cell in row.cells:
                         for paragraph in cell.paragraphs:
                             idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records)
-
+    
     _set_proofing_language(document, target_lang)
     document.save(output_docx_file)
-
+    
     if hyperlink_records:
         from translate.hyperlink_notes import write_hyperlink_notes
         notes_path = os.path.splitext(output_docx_file)[0] + '_translation_notes.docx'
         write_hyperlink_notes(hyperlink_records, notes_path)
-
+    
     return output_docx_file
