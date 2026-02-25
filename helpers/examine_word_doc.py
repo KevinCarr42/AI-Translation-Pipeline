@@ -27,7 +27,7 @@ def print_dir():
                     break
 
 
-def print_paragraph_details(p, print_text=False, min_runs=1, only_include_format_changes=False):
+def print_paragraph_details(p, p_index=None, print_text=False, min_runs=1, only_include_format_changes=False):
     rows = []
     changes = None
     has_changes = False
@@ -48,10 +48,14 @@ def print_paragraph_details(p, print_text=False, min_runs=1, only_include_format
             elif changes != [b, it, sz, fnt, color]:
                 has_changes = True
         
-        rows.append(f"{idx:<4} | {b:<4} | {it:<4} | {sz:<5} | {fnt:<10} | {color:<8} | {run.text}")
+        run_text = run.text.replace("\n", "<br>")
+        rows.append(f'{idx:<4} | {b:<4} | {it:<4} | {sz:<5} | {fnt:<10} | {color:<8} | "{run_text}"')
     
     if (not only_include_format_changes or has_changes) and (idx >= min_runs):
         print()
+        if p_index is not None:
+            print_block(f"paragraph {i}", level=2)
+            print()
         print("-" * 80)
         print(f"{'Idx':<4} | {'Bold':<4} | {'Ital':<4} | {'Size':<5} | {'Font':<10} | {'Color':<8} | {'Text'}")
         print("-" * 80)
@@ -60,12 +64,14 @@ def print_paragraph_details(p, print_text=False, min_runs=1, only_include_format
             print()
             print(f'-> full text: "{p.text}"')
             print()
+    elif p_index is not None:
+        print_block(f"skipping paragraph {p_index} - no formatting changes detected", level=2)
 
 
 def print_section_details(doc):
     w = 20
     for i, section in enumerate(doc.sections):
-        print_block(f"Section {i}", major=False)
+        print_block(f"Section {i}", level=2)
         print()
         
         print(f"{'Start Type:':<{w}} {section.start_type}")
@@ -79,37 +85,51 @@ def print_section_details(doc):
         print()
 
 
-def print_block(text, major=True):
-    if major:
+def print_block(text, level=1):
+    if level == 0:
+        print()
+        centered = f"  {text.upper()}  ".center(80, "=")
+        print(f"\n{'=' * 80}\n{'=' * 80}\n{centered}\n{'=' * 80}\n{'=' * 80}\n")
+        print()
+    elif level == 1:
+        print()
         centered = f" {text.upper()} ".center(80, "=")
         print(f"\n{'=' * 80}\n{centered}\n{'=' * 80}\n")
-    else:
+    elif level == 2:
         print(f"    {text}    ".center(80, "-"))
 
 
 if __name__ == '__main__':
-    filepath = Path('..') / "_TRANSLATED_DOCUMENTS" / "EXAMPLE_PROBLEM.docx"
-    check_dir = False
-    
-    document = Document(filepath)
-    
-    if check_dir:
-        print_dir()
-        
-    kwargs = {"print_text": True, "min_runs": 2, "only_include_format_changes": True}
-    
-    print_block("sections")
-    print_section_details(document)
-    
-    print_block("paragraphs")
-    for i, paragraph in enumerate(document.paragraphs):
-        print("Paragraph", i)
-        print_paragraph_details(paragraph, **kwargs)
-        
-    print_block("tables")
-    for table in document.tables:
-        for i, row in enumerate(table.rows):
-            for j, cell in enumerate(row.cells):
-                for k, paragraph in enumerate(cell.paragraphs):
-                    print_paragraph_details(paragraph, **kwargs)
-    
+    kwargs = {"print_text": True, "min_runs": 1, "only_include_format_changes": True}
+    root = Path('..') / "_TRANSLATED_DOCUMENTS" / "fsar_docs"
+    docs = [
+        "1301_en.docx",
+        # "1303_en.docx",
+        # "1407_en.docx",
+        # "1429_en.docx",
+        # "1379_fr.docx",
+        # "1415_fr.docx",
+        # "1444_fr.docx",
+        # "1458_fr.docx",
+    ]
+
+    for doc in docs:
+        print_block(doc, level=0)
+        document = Document(root / doc)
+
+        print_block(f"sections ({len(document.sections)})")
+        print_section_details(document)
+
+        print_block(f"paragraphs ({len(document.paragraphs)})")
+        for i, paragraph in enumerate(document.paragraphs):
+            print_paragraph_details(paragraph, p_index=i, **kwargs)
+
+        print_block(f"tables ({len(document.tables)})")
+        for n, table in enumerate(document.tables):
+            print_block(f"table {n}")
+            for i, row in enumerate(table.rows):
+                print_block(f"row {i}", level=2)
+                for j, cell in enumerate(row.cells):
+                    for k, paragraph in enumerate(cell.paragraphs):
+                        print_paragraph_details(paragraph, **kwargs)
+
