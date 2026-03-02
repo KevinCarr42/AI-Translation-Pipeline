@@ -678,7 +678,17 @@ def translate_word_document(
     table_translations_dict = None
     if os.path.exists(config.TABLE_TRANSLATIONS_JSON_PATH):
         with open(config.TABLE_TRANSLATIONS_JSON_PATH, 'r', encoding='utf-8') as f:
-            table_translations_dict = json.load(f)
+            raw = json.load(f)
+        source_key = source_lang
+        target_key = target_lang
+        if isinstance(raw, list):
+            table_translations_dict = {
+                entry[source_key]: entry[target_key]
+                for entry in raw
+                if source_key in entry and target_key in entry
+            }
+        else:
+            table_translations_dict = raw
 
     for paragraph in document.paragraphs:
         idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records, preferential_dict=preferential_dict)
