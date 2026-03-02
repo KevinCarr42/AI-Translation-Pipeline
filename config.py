@@ -138,6 +138,14 @@ PREFERENTIAL_TRANSLATION_CONFIG = {
     "validate_tokens": True,
 }
 
+TABLE_TRANSLATION_CONFIG = {
+    "min_cell_length_for_ai": 20,
+}
+
+NUMERIC_CONVERSION_CONFIG = {
+    "enabled": True,
+}
+
 TRANSLATION_MODEL_VARIANTS = {
     "opus_mt_base": {
         "base_model_key": "opus_mt_en_fr",
