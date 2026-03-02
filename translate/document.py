@@ -588,6 +588,7 @@ def translate_word_document(
     for table in document.tables:
         for row in table.rows:
             for cell in row.cells:
+                # TODO: update tables to use rules outlined in the Tables section of TODO.md
                 for paragraph in cell.paragraphs:
                     idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records)
     
