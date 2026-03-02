@@ -1,5 +1,6 @@
 import logging
 import re
+import config
 from translate.models import create_translator
 
 logger = logging.getLogger(__name__)
@@ -348,7 +349,7 @@ def _distribute_text_to_runs(translated_text, content_runs, original_lengths):
         run.text = piece
 
 
-def _chunk_and_translate(text, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=True):
+def _chunk_and_translate(text, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=True, preferential_dict=None):
     MAX_CHAR = 600
     if len(text) <= MAX_CHAR:
         result = translation_manager.translate_with_best_model(
@@ -357,10 +358,11 @@ def _chunk_and_translate(text, translation_manager, source_lang, target_lang, us
             target_lang=target_lang,
             use_find_replace=use_find_replace,
             idx=idx,
-            use_cache=use_cache
+            use_cache=use_cache,
+            preferential_dict=preferential_dict
         )
         return result.get("translated_text", "[TRANSLATION FAILED]")
-    
+
     sentences = _split_into_sentences(text)
     chunks = []
     current_chunk = ''
@@ -382,13 +384,14 @@ def _chunk_and_translate(text, translation_manager, source_lang, target_lang, us
             target_lang=target_lang,
             use_find_replace=use_find_replace,
             idx=idx,
-            use_cache=use_cache
+            use_cache=use_cache,
+            preferential_dict=preferential_dict
         )
         translated_parts.append(result.get("translated_text", "[TRANSLATION FAILED]"))
     return ' '.join(translated_parts)
 
 
-def _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=True, hyperlink_records=None):
+def _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=True, hyperlink_records=None, preferential_dict=None):
     from docx.oxml.ns import qn
     
     _apply_cyan = False
@@ -477,10 +480,10 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
         
         translated_text = _chunk_and_translate(
             text_to_translate, translation_manager, source_lang, target_lang,
-            use_find_replace, idx, use_cache
+            use_find_replace, idx, use_cache, preferential_dict=preferential_dict
         )
         translated_text = normalize_apostrophes(translated_text)
-        
+
         first_content_run = None
         for run in all_runs:
             if run.text and run.text.strip():
@@ -509,10 +512,10 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
         
         translated_text = _chunk_and_translate(
             text_to_translate, translation_manager, source_lang, target_lang,
-            use_find_replace, idx, use_cache
+            use_find_replace, idx, use_cache, preferential_dict=preferential_dict
         )
         translated_text = normalize_apostrophes(translated_text)
-        
+
         _distribute_text_to_runs(translated_text, content_runs, original_lengths)
     
     if _apply_cyan:
@@ -581,16 +584,27 @@ def translate_word_document(
     document = Document(input_docx_file)
     idx = 1
     hyperlink_records = []
-    
+
+    import json
+    preferential_dict = None
+    if os.path.exists(config.PREFERENTIAL_JSON_PATH):
+        with open(config.PREFERENTIAL_JSON_PATH, 'r', encoding='utf-8') as f:
+            preferential_dict = json.load(f)
+
+    table_translations_dict = None
+    if os.path.exists(config.TABLE_TRANSLATIONS_JSON_PATH):
+        with open(config.TABLE_TRANSLATIONS_JSON_PATH, 'r', encoding='utf-8') as f:
+            table_translations_dict = json.load(f)
+
     for paragraph in document.paragraphs:
-        idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records)
+        idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records, preferential_dict=preferential_dict)
     
     for table in document.tables:
         for row in table.rows:
             for cell in row.cells:
                 # TODO: update tables to use rules outlined in the Tables section of TODO.md
                 for paragraph in cell.paragraphs:
-                    idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records)
+                    idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records, preferential_dict=preferential_dict)
     
     translated_hf_ids = set()
     
@@ -609,12 +623,12 @@ def translate_word_document(
                 continue
             translated_hf_ids.add(id(hf._element))
             for paragraph in hf.paragraphs:
-                idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records)
+                idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records, preferential_dict=preferential_dict)
             for table in hf.tables:
                 for row in table.rows:
                     for cell in row.cells:
                         for paragraph in cell.paragraphs:
-                            idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records)
+                            idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records, preferential_dict=preferential_dict)
     
     _set_proofing_language(document, target_lang)
     document.save(output_docx_file)

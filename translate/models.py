@@ -406,7 +406,8 @@ class TranslationManager:
     
     def translate_single(self, text, model_name, source_lang="en", target_lang="fr",
                          use_find_replace=True, generation_kwargs=None, idx=None,
-                         target_text=None, debug=False, single_attempt=False):
+                         target_text=None, debug=False, single_attempt=False,
+                         preferential_dict=None):
         
         if not text or not text.strip():
             if self.debug:
@@ -430,7 +431,7 @@ class TranslationManager:
         
         if use_find_replace:
             preprocessed_text, token_mapping = apply_preferential_translations(
-                text, source_lang, target_lang, config.PREFERENTIAL_JSON_PATH
+                text, source_lang, target_lang, preferential_dict if preferential_dict is not None else config.PREFERENTIAL_JSON_PATH
             )
             
             translated_with_tokens, retry_attempts, retry_params = self.translate_with_retries(
@@ -529,7 +530,7 @@ class TranslationManager:
     def translate_with_all_models(self, text, source_lang="en", target_lang="fr",
                                   use_find_replace=True, generation_kwargs=None,
                                   idx=None, target_text=None, debug=False,
-                                  single_attempt=False):
+                                  single_attempt=False, preferential_dict=None):
         model_names = list(self.loaded_models.keys())
         
         all_results = {}
@@ -540,7 +541,7 @@ class TranslationManager:
             result = self.translate_single(
                 text, model_name, source_lang, target_lang,
                 use_find_replace, generation_kwargs, idx, target_text, debug,
-                single_attempt
+                single_attempt, preferential_dict=preferential_dict
             )
             all_results[model_name] = result
             
