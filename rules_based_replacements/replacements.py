@@ -59,7 +59,11 @@ def find_translation_matches(source, target, source_lang, french_index, english_
 
 
 def preprocess_for_translation(text, translations_file, source_lang='fr'):
-    translations_data = load_translations(translations_file)
+    # Accept a pre-loaded dict to avoid repeated disk I/O at the call site
+    if isinstance(translations_file, dict):
+        translations_data = translations_file
+    else:
+        translations_data = load_translations(translations_file)
     
     if 'translations' in translations_data:
         translations = translations_data['translations']
