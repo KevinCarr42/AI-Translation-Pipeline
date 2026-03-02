@@ -516,7 +516,26 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
         )
         translated_text = normalize_apostrophes(translated_text)
 
-        _distribute_text_to_runs(translated_text, content_runs, original_lengths)
+        from translate.formatting_rules import apply_formatting_rules
+        rule_fired, formatted_runs = apply_formatting_rules(full_text, translated_text, all_runs)
+
+        if rule_fired and formatted_runs:
+            # Clear all existing run text, then assign from FormattedRun list
+            for run in all_runs:
+                run.text = ''
+            for i, fmt_run in enumerate(formatted_runs):
+                if i < len(content_runs):
+                    content_runs[i].text = fmt_run.text
+                    content_runs[i].italic = fmt_run.italic
+                    if fmt_run.superscript:
+                        content_runs[i].font.superscript = True
+                    if fmt_run.subscript:
+                        content_runs[i].font.subscript = True
+                else:
+                    # More formatted runs than content runs — append to last run
+                    content_runs[-1].text += fmt_run.text
+        else:
+            _distribute_text_to_runs(translated_text, content_runs, original_lengths)
     
     if _apply_cyan:
         from docx.enum.text import WD_COLOR_INDEX
