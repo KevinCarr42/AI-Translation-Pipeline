@@ -527,6 +527,71 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
     return idx + 1
 
 
+def _translate_table_cell(cell, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=True, hyperlink_records=None, preferential_dict=None, table_translations_dict=None):
+    from translate.numeric import is_numeric, convert_numeric
+
+    to_fr = target_lang == "fr"
+    cell_text = cell.text
+
+    if not cell_text or not cell_text.strip():
+        return idx
+
+    stripped = cell_text.strip()
+
+    # 1. Numeric conversion
+    if config.NUMERIC_CONVERSION_CONFIG.get("enabled") and is_numeric(stripped):
+        converted = convert_numeric(stripped, to_fr=to_fr)
+        for paragraph in cell.paragraphs:
+            for run in paragraph.runs:
+                if run.text.strip():
+                    run.text = converted
+                    converted = ""
+        return idx
+
+    # 2. Exact match in table translations dict
+    if table_translations_dict and stripped in table_translations_dict:
+        replacement = table_translations_dict[stripped]
+        for paragraph in cell.paragraphs:
+            for run in paragraph.runs:
+                if run.text.strip():
+                    run.text = replacement
+                    replacement = ""
+        return idx
+
+    # 3. Preferential translations exact match
+    if preferential_dict:
+        lookup_key = stripped.lower()
+        pref_translations = preferential_dict.get("translations", preferential_dict)
+        for category, terms in pref_translations.items():
+            for term_key, term_data in terms.items():
+                if term_key.lower() == lookup_key:
+                    if source_lang == "en":
+                        from rules_based_replacements.token_utils import get_translation_value
+                        match_translation = get_translation_value(term_data)
+                    else:
+                        match_translation = term_key if source_lang == "fr" else None
+                    if match_translation:
+                        # Preserve leading capitalization
+                        if stripped[0].isupper() and match_translation[0].islower():
+                            match_translation = match_translation[0].upper() + match_translation[1:]
+                        for paragraph in cell.paragraphs:
+                            for run in paragraph.runs:
+                                if run.text.strip():
+                                    run.text = match_translation
+                                    match_translation = ""
+                        return idx
+
+    # 4. AI translation for cells exceeding minimum length
+    min_length = config.TABLE_TRANSLATION_CONFIG.get("min_cell_length_for_ai", 20)
+    if len(stripped) >= min_length:
+        for paragraph in cell.paragraphs:
+            idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records, preferential_dict=preferential_dict)
+        return idx
+
+    # 5. Short text - leave as-is
+    return idx
+
+
 def _set_proofing_language(document, target_lang):
     from docx.oxml.ns import qn
     from lxml import etree
@@ -602,9 +667,7 @@ def translate_word_document(
     for table in document.tables:
         for row in table.rows:
             for cell in row.cells:
-                # TODO: update tables to use rules outlined in the Tables section of TODO.md
-                for paragraph in cell.paragraphs:
-                    idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records, preferential_dict=preferential_dict)
+                idx = _translate_table_cell(cell, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records, preferential_dict=preferential_dict, table_translations_dict=table_translations_dict)
     
     translated_hf_ids = set()
     
@@ -627,8 +690,7 @@ def translate_word_document(
             for table in hf.tables:
                 for row in table.rows:
                     for cell in row.cells:
-                        for paragraph in cell.paragraphs:
-                            idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records, preferential_dict=preferential_dict)
+                        idx = _translate_table_cell(cell, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records, preferential_dict=preferential_dict, table_translations_dict=table_translations_dict)
     
     _set_proofing_language(document, target_lang)
     document.save(output_docx_file)
