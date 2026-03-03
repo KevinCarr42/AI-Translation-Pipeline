@@ -569,12 +569,22 @@ def _translate_table_cell(cell, translation_manager, source_lang, target_lang, u
 
     # 2. Exact match in table translations dict
     if table_translations_dict and stripped in table_translations_dict:
-        replacement = table_translations_dict[stripped]
-        for paragraph in cell.paragraphs:
-            for run in paragraph.runs:
-                if run.text.strip():
-                    run.text = replacement
-                    replacement = ""
+        from translate.convert_formating import parse_formatted_string
+        raw_replacement = table_translations_dict[stripped]
+        formatted_runs = parse_formatted_string(raw_replacement)
+        content_runs = [run for p in cell.paragraphs for run in p.runs if run.text.strip()]
+        for run in cell.paragraphs[0].runs:
+            run.text = ''
+        for i, fmt_run in enumerate(formatted_runs):
+            if i < len(content_runs):
+                content_runs[i].text = fmt_run.text
+                content_runs[i].italic = fmt_run.italic
+                if fmt_run.superscript:
+                    content_runs[i].font.superscript = True
+                if fmt_run.subscript:
+                    content_runs[i].font.subscript = True
+            else:
+                content_runs[-1].text += fmt_run.text
         return idx
 
     # 3. Preferential translations exact match
@@ -677,16 +687,21 @@ def translate_word_document(
 
     table_translations_dict = None
     if os.path.exists(config.TABLE_TRANSLATIONS_JSON_PATH):
+        import re
         with open(config.TABLE_TRANSLATIONS_JSON_PATH, 'r', encoding='utf-8') as f:
             raw = json.load(f)
         source_key = source_lang
         target_key = target_lang
         if isinstance(raw, list):
-            table_translations_dict = {
-                entry[source_key]: entry[target_key]
-                for entry in raw
-                if source_key in entry and target_key in entry
-            }
+            table_translations_dict = {}
+            for entry in raw:
+                if source_key not in entry or target_key not in entry:
+                    continue
+                # Strip formatting notation: /text/ -> text, _{text} -> text, ^{text} -> text
+                plain_key = re.sub(r'/([^/]+)/', r'\1', entry[source_key])
+                plain_key = re.sub(r'[_^]\{([^}]*)\}', r'\1', plain_key)
+                if plain_key not in table_translations_dict:
+                    table_translations_dict[plain_key] = entry[target_key]
         else:
             table_translations_dict = raw
 
