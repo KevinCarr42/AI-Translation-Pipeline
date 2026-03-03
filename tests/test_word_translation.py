@@ -1,10 +1,6 @@
-import sys
 import os
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-
-from translate.document import translate_word_document, _has_formatting_differences, _translate_paragraph, _get_all_runs, _join_run_texts, _split_into_sentences, _set_proofing_language
-from translate.models import create_translator
+from scitrans.translate.document import translate_word_document, _has_formatting_differences, _translate_paragraph, _get_all_runs, _join_run_texts, _split_into_sentences, _set_proofing_language
+from scitrans.translate.models import create_translator
 from docx import Document
 from docx.shared import RGBColor
 from docx.enum.text import WD_COLOR_INDEX
@@ -1117,7 +1113,7 @@ def test_hyperlink_stripping_and_records():
 def test_write_hyperlink_notes():
     print("\n=== Testing write_hyperlink_notes creates valid notes document ===\n")
 
-    from translate.hyperlink_notes import write_hyperlink_notes
+    from scitrans.translate.hyperlink_notes import write_hyperlink_notes
 
     passed = 0
     failed = 0

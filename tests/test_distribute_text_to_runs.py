@@ -1,10 +1,6 @@
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-
 import pytest
 from unittest.mock import MagicMock
-from translate.document import _distribute_text_to_runs
+from scitrans.translate.document import _distribute_text_to_runs
 
 
 def make_mock_run(text):

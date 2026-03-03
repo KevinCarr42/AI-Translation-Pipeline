@@ -1,4 +1,4 @@
-from translate.document import translate_txt_document
+from scitrans.translate.document import translate_txt_document
 
 
 def translation_pipeline(input_text_file, output_text_file, with_preferential_translation=True,

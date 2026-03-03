@@ -1,8 +1,8 @@
 import pytest
 from pathlib import Path
 from docx import Document
-from translate.models import create_translator
-from translate.document import translate_word_document
+from scitrans.translate.models import create_translator
+from scitrans.translate.document import translate_word_document
 
 
 @pytest.fixture(params=[("en", "fr"), ("fr", "en")])

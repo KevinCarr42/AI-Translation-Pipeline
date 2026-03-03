@@ -5,8 +5,8 @@ import time
 import pandas as pd
 import numpy as np
 
-import config
-from helpers.helpers import print_timing
+from scitrans import config
+from scitrans.helpers.helpers import print_timing
 
 
 @print_timing("loading nlp language models")

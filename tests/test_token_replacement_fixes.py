@@ -1,9 +1,5 @@
-import sys
 import os
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-
-from rules_based_replacements.replacements import find_corrupted_token, postprocess_translation
+from scitrans.rules_based_replacements.replacements import find_corrupted_token, postprocess_translation
 
 
 def test_find_corrupted_token():
@@ -230,7 +226,7 @@ def test_postprocess_translation():
 def test_validation_with_fuzzy_matching():
     print("\n=== Testing is_valid_translation() with fuzzy matching ===\n")
     
-    from translate.models import TranslationManager
+    from scitrans.translate.models import TranslationManager
     
     manager = TranslationManager(all_models={})
     
@@ -326,7 +322,7 @@ def test_mbart50_bug_fix():
     
     import re
     
-    models_file = os.path.join(os.path.dirname(__file__), '..', 'translate', 'models.py')
+    models_file = os.path.join(os.path.dirname(__file__), '..', 'src', 'scitrans', 'translate', 'models.py')
     
     with open(models_file, 'r', encoding='utf-8') as f:
         content = f.read()

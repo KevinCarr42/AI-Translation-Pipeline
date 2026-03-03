@@ -1,10 +1,6 @@
-import sys
-import os
 from unittest.mock import MagicMock, patch
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-
-from translate.models import TranslationManager
+from scitrans.translate.models import TranslationManager
 
 
 def _make_manager():

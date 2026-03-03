@@ -1,8 +1,8 @@
-import config
+from scitrans import config
 import time
 from pathlib import Path
-from translate.document import translate_txt_document, translate_word_document
-from translate.models import create_translator
+from scitrans.translate.document import translate_txt_document, translate_word_document
+from scitrans.translate.models import create_translator
 
 if __name__ == '__main__':
     print_timing = True

@@ -3,12 +3,12 @@ import os
 os.environ['TRANSFORMERS_OFFLINE'] = '1'
 os.environ['HF_HUB_OFFLINE'] = '1'
 
-import config
+from scitrans import config
 import logging
 import torch
 from sentence_transformers.util import pytorch_cos_sim
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, AutoModelForCausalLM, BitsAndBytesConfig
-from rules_based_replacements.preferential_translations import apply_preferential_translations, reverse_preferential_translations
+from scitrans.rules_based_replacements.preferential_translations import apply_preferential_translations, reverse_preferential_translations
 from huggingface_hub import try_to_load_from_cache
 
 
@@ -395,7 +395,7 @@ class TranslationManager:
             return False
         
         if token_mapping:
-            from rules_based_replacements.replacements import find_corrupted_token
+            from scitrans.rules_based_replacements.replacements import find_corrupted_token
             
             for key in token_mapping.keys():
                 found, _, _ = find_corrupted_token(translated_text, key)

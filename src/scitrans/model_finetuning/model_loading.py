@@ -1,5 +1,5 @@
 import torch
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, BitsAndBytesConfig
+from scitrans.transformers import AutoTokenizer, AutoModelForSeq2SeqLM, BitsAndBytesConfig
 
 
 def load_tokenizer_and_model(model_id, use_qlora, use_bfloat16, device_map):

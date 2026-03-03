@@ -1,7 +1,7 @@
 import json
 import re
 
-from helpers.helpers import print_timing
+from scitrans.helpers.helpers import print_timing
 
 outlier_criteria_s1 = {
     "len_ratio": (0.75, 1.92),  # override with 2 stdev len ratios

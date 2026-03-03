@@ -1,9 +1,5 @@
-import sys
 import os
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-
-from translate.document import translate_word_document
+from scitrans.translate.document import translate_word_document
 from docx import Document
 import tempfile
 

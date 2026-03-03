@@ -1,6 +1,6 @@
-from create_training_data.match_languages import create_matched_data
-from create_training_data.add_features import add_features
-from create_training_data.create_training_data import create_training_data, create_testing_data, save_jsonl
+from scitrans.create_training_data.match_languages import create_matched_data
+from scitrans.create_training_data.add_features import add_features
+from scitrans.create_training_data.create_training_data import create_training_data, create_testing_data, save_jsonl
 
 
 # FULL DATA-CLEANING PIPELINE

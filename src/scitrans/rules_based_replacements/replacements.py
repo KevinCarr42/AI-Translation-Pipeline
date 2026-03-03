@@ -1,7 +1,7 @@
 import re
 import spacy
 
-from rules_based_replacements.token_utils import (
+from scitrans.rules_based_replacements.token_utils import (
     create_replacement_token, load_translations, get_search_patterns,
     get_translation_value, build_english_to_french_lookup
 )

@@ -3,10 +3,10 @@ import json
 import os
 import random
 import re
-from translate.document import translate_txt_document
-from translate.models import create_translator
-from create_training_data.language_classifier.language_classifier import LanguageClassifier
-from create_training_data.match_languages import clean_text
+from scitrans.translate.document import translate_txt_document
+from scitrans.translate.models import create_translator
+from scitrans.create_training_data.language_classifier.language_classifier import LanguageClassifier
+from scitrans.create_training_data.match_languages import clean_text
 
 
 def get_paragraphs(folder, n_paragraphs_per_lang=10):

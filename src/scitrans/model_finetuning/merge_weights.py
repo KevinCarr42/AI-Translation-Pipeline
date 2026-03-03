@@ -1,7 +1,7 @@
 import os, torch
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 from peft import PeftModel
-import config
+from scitrans import config
 
 
 def merge_one(base_model_id, lora_dir, out_dir, dtype=torch.bfloat16):

@@ -1,7 +1,7 @@
 import logging
 import re
-import config
-from translate.models import create_translator
+from scitrans import config
+from scitrans.translate.models import create_translator
 
 logger = logging.getLogger(__name__)
 
@@ -520,7 +520,7 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
         )
         translated_text = normalize_apostrophes(translated_text)
 
-        from translate.formatting_rules import apply_formatting_rules
+        from scitrans.translate.formatting_rules import apply_formatting_rules
         rule_fired, formatted_runs = apply_formatting_rules(full_text, translated_text, all_runs)
 
         if rule_fired and formatted_runs:
@@ -551,7 +551,7 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
 
 
 def _translate_table_cell(cell, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=True, hyperlink_records=None, preferential_dict=None, table_translations_dict=None):
-    from translate.numeric import is_numeric, convert_numeric
+    from scitrans.translate.numeric import is_numeric, convert_numeric
 
     to_fr = target_lang == "fr"
     cell_text = cell.text
@@ -573,7 +573,7 @@ def _translate_table_cell(cell, translation_manager, source_lang, target_lang, u
 
     # 2. Exact match in table translations dict
     if table_translations_dict and stripped in table_translations_dict:
-        from translate.convert_formating import parse_formatted_string
+        from scitrans.translate.convert_formating import parse_formatted_string
         raw_replacement = table_translations_dict[stripped]
         formatted_runs = parse_formatted_string(raw_replacement)
         content_runs = [run for p in cell.paragraphs for run in p.runs if run.text.strip()]
@@ -599,7 +599,7 @@ def _translate_table_cell(cell, translation_manager, source_lang, target_lang, u
             for term_key, term_data in terms.items():
                 if term_key.lower() == lookup_key:
                     if source_lang == "en":
-                        from rules_based_replacements.token_utils import get_translation_value
+                        from scitrans.rules_based_replacements.token_utils import get_translation_value
                         match_translation = get_translation_value(term_data)
                     else:
                         match_translation = term_key if source_lang == "fr" else None
@@ -744,7 +744,7 @@ def translate_word_document(
     document.save(output_docx_file)
     
     if hyperlink_records:
-        from translate.hyperlink_notes import write_hyperlink_notes
+        from scitrans.translate.hyperlink_notes import write_hyperlink_notes
         notes_path = os.path.splitext(output_docx_file)[0] + '_translation_notes.docx'
         write_hyperlink_notes(hyperlink_records, notes_path)
     

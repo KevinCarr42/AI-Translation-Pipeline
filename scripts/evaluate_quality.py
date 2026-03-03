@@ -1,4 +1,4 @@
-from quality_evaluation.evaluate import run_quality_evaluation
+from scitrans.quality_evaluation.evaluate import run_quality_evaluation
 
 if __name__ == '__main__':
     jsonl_path = "../Data/pipeline_testing_data.jsonl"

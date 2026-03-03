@@ -5,8 +5,8 @@ import pandas as pd
 from sentence_transformers import SentenceTransformer
 from sentence_transformers.util import pytorch_cos_sim
 
-from translate.models import create_translator
-from translate.document import translate_txt_document
+from scitrans.translate.models import create_translator
+from scitrans.translate.document import translate_txt_document
 
 TEMP_DIR = os.path.join(os.path.dirname(__file__), "eval_results", "quality")
 DEFAULT_OUTPUT_PICKLE = os.path.join(os.path.dirname(__file__), "eval_results", "quality_test_results.pickle")

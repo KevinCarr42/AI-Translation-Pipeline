@@ -10,8 +10,8 @@ import numpy as np
 
 from sentence_transformers import SentenceTransformer, util
 
-import config
-from create_training_data.language_classifier.language_classifier import LanguageClassifier
+from scitrans import config
+from scitrans.create_training_data.language_classifier.language_classifier import LanguageClassifier
 
 
 def clean_text(text):
