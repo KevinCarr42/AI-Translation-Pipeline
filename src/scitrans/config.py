@@ -1,27 +1,33 @@
-import os
+from pathlib import Path
 
 # folders
-DATA_DIR = "../Data"
-TRANSLATED_TEXT_DIR = "_TRANSLATED_DOCUMENTS"
+USER_DIR = Path.home()
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+EXTERNAL_DATA_DIR = USER_DIR / "Documents/Repositories/AI/Data"
+INTERNAL_DATA_DIR = PROJECT_ROOT / "data"
+TRANSLATED_TEXT_DIR = INTERNAL_DATA_DIR / "_TRANSLATED_DOCUMENTS"
 
 # starting data
-PARSED_DOCS_DIR = os.path.join(DATA_DIR, "ParsedPublications")
-CORRELATION_CSV_PATH = os.path.join(DATA_DIR, "fr_eng_correlation_data.csv")
+PARSED_DOCS_DIR = EXTERNAL_DATA_DIR / "ParsedPublications"
+CORRELATION_CSV_PATH = EXTERNAL_DATA_DIR / "fr_eng_correlation_data.csv"
 
 # calculated data
-MATCHED_DATA = os.path.join(DATA_DIR, "pipeline_matched_data_wo_linebreaks.pickle")
-MATCHED_DATA_WITH_FEATURES = os.path.join(DATA_DIR, "pipeline_df_with_features.pickle")
+MATCHED_DATA = EXTERNAL_DATA_DIR / "pipeline_matched_data_wo_linebreaks.pickle"
+MATCHED_DATA_WITH_FEATURES = EXTERNAL_DATA_DIR / "pipeline_df_with_features.pickle"
 
 # training and testing data
-TRAINING_DATA_OUTPUT = os.path.join(DATA_DIR, "pipeline_training_data.jsonl")
-TESTING_DATA_OUTPUT = os.path.join(DATA_DIR, "pipeline_testing_data.jsonl")
+TRAINING_DATA_OUTPUT = EXTERNAL_DATA_DIR / "pipeline_training_data.jsonl"
+TESTING_DATA_OUTPUT = EXTERNAL_DATA_DIR / "pipeline_testing_data.jsonl"
 
 # translations folders
-PREFERENTIAL_JSON_PATH = os.path.join(DATA_DIR, "preferential_translations.json")
-TABLE_TRANSLATIONS_JSON_PATH = os.path.join(DATA_DIR, "table_translations.json")
-PRETRAINED_MODELS_FOLDER = os.path.join(DATA_DIR, "pretrained_models")
-MODEL_OUTPUT_DIR = os.path.join(DATA_DIR, "finetuning_outputs")
-MERGED_MODEL_DIR = os.path.join(DATA_DIR, "finetuning_merged")
+PREFERENTIAL_JSON_PATH = EXTERNAL_DATA_DIR / "preferential_translations.json"
+TABLE_TRANSLATIONS_JSON_PATH = EXTERNAL_DATA_DIR / "table_translations.json"
+PRETRAINED_MODELS_FOLDER = EXTERNAL_DATA_DIR / "pretrained_models"
+MODEL_OUTPUT_DIR = EXTERNAL_DATA_DIR / "finetuning_outputs"
+MERGED_MODEL_DIR = EXTERNAL_DATA_DIR / "finetuning_merged"
+
+Path(EXTERNAL_DATA_DIR).mkdir(parents=True, exist_ok=True)
+Path(MODEL_OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
 
 MODELS = {
     "m2m100_418m": {
@@ -189,6 +195,3 @@ TRANSLATION_MODEL_VARIANTS = {
         }
     },
 }
-
-os.makedirs(DATA_DIR, exist_ok=True)
-os.makedirs(MODEL_OUTPUT_DIR, exist_ok=True)

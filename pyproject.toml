@@ -7,7 +7,7 @@ name = "scitrans"
 version = "0.3.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = "==3.12.3"
 dependencies = [
     "alive-progress==3.3.0",
     "datasets==4.4.1",
@@ -29,6 +29,10 @@ dependencies = [
     "torch==2.6.0+cu124",
     "transformers==4.57.3",
     "notebook>=7.5.4",
+    "sacremoses>=0.1.1",
+    "en_core_web_lg",
+    "fr_core_news_lg",
+    "multiprocess>=0.70.18",
 ]
 
 [[tool.uv.index]]
@@ -43,6 +47,8 @@ packages = ["src/scitrans"]
 torch = { index = "pytorch-cu124" }
 torchvision = { index = "pytorch-cu124" }
 torchaudio = { index = "pytorch-cu124" }
+en_core_web_lg = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.8.0/en_core_web_lg-3.8.0-py3-none-any.whl" }
+fr_core_news_lg = { url = "https://github.com/explosion/spacy-models/releases/download/fr_core_news_lg-3.8.0/fr_core_news_lg-3.8.0-py3-none-any.whl" }
 
 [tool.deptry]
 ignore_notebooks = true

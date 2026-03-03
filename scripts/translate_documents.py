@@ -23,7 +23,7 @@ if __name__ == '__main__':
     
     translation_manager = create_translator(
         use_finetuned=use_finetuned,
-        debug = True
+        debug=True
     )
     
     if print_timing:
