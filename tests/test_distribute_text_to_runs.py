@@ -1,5 +1,10 @@
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
 import pytest
 from unittest.mock import MagicMock
+from translate.document import _distribute_text_to_runs
 
 
 def make_mock_run(text):
@@ -8,50 +13,7 @@ def make_mock_run(text):
     return run
 
 
-def _distribute_text_to_runs(translated_text, content_runs, original_lengths):
-    """Copy of the current (buggy) implementation for testing."""
-    total_original = sum(original_lengths)
-    split_points = []
-    cumulative = 0
-    for length in original_lengths[:-1]:
-        cumulative += length
-        ratio = cumulative / total_original
-        raw_offset = int(ratio * len(translated_text))
-        forward = raw_offset
-        while forward < len(translated_text) and translated_text[forward] != ' ':
-            forward += 1
-        backward = raw_offset
-        while backward > 0 and translated_text[backward] != ' ':
-            backward -= 1
-        if forward < len(translated_text):
-            boundary = forward
-        else:
-            boundary = backward
-        split_points.append(boundary)
-
-    pieces = []
-    previous = 0
-    for point in split_points:
-        pieces.append(translated_text[previous:point].strip())
-        previous = point
-    pieces.append(translated_text[previous:].strip())
-
-    non_empty_pieces = [p for p in pieces if p]
-    if len(non_empty_pieces) < len(content_runs) and len(non_empty_pieces) > 0:
-        pieces = [translated_text] + [''] * (len(content_runs) - 1)
-
-    for run, piece in zip(content_runs, pieces):
-        run.text = piece
-
-
 class TestDistributeTextToRunsBug:
-    """Tests demonstrating the missing-space bug in _distribute_text_to_runs.
-
-    These tests currently FAIL because they assert the correct (desired) behavior.
-    When the bug is fixed, replace _distribute_text_to_runs with the real import:
-        from translate.document import _distribute_text_to_runs
-    and these tests should pass.
-    """
 
     def test_region_du_labrador_missing_space(self):
         """Row 4: 'Région du' loses its space at the run boundary."""

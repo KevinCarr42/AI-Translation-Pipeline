@@ -38,7 +38,7 @@ class TestDocumentTranslations:
         goal = translation_context["doc_goal"]
         
         for i, (p, p_goal) in enumerate(zip(doc.paragraphs, goal.paragraphs)):
-            with subtests.test(msg=f"Para {i}", direction=translation_context["direction"]):
+            with subtests.test(msg=f"Paragraph {i}", direction=translation_context["direction"]):
                 assert p.text == p_goal.text
     
     def test_tables(self, translation_context, subtests):

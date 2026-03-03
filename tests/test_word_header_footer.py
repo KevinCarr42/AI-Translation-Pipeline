@@ -139,14 +139,20 @@ def test_header_table_cells_translated():
                 cell_0_text = table.rows[0].cells[0].text
                 cell_1_text = table.rows[0].cells[1].text
                 
-                if '[TR:' in cell_0_text and '[TR:' in cell_1_text:
+                # Cell 0 is long enough to be AI-translated; cell 1 may be
+                # short (< 20 chars) and intentionally left as-is by the
+                # table cell dispatch logic.
+                cell_0_ok = '[TR:' in cell_0_text
+                cell_1_ok = '[TR:' in cell_1_text or len(cell_1_text.strip()) < 20
+
+                if cell_0_ok and cell_1_ok:
                     print(f"[PASS] {test['name']}")
                     print(f"  Cell 0: {cell_0_text[:40]}")
                     print(f"  Cell 1: {cell_1_text[:40]}")
                     passed += 1
                 else:
                     print(f"[FAIL] {test['name']}")
-                    print(f"  Expected: Both cells contain '[TR:'")
+                    print(f"  Expected: Cell 0 translated, cell 1 translated or short")
                     print(f"  Cell 0: {cell_0_text}")
                     print(f"  Cell 1: {cell_1_text}")
                     failed += 1
@@ -403,7 +409,10 @@ def test_body_table_still_translated():
             for row in table.rows:
                 for cell in row.cells:
                     cell_text = cell.text
-                    if cell_text.strip() and '[TR:' not in cell_text:
+                    stripped = cell_text.strip()
+                    # Short cells (< 20 chars) are intentionally left as-is
+                    # by the table cell dispatch logic
+                    if stripped and len(stripped) >= 20 and '[TR:' not in cell_text:
                         print(f"[FAIL] {test['name']}")
                         print(f"  Cell not translated: {cell_text}")
                         all_cells_ok = False

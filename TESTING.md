@@ -3,26 +3,31 @@
 ## Quick Commands
 
 ### Run all tests
+
 ```bash
 pytest tests/
 ```
 
 ### Run with verbose output
+
 ```bash
 pytest tests/ -v
 ```
 
 ### Run specific test file
+
 ```bash
 pytest tests/test_token_replacement_fixes.py
 ```
 
 ### Run specific test function
+
 ```bash
 pytest tests/test_token_replacement_fixes.py::test_find_corrupted_token
 ```
 
 ### Run with coverage report
+
 ```bash
 pytest tests/ --cov=rules_based_replacements --cov=translate
 ```
@@ -51,6 +56,7 @@ pytest tests/ --cov=rules_based_replacements --cov=translate
 ### Run Individual Tests in PyCharm
 
 Once pytest is configured:
+
 - Open a test file
 - You'll see green play icons next to each test function
 - Click any play icon to run that specific test
@@ -59,6 +65,7 @@ Once pytest is configured:
 ## Test Structure
 
 Tests are located in `tests/` directory:
+
 - `test_token_replacement_fixes.py` - Tests for token replacement improvements
 
 ## Configuration Files
@@ -74,6 +81,7 @@ Tests are located in `tests/` directory:
 4. pytest will automatically discover and run them
 
 Example:
+
 ```python
 def test_my_feature():
     result = my_function()

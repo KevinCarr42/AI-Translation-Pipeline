@@ -470,13 +470,13 @@ def test_spacing_between_runs():
 
 def test_mid_paragraph_formatting():
     print("\n=== Testing mid-paragraph formatting preservation ===\n")
-    
+
     passed = 0
     failed = 0
-    
+
     class MockTranslationManager:
         def translate_with_best_model(self, text, source_lang, target_lang,
-                                      use_find_replace, idx, use_cache=True):
+                                      use_find_replace, idx, use_cache=True, preferential_dict=None):
             return {"translated_text": "TRANSLATED: " + text}
     
     mock_manager = MockTranslationManager()
@@ -579,13 +579,13 @@ def test_color_normalization():
 
 def test_long_paragraph_chunking():
     print("\n=== Testing long paragraph chunking (>600 chars) ===\n")
-    
+
     passed = 0
     failed = 0
-    
+
     class MockTranslationManager:
         def translate_with_best_model(self, text, source_lang, target_lang,
-                                      use_find_replace, idx, use_cache=True):
+                                      use_find_replace, idx, use_cache=True, preferential_dict=None):
             return {"translated_text": "TRANSLATED: " + text}
     
     mock_manager = MockTranslationManager()
@@ -660,13 +660,13 @@ def _paragraph_has_hyperlink_relationship(paragraph):
 
 def test_hyperlink_in_paragraph():
     print("\n=== Testing hyperlink text preserved in correct position after translation ===\n")
-    
+
     passed = 0
     failed = 0
-    
+
     class MockTranslationManager:
         def translate_with_best_model(self, text, source_lang, target_lang,
-                                      use_find_replace, idx, use_cache=True):
+                                      use_find_replace, idx, use_cache=True, preferential_dict=None):
             return {"translated_text": "TRANSLATED: " + text}
     
     mock_manager = MockTranslationManager()
@@ -1006,7 +1006,7 @@ def test_hyperlink_stripping_and_records():
 
     class MockTranslationManager:
         def translate_with_best_model(self, text, source_lang, target_lang,
-                                      use_find_replace, idx, use_cache=True):
+                                      use_find_replace, idx, use_cache=True, preferential_dict=None):
             return {"translated_text": "TRANSLATED: " + text}
 
     mock_manager = MockTranslationManager()
@@ -1204,7 +1204,7 @@ def test_proofing_language_set():
 
     class MockTranslationManager:
         def translate_with_best_model(self, text, source_lang, target_lang,
-                                      use_find_replace, idx, use_cache=True):
+                                      use_find_replace, idx, use_cache=True, preferential_dict=None):
             return {"translated_text": "TRANSLATED: " + text}
 
     mock_manager = MockTranslationManager()

@@ -336,9 +336,13 @@ def _distribute_text_to_runs(translated_text, content_runs, original_lengths):
     pieces = []
     previous = 0
     for point in split_points:
-        pieces.append(translated_text[previous:point].strip())
+        pieces.append(translated_text[previous:point])
         previous = point
-    pieces.append(translated_text[previous:].strip())
+    pieces.append(translated_text[previous:])
+    # Only strip the outer edges, not internal boundaries
+    if pieces:
+        pieces[0] = pieces[0].lstrip()
+        pieces[-1] = pieces[-1].rstrip()
     
     # Fall back if any content run would be left empty while others have text
     non_empty_pieces = [p for p in pieces if p]
