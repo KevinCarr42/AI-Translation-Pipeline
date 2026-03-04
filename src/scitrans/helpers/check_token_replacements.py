@@ -3,7 +3,7 @@ import json
 import os
 import random
 import re
-from scitrans.translate.document import translate_txt_document
+from scitrans.translate.txt_document import translate_txt_document
 from scitrans.translate.models import create_translator
 from scitrans.create_training_data.language_classifier.language_classifier import LanguageClassifier
 from scitrans.create_training_data.match_languages import clean_text

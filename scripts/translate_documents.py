@@ -1,7 +1,8 @@
 from scitrans import config
 import time
 from pathlib import Path
-from scitrans.translate.document import translate_txt_document, translate_word_document
+from scitrans.translate.txt_document import translate_txt_document
+from scitrans.translate.word_document import translate_word_document
 from scitrans.translate.models import create_translator
 
 if __name__ == '__main__':
@@ -17,8 +18,8 @@ if __name__ == '__main__':
     file_list = (
         # ("1432_en.docx", "en"),
         # ("1466_fr.docx", "fr"),
-        ("test_table_replacements_en.docx", "en"),
-        ("test_table_replacements_fr.docx", "fr"),
+        ("figure_test.txt", "en"),
+        ("figure_test.docx", "en"),
     )
     
     translation_manager = create_translator(
@@ -59,7 +60,7 @@ if __name__ == '__main__':
                 input_text_file=str(file_path),
                 output_text_file=None,
                 source_lang=source_lang,
-                chunk_by="sentence",
+                chunk_by="sentences",
                 models_to_use=None,
                 use_find_replace=True,
                 use_finetuned=None,

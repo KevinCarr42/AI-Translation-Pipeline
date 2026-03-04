@@ -1,5 +1,6 @@
 import os
-from scitrans.translate.document import translate_word_document, _has_formatting_differences, _translate_paragraph, _get_all_runs, _join_run_texts, _split_into_sentences, _set_proofing_language
+from scitrans.translate.word_document import translate_word_document, _has_formatting_differences, _translate_paragraph, _get_all_runs, _join_run_texts, _set_proofing_language, write_hyperlink_notes
+from scitrans.translate.txt_document import _split_into_sentences
 from scitrans.translate.models import create_translator
 from docx import Document
 from docx.shared import RGBColor
@@ -38,7 +39,7 @@ def test_basic_translation():
                 load_models=True
             )
             
-            result = translate_word_document(
+            result = translate_word_document(  # FIXME?
                 input_docx_file=test['fixture'],
                 output_docx_file=output_path,
                 source_lang=test['source_lang'],
@@ -466,10 +467,10 @@ def test_spacing_between_runs():
 
 def test_mid_paragraph_formatting():
     print("\n=== Testing mid-paragraph formatting preservation ===\n")
-
+    
     passed = 0
     failed = 0
-
+    
     class MockTranslationManager:
         def translate_with_best_model(self, text, source_lang, target_lang,
                                       use_find_replace, idx, use_cache=True, preferential_dict=None):
@@ -575,10 +576,10 @@ def test_color_normalization():
 
 def test_long_paragraph_chunking():
     print("\n=== Testing long paragraph chunking (>600 chars) ===\n")
-
+    
     passed = 0
     failed = 0
-
+    
     class MockTranslationManager:
         def translate_with_best_model(self, text, source_lang, target_lang,
                                       use_find_replace, idx, use_cache=True, preferential_dict=None):
@@ -656,10 +657,10 @@ def _paragraph_has_hyperlink_relationship(paragraph):
 
 def test_hyperlink_in_paragraph():
     print("\n=== Testing hyperlink text preserved in correct position after translation ===\n")
-
+    
     passed = 0
     failed = 0
-
+    
     class MockTranslationManager:
         def translate_with_best_model(self, text, source_lang, target_lang,
                                       use_find_replace, idx, use_cache=True, preferential_dict=None):
@@ -809,20 +810,20 @@ def _build_para_link_end(doc):
 
 def test_get_all_runs():
     print("\n=== Testing _get_all_runs() returns direct w:r children only ===\n")
-
+    
     passed = 0
     failed = 0
-
+    
     # Test 1: plain paragraph returns all runs
     doc = Document()
     para = doc.add_paragraph()
     para.add_run('Hello ')
     para.add_run('world.')
-
+    
     all_runs = _get_all_runs(para)
     texts = [r.text for r in all_runs]
     expected = ['Hello ', 'world.']
-
+    
     if texts == expected:
         print(f"[PASS] Plain runs returned correctly: {texts}")
         passed += 1
@@ -831,18 +832,18 @@ def test_get_all_runs():
         print(f"  Expected: {expected}")
         print(f"  Got: {texts}")
         failed += 1
-
+    
     # Test 2: paragraph with hyperlinks only returns direct w:r children (skips hyperlink-nested runs)
     doc2 = Document()
     para2 = doc2.add_paragraph()
     para2.add_run('Before ')
     _add_hyperlink(para2, 'https://example.com', 'Link Text')
     para2.add_run(' after.')
-
+    
     all_runs2 = _get_all_runs(para2)
     texts2 = [r.text for r in all_runs2]
     expected2 = ['Before ', ' after.']
-
+    
     if texts2 == expected2:
         print(f"[PASS] Hyperlink-nested runs correctly skipped: {texts2}")
         passed += 1
@@ -851,37 +852,37 @@ def test_get_all_runs():
         print(f"  Expected: {expected2}")
         print(f"  Got: {texts2}")
         failed += 1
-
+    
     # Test 3: single run paragraph
     doc3 = Document()
     para3 = doc3.add_paragraph()
     para3.add_run('Plain text only.')
     all_runs3 = _get_all_runs(para3)
-
+    
     if len(all_runs3) == 1 and all_runs3[0].text == 'Plain text only.':
         print(f"[PASS] Single run paragraph works correctly")
         passed += 1
     else:
         print(f"[FAIL] Single run paragraph result unexpected: {[r.text for r in all_runs3]}")
         failed += 1
-
+    
     print(f"\n{passed} passed, {failed} failed\n")
     assert failed == 0, f"{failed} test cases failed"
 
 
 def test_join_run_texts():
     print("\n=== Testing _join_run_texts concatenation ===\n")
-
+    
     passed = 0
     failed = 0
-
+    
     class FakeRun:
         def __init__(self, text):
             self.text = text
-
+    
     def make_runs(texts):
         return [FakeRun(t) for t in texts]
-
+    
     # Test 1: runs concatenated directly (Word mid-word splits)
     result = _join_run_texts(make_runs(['N', 'ewfoundland']))
     if result == 'Newfoundland':
@@ -890,7 +891,7 @@ def test_join_run_texts():
     else:
         print(f"[FAIL] Expected 'Newfoundland', got '{result}'")
         failed += 1
-
+    
     # Test 2: existing whitespace preserved
     result = _join_run_texts(make_runs(['Region ', 'du']))
     if result == 'Region du':
@@ -899,7 +900,7 @@ def test_join_run_texts():
     else:
         print(f"[FAIL] Expected 'Region du', got '{result}'")
         failed += 1
-
+    
     # Test 3: single run — no change
     result = _join_run_texts(make_runs(['Hello world']))
     if result == 'Hello world':
@@ -908,7 +909,7 @@ def test_join_run_texts():
     else:
         print(f"[FAIL] Expected 'Hello world', got '{result}'")
         failed += 1
-
+    
     # Test 4: empty text runs — no spaces injected
     result = _join_run_texts(make_runs(['Hello', '', 'world']))
     if result == 'Helloworld':
@@ -917,7 +918,7 @@ def test_join_run_texts():
     else:
         print(f"[FAIL] Expected 'Helloworld', got '{result}'")
         failed += 1
-
+    
     # Test 5: None text runs
     result = _join_run_texts([FakeRun(None), FakeRun('text')])
     if result == 'text':
@@ -926,7 +927,7 @@ def test_join_run_texts():
     else:
         print(f"[FAIL] Expected 'text', got '{result}'")
         failed += 1
-
+    
     # Test 6: empty list
     result = _join_run_texts([])
     if result == '':
@@ -935,17 +936,17 @@ def test_join_run_texts():
     else:
         print(f"[FAIL] Expected '', got '{result}'")
         failed += 1
-
+    
     print(f"\n{passed} passed, {failed} failed\n")
     assert failed == 0, f"{failed} test cases failed"
 
 
 def test_split_into_sentences():
     print("\n=== Testing _split_into_sentences ===\n")
-
+    
     passed = 0
     failed = 0
-
+    
     test_cases = [
         {
             'name': 'Figure label not split',
@@ -978,7 +979,7 @@ def test_split_into_sentences():
             'expected': ['No periods here'],
         },
     ]
-
+    
     for test in test_cases:
         result = _split_into_sentences(test['input'])
         if result == test['expected']:
@@ -989,29 +990,29 @@ def test_split_into_sentences():
             print(f"  Expected: {test['expected']}")
             print(f"  Got:      {result}")
             failed += 1
-
+    
     print(f"\n{passed} passed, {failed} failed\n")
     assert failed == 0, f"{failed} test cases failed"
 
 
 def test_hyperlink_stripping_and_records():
     print("\n=== Testing hyperlink stripping, cyan highlighting, and records collection ===\n")
-
+    
     passed = 0
     failed = 0
-
+    
     class MockTranslationManager:
         def translate_with_best_model(self, text, source_lang, target_lang,
                                       use_find_replace, idx, use_cache=True, preferential_dict=None):
             return {"translated_text": "TRANSLATED: " + text}
-
+    
     mock_manager = MockTranslationManager()
-
+    
     # --- Test: paragraph WITH hyperlink ---
     temp_file = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
     temp_file.close()
     temp_path = temp_file.name
-
+    
     try:
         doc = Document()
         para = doc.add_paragraph()
@@ -1019,14 +1020,14 @@ def test_hyperlink_stripping_and_records():
         _add_hyperlink(para, 'https://example.com', 'our site')
         para.add_run(' for details.')
         doc.save(temp_path)
-
+        
         # Re-open so relationship IDs are properly persisted
         doc = Document(temp_path)
         para = doc.paragraphs[0]
-
+        
         hyperlink_records = []
         _translate_paragraph(para, mock_manager, 'en', 'fr', False, 1, hyperlink_records=hyperlink_records)
-
+        
         # Check 1: no w:hyperlink elements remain
         hyperlinks_remaining = para._element.findall(ns.qn('w:hyperlink'))
         if len(hyperlinks_remaining) == 0:
@@ -1035,7 +1036,7 @@ def test_hyperlink_stripping_and_records():
         else:
             print(f"[FAIL] Hyperlink XML not stripped — {len(hyperlinks_remaining)} w:hyperlink elements remain")
             failed += 1
-
+        
         # Check 2: cyan highlighting applied to all runs
         all_runs_after = _get_all_runs(para)
         all_have_cyan = all(
@@ -1050,24 +1051,24 @@ def test_hyperlink_stripping_and_records():
             highlight_values = [(run.text, run.font.highlight_color) for run in all_runs_after]
             print(f"[FAIL] Not all runs have cyan highlighting: {highlight_values}")
             failed += 1
-
+        
         # Check 3: hyperlink_records populated correctly
         if len(hyperlink_records) == 1:
             record = hyperlink_records[0]
             record_ok = True
-
+            
             if record['original_text'] != 'our site':
                 print(f"[FAIL] Record original_text wrong: '{record['original_text']}'")
                 record_ok = False
-
+            
             if record['url'] != 'https://example.com':
                 print(f"[FAIL] Record url wrong: '{record['url']}'")
                 record_ok = False
-
+            
             if 'Visit' not in record['full_sentence'] or 'our site' not in record['full_sentence']:
                 print(f"[FAIL] Record full_sentence missing expected text: '{record['full_sentence']}'")
                 record_ok = False
-
+            
             if record_ok:
                 print(f"[PASS] hyperlink_records populated correctly: {record}")
                 passed += 1
@@ -1076,20 +1077,20 @@ def test_hyperlink_stripping_and_records():
         else:
             print(f"[FAIL] Expected 1 hyperlink record, got {len(hyperlink_records)}")
             failed += 1
-
+    
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
-
+    
     # --- Test: paragraph WITHOUT hyperlink should NOT get cyan highlighting ---
     try:
         doc2 = Document()
         para2 = doc2.add_paragraph()
         para2.add_run('Plain text without any links.')
-
+        
         hyperlink_records_plain = []
         _translate_paragraph(para2, mock_manager, 'en', 'fr', False, 1, hyperlink_records=hyperlink_records_plain)
-
+        
         all_runs_plain = _get_all_runs(para2)
         any_cyan = any(
             hasattr(run, 'font') and hasattr(run.font, 'highlight_color') and run.font.highlight_color == WD_COLOR_INDEX.TURQUOISE
@@ -1101,37 +1102,35 @@ def test_hyperlink_stripping_and_records():
         else:
             print("[FAIL] Cyan highlighting incorrectly applied to paragraph without hyperlinks")
             failed += 1
-
+    
     except Exception as e:
         print(f"[FAIL] Exception in no-hyperlink test: {e}")
         failed += 1
-
+    
     print(f"\n{passed} passed, {failed} failed\n")
     assert failed == 0, f"{failed} test cases failed"
 
 
 def test_write_hyperlink_notes():
     print("\n=== Testing write_hyperlink_notes creates valid notes document ===\n")
-
-    from scitrans.translate.hyperlink_notes import write_hyperlink_notes
-
+    
     passed = 0
     failed = 0
-
+    
     records = [
         {'original_text': 'Example Link', 'full_sentence': 'Visit Example Link for details.', 'url': 'https://example.com'},
         {'original_text': 'Another', 'full_sentence': 'See Another for more.', 'url': 'https://another.com'},
     ]
-
+    
     temp_file = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
     temp_file.close()
     temp_path = temp_file.name
-
+    
     try:
         write_hyperlink_notes(records, temp_path)
-
+        
         doc = Document(temp_path)
-
+        
         # Check 1: document has at least one table
         if len(doc.tables) >= 1:
             print("[PASS] Document contains at least one table")
@@ -1139,9 +1138,9 @@ def test_write_hyperlink_notes():
         else:
             print(f"[FAIL] Expected at least 1 table, got {len(doc.tables)}")
             failed += 1
-
+        
         table = doc.tables[0]
-
+        
         # Check 2: table has 3 columns
         num_cols = len(table.rows[0].cells) if table.rows else 0
         if num_cols == 3:
@@ -1150,7 +1149,7 @@ def test_write_hyperlink_notes():
         else:
             print(f"[FAIL] Expected 3 columns, got {num_cols}")
             failed += 1
-
+        
         # Check 3: table has 3 rows (1 header + 2 data)
         num_rows = len(table.rows)
         if num_rows == 3:
@@ -1159,7 +1158,7 @@ def test_write_hyperlink_notes():
         else:
             print(f"[FAIL] Expected 3 rows, got {num_rows}")
             failed += 1
-
+        
         # Check 4: header row contains correct labels
         header_texts = [cell.text for cell in table.rows[0].cells]
         expected_headers = ['Original Text', 'Full Sentence', 'URL']
@@ -1171,7 +1170,7 @@ def test_write_hyperlink_notes():
             print(f"  Expected: {expected_headers}")
             print(f"  Got: {header_texts}")
             failed += 1
-
+        
         # Check 5: first data row contains correct values
         first_row_texts = [cell.text for cell in table.rows[1].cells]
         expected_first_row = ['Example Link', 'Visit Example Link for details.', 'https://example.com']
@@ -1183,28 +1182,28 @@ def test_write_hyperlink_notes():
             print(f"  Expected: {expected_first_row}")
             print(f"  Got: {first_row_texts}")
             failed += 1
-
+    
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
-
+    
     print(f"\n{passed} passed, {failed} failed\n")
     assert failed == 0, f"{failed} test cases failed"
 
 
 def test_proofing_language_set():
     print("\n=== Testing proofing language set on translated documents ===\n")
-
+    
     passed = 0
     failed = 0
-
+    
     class MockTranslationManager:
         def translate_with_best_model(self, text, source_lang, target_lang,
                                       use_find_replace, idx, use_cache=True, preferential_dict=None):
             return {"translated_text": "TRANSLATED: " + text}
-
+    
     mock_manager = MockTranslationManager()
-
+    
     test_cases = [
         {
             'name': 'English to French sets fr-CA',
@@ -1217,21 +1216,21 @@ def test_proofing_language_set():
             'expected_locale': 'en-CA',
         },
     ]
-
+    
     for test in test_cases:
         temp_input = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
         temp_input.close()
         input_path = temp_input.name
-
+        
         temp_output = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
         temp_output.close()
         output_path = temp_output.name
-
+        
         try:
             doc = Document()
             doc.add_paragraph("This is a test sentence.")
             doc.save(input_path)
-
+            
             translate_word_document(
                 input_docx_file=input_path,
                 output_docx_file=output_path,
@@ -1239,15 +1238,15 @@ def test_proofing_language_set():
                 use_find_replace=False,
                 translation_manager=mock_manager
             )
-
+            
             output_doc = Document(output_path)
             all_r_elements = list(output_doc.element.iter(ns.qn('w:r')))
-
+            
             if not all_r_elements:
                 print(f"[FAIL] {test['name']} - no w:r elements found in output")
                 failed += 1
                 continue
-
+            
             all_correct = True
             for r_elem in all_r_elements:
                 rPr = r_elem.find(ns.qn('w:rPr'))
@@ -1265,18 +1264,18 @@ def test_proofing_language_set():
                     print(f"[FAIL] {test['name']} - expected w:val='{test['expected_locale']}', got '{val}'")
                     all_correct = False
                     break
-
+            
             if all_correct:
                 print(f"[PASS] {test['name']} - all {len(all_r_elements)} runs have w:lang w:val='{test['expected_locale']}'")
                 passed += 1
             else:
                 failed += 1
-
+        
         finally:
             if os.path.exists(input_path):
                 os.remove(input_path)
             if os.path.exists(output_path):
                 os.remove(output_path)
-
+    
     print(f"\n{passed} passed, {failed} failed\n")
     assert failed == 0, f"{failed} test cases failed"

@@ -11,7 +11,7 @@
 *quality_evaluation/tests/old/
 *quality_evaluation/tests/quality/
 *scratch.py
-*temp_calcs.ipynb
+*temp_calcs.*
 .claude/
 .idea/
 /.venv/

@@ -1,5 +1,5 @@
 import os
-from scitrans.translate.document import translate_word_document
+from scitrans.translate.word_document import translate_word_document
 from docx import Document
 import tempfile
 
@@ -140,7 +140,7 @@ def test_header_table_cells_translated():
                 # table cell dispatch logic.
                 cell_0_ok = '[TR:' in cell_0_text
                 cell_1_ok = '[TR:' in cell_1_text or len(cell_1_text.strip()) < 20
-
+                
                 if cell_0_ok and cell_1_ok:
                     print(f"[PASS] {test['name']}")
                     print(f"  Cell 0: {cell_0_text[:40]}")

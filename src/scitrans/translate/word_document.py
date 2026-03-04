@@ -1,225 +1,39 @@
-import logging
+import json
+import os
 import re
+from datetime import datetime
+
+from docx import Document
+from docx.enum.text import WD_COLOR_INDEX
+from docx.oxml.ns import qn
+from lxml import etree
 from scitrans import config
+from scitrans.rules_based_replacements.token_utils import get_translation_value
 from scitrans.translate.models import create_translator
-
-logger = logging.getLogger(__name__)
-
-
-def split_by_sentences(text):
-    lines = text.split('\n')
-    chunks = []
-    chunk_metadata = []
-    
-    for line_idx, line in enumerate(lines):
-        if not line.strip():
-            chunks.append('')
-            chunk_metadata.append({
-                'line_idx': line_idx,
-                'sent_idx': 0,
-                'is_last_in_line': True,
-                'is_empty': True
-            })
-            continue
-        
-        sentences = _split_into_sentences(line)
-        for sent_idx, sentence in enumerate(sentences):
-            sentence = sentence.strip()
-            if sentence:
-                chunks.append(sentence)
-                chunk_metadata.append({
-                    'line_idx': line_idx,
-                    'sent_idx': sent_idx,
-                    'is_last_in_line': sent_idx == len(sentences) - 1,
-                    'is_empty': False
-                })
-    
-    return chunks, chunk_metadata
+from scitrans.translate.utils import _split_into_sentences, normalize_apostrophes
+from scitrans.translate.word_formatting import apply_formatting_rules, is_numeric, convert_numeric
+from scitrans.translate.word_formatting import parse_formatted_string
 
 
-def reassemble_sentences(translated_chunks, chunk_metadata):
-    lines_dict = {}
-    for i, (translated_chunk, metadata) in enumerate(zip(translated_chunks, chunk_metadata)):
-        line_idx = metadata['line_idx']
-        if line_idx not in lines_dict:
-            lines_dict[line_idx] = []
-        
-        lines_dict[line_idx].append(translated_chunk)
+def write_hyperlink_notes(hyperlink_records, output_path):
+    document = Document()
+    document.add_heading('Hyperlink Translation Notes', level=1)
     
-    for line_idx in lines_dict:
-        if isinstance(lines_dict[line_idx], list):
-            lines_dict[line_idx] = ' '.join(lines_dict[line_idx])
+    table = document.add_table(rows=1, cols=3)
+    table.style = 'Table Grid'
     
-    return '\n'.join(lines_dict[i] for i in sorted(lines_dict.keys()))
-
-
-def split_by_paragraphs(text):
-    # Notes:
-    #  still get >512 token issues with 1000 characters, use 600 to be conservative
-    MAX_CHAR = 600
+    header_cells = table.rows[0].cells
+    header_cells[0].text = 'Original Text'
+    header_cells[1].text = 'Full Sentence'
+    header_cells[2].text = 'URL'
     
-    lines = text.split('\n')
-    chunks = []
-    chunk_metadata = []
+    for record in hyperlink_records:
+        row_cells = table.add_row().cells
+        row_cells[0].text = record['original_text']
+        row_cells[1].text = record['full_sentence']
+        row_cells[2].text = record['url']
     
-    para_idx = 0
-    for line_idx, line in enumerate(lines):
-        if not line.strip():
-            chunks.append('')
-            chunk_metadata.append({
-                'line_idx': line_idx,
-                'para_idx': para_idx,
-                'is_empty': True
-            })
-            para_idx += 1
-            continue
-        
-        if len(line) <= MAX_CHAR:
-            chunks.append(line)
-            chunk_metadata.append({
-                'line_idx': line_idx,
-                'para_idx': para_idx,
-                'is_last_in_line': True,
-                'is_empty': False
-            })
-        else:
-            sentences = _split_into_sentences(line)
-            line_chunks = []
-            current_chunk = ''
-            
-            for sentence in sentences:
-                if len(current_chunk) + len(sentence) + 1 <= MAX_CHAR:
-                    current_chunk += (' ' if current_chunk else '') + sentence
-                else:
-                    if current_chunk:
-                        line_chunks.append(current_chunk)
-                    current_chunk = sentence
-            
-            if current_chunk:
-                line_chunks.append(current_chunk)
-            
-            for chunk_idx, chunk in enumerate(line_chunks):
-                chunks.append(chunk)
-                chunk_metadata.append({
-                    'line_idx': line_idx,
-                    'para_idx': para_idx,
-                    'is_last_in_line': chunk_idx == len(line_chunks) - 1,
-                    'is_empty': False
-                })
-    
-    return chunks, chunk_metadata
-
-
-def reassemble_paragraphs(translated_chunks, chunk_metadata):
-    lines_dict = {}
-    for translated_chunk, metadata in zip(translated_chunks, chunk_metadata):
-        line_idx = metadata['line_idx']
-        if line_idx not in lines_dict:
-            lines_dict[line_idx] = []
-        
-        lines_dict[line_idx].append(translated_chunk)
-    
-    for line_idx in lines_dict:
-        if isinstance(lines_dict[line_idx], list):
-            lines_dict[line_idx] = ' '.join(lines_dict[line_idx])
-    
-    return '\n'.join(lines_dict[i] for i in sorted(lines_dict.keys()))
-
-
-def normalize_apostrophes(text):
-    return text.replace("'", "'").replace("'", "'")
-
-
-_PROTECTED_LABEL_PATTERN = re.compile(
-    r'\b(?:Figure|Fig|Table|Tableau)\.?\s*\d+\.?', re.IGNORECASE
-)
-_PLACEHOLDER = '\x00'
-
-
-def _split_into_sentences(text):
-    protected_positions = []
-    for match in _PROTECTED_LABEL_PATTERN.finditer(text):
-        for i, ch in enumerate(match.group()):
-            if ch == '.':
-                protected_positions.append(match.start() + i)
-    
-    chars = list(text)
-    for pos in protected_positions:
-        chars[pos] = _PLACEHOLDER
-    
-    sentences = re.split(r'(?<=[.!?])\s+', ''.join(chars))
-    return [s.replace(_PLACEHOLDER, '.') for s in sentences]
-
-
-def translate_txt_document(
-        input_text_file,
-        output_text_file=None,
-        source_lang="en",
-        chunk_by="sentences",
-        models_to_use=None,
-        use_find_replace=True,
-        use_finetuned=True,
-        translation_manager=None,
-        start_idx=0,
-        single_attempt=False,
-        use_cache=True
-):
-    if not output_text_file:
-        import os
-        base, ext = os.path.splitext(input_text_file)
-        output_text_file = f"{base}_translated{ext}"
-    
-    if source_lang not in ["en", "fr"]:
-        raise ValueError('source_lang must be either "fr" or "en"')
-    
-    target_lang = "fr" if source_lang == "en" else "en"
-    
-    with open(input_text_file, 'r', encoding='utf-8') as f:
-        text = f.read()
-    
-    if chunk_by == "sentences":
-        chunks, chunk_metadata = split_by_sentences(text)
-    else:
-        chunks, chunk_metadata = split_by_paragraphs(text)
-    
-    if not translation_manager:
-        translation_manager = create_translator(
-            use_finetuned=use_finetuned,
-            models_to_use=models_to_use,
-            use_embedder=True,
-            load_models=True
-        )
-    
-    translated_chunks = []
-    for i, (chunk, metadata) in enumerate(zip(chunks, chunk_metadata), start_idx + 1):
-        if metadata.get('is_empty', False):
-            translated_chunks.append('')
-            continue
-        
-        result = translation_manager.translate_with_best_model(
-            text=chunk,
-            source_lang=source_lang,
-            target_lang=target_lang,
-            use_find_replace=use_find_replace,
-            idx=i,
-            single_attempt=single_attempt,
-            use_cache=use_cache
-        )
-        
-        translated_text = result.get("translated_text", "[TRANSLATION FAILED]")
-        translated_text = normalize_apostrophes(translated_text)
-        translated_chunks.append(translated_text)
-        next_idx = i
-    
-    if chunk_by == "sentences":
-        translated_document = reassemble_sentences(translated_chunks, chunk_metadata)
-    else:
-        translated_document = reassemble_paragraphs(translated_chunks, chunk_metadata)
-    
-    with open(output_text_file, 'w', encoding='utf-8') as f:
-        f.write(translated_document)
-    
-    return next_idx if translated_chunks else start_idx
+    document.save(output_path)
 
 
 def _get_all_runs(paragraph):
@@ -234,7 +48,6 @@ def _get_run_format_key(run):
     font_color = None
     if run.font.color and run.font.color.rgb:
         font_color = str(run.font.color.rgb)
-    # Explicit black is visually identical to inherited (None)
     if font_color == '000000':
         font_color = None
     
@@ -248,7 +61,10 @@ def _get_run_format_key(run):
     )
 
 
-def _merge_identical_runs(paragraph):
+def _merge_identical_runs(paragraph):  # NOTE: add an ignore_colour=True flag?
+    # FIXME: this should ignore colour
+    #  everything should just use default colour
+    #  making a note when the colour deviates
     all_runs = _get_all_runs(paragraph)
     if len(all_runs) <= 1:
         return
@@ -353,7 +169,16 @@ def _distribute_text_to_runs(translated_text, content_runs, original_lengths):
         run.text = piece
 
 
-def _chunk_and_translate(text, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=True, preferential_dict=None):
+def _chunk_and_translate(
+        text,
+        translation_manager,
+        source_lang,
+        target_lang,
+        use_find_replace,
+        idx,
+        use_cache=True,
+        preferential_dict=None
+):
     MAX_CHAR = 600
     if len(text) <= MAX_CHAR:
         result = translation_manager.translate_with_best_model(
@@ -366,7 +191,7 @@ def _chunk_and_translate(text, translation_manager, source_lang, target_lang, us
             preferential_dict=preferential_dict
         )
         return result.get("translated_text", "[TRANSLATION FAILED]")
-
+    
     sentences = _split_into_sentences(text)
     chunks = []
     current_chunk = ''
@@ -395,9 +220,17 @@ def _chunk_and_translate(text, translation_manager, source_lang, target_lang, us
     return ' '.join(translated_parts)
 
 
-def _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=True, hyperlink_records=None, preferential_dict=None):
-    from docx.oxml.ns import qn
-    
+def _translate_paragraph(
+        paragraph,
+        translation_manager,
+        source_lang,
+        target_lang,
+        use_find_replace,
+        idx,
+        use_cache=True,
+        hyperlink_records=None,
+        preferential_dict=None
+):
     _apply_cyan = False
     p_elem = paragraph._element
     hyperlink_elems = p_elem.findall(qn('w:hyperlink'))
@@ -487,7 +320,7 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
             use_find_replace, idx, use_cache, preferential_dict=preferential_dict
         )
         translated_text = normalize_apostrophes(translated_text)
-
+        
         first_content_run = None
         for run in all_runs:
             if run.text and run.text.strip():
@@ -519,10 +352,9 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
             use_find_replace, idx, use_cache, preferential_dict=preferential_dict
         )
         translated_text = normalize_apostrophes(translated_text)
-
-        from scitrans.translate.formatting_rules import apply_formatting_rules
+        
         rule_fired, formatted_runs = apply_formatting_rules(full_text, translated_text, all_runs)
-
+        
         if rule_fired and formatted_runs:
             # Clear all existing run text, then assign from FormattedRun list
             for run in all_runs:
@@ -542,7 +374,7 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
             _distribute_text_to_runs(translated_text, content_runs, original_lengths)
     
     if _apply_cyan:
-        from docx.enum.text import WD_COLOR_INDEX
+        
         for run in _get_all_runs(paragraph):
             if hasattr(run, 'font') and hasattr(run.font, 'highlight_color'):
                 run.font.highlight_color = WD_COLOR_INDEX.TURQUOISE
@@ -550,17 +382,26 @@ def _translate_paragraph(paragraph, translation_manager, source_lang, target_lan
     return idx + 1
 
 
-def _translate_table_cell(cell, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=True, hyperlink_records=None, preferential_dict=None, table_translations_dict=None):
-    from scitrans.translate.numeric import is_numeric, convert_numeric
-
+def _translate_table_cell(
+        cell,
+        translation_manager,
+        source_lang,
+        target_lang,
+        use_find_replace,
+        idx,
+        use_cache=True,
+        hyperlink_records=None,
+        preferential_dict=None,
+        table_translations_dict=None
+):
     to_fr = target_lang == "fr"
     cell_text = cell.text
-
+    
     if not cell_text or not cell_text.strip():
         return idx
-
+    
     stripped = cell_text.strip()
-
+    
     # 1. Numeric conversion
     if config.NUMERIC_CONVERSION_CONFIG.get("enabled") and is_numeric(stripped):
         converted = convert_numeric(stripped, to_fr=to_fr)
@@ -570,10 +411,10 @@ def _translate_table_cell(cell, translation_manager, source_lang, target_lang, u
                     run.text = converted
                     converted = ""
         return idx
-
+    
     # 2. Exact match in table translations dict
     if table_translations_dict and stripped in table_translations_dict:
-        from scitrans.translate.convert_formating import parse_formatted_string
+        
         raw_replacement = table_translations_dict[stripped]
         formatted_runs = parse_formatted_string(raw_replacement)
         content_runs = [run for p in cell.paragraphs for run in p.runs if run.text.strip()]
@@ -590,7 +431,7 @@ def _translate_table_cell(cell, translation_manager, source_lang, target_lang, u
             else:
                 content_runs[-1].text += fmt_run.text
         return idx
-
+    
     # 3. Preferential translations exact match
     if preferential_dict:
         lookup_key = stripped.lower()
@@ -599,7 +440,7 @@ def _translate_table_cell(cell, translation_manager, source_lang, target_lang, u
             for term_key, term_data in terms.items():
                 if term_key.lower() == lookup_key:
                     if source_lang == "en":
-                        from scitrans.rules_based_replacements.token_utils import get_translation_value
+                        
                         match_translation = get_translation_value(term_data)
                     else:
                         match_translation = term_key if source_lang == "fr" else None
@@ -613,22 +454,29 @@ def _translate_table_cell(cell, translation_manager, source_lang, target_lang, u
                                     run.text = match_translation
                                     match_translation = ""
                         return idx
-
+    
     # 4. AI translation for cells exceeding minimum length
     min_length = config.TABLE_TRANSLATION_CONFIG.get("min_cell_length_for_ai", 20)
     if len(stripped) >= min_length:
         for paragraph in cell.paragraphs:
-            idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records, preferential_dict=preferential_dict)
+            idx = _translate_paragraph(
+                paragraph,
+                translation_manager,
+                source_lang,
+                target_lang,
+                use_find_replace,
+                idx,
+                use_cache=use_cache,
+                hyperlink_records=hyperlink_records,
+                preferential_dict=preferential_dict
+            )
         return idx
-
+    
     # 5. Short text - leave as-is
     return idx
 
 
 def _set_proofing_language(document, target_lang):
-    from docx.oxml.ns import qn
-    from lxml import etree
-    
     locale_map = {'fr': 'fr-CA', 'en': 'en-CA'}
     locale_code = locale_map[target_lang]
     
@@ -654,10 +502,6 @@ def translate_word_document(
         include_timestamp=True,
         use_cache=True
 ):
-    import os
-    from datetime import datetime
-    from docx import Document
-    
     if not output_docx_file:
         base, ext = os.path.splitext(input_docx_file)
         date_str = datetime.now().strftime("%Y%m%d")
@@ -671,6 +515,8 @@ def translate_word_document(
     
     target_lang = "fr" if source_lang == "en" else "en"
     
+    # TODO: split by sentences
+    
     if not translation_manager:
         translation_manager = create_translator(
             use_finetuned=use_finetuned,
@@ -682,16 +528,15 @@ def translate_word_document(
     document = Document(input_docx_file)
     idx = 1
     hyperlink_records = []
-
-    import json
+    
     preferential_dict = None
     if os.path.exists(config.PREFERENTIAL_JSON_PATH):
         with open(config.PREFERENTIAL_JSON_PATH, 'r', encoding='utf-8') as f:
             preferential_dict = json.load(f)
-
+    
     table_translations_dict = None
     if os.path.exists(config.TABLE_TRANSLATIONS_JSON_PATH):
-        import re
+        
         with open(config.TABLE_TRANSLATIONS_JSON_PATH, 'r', encoding='utf-8') as f:
             raw = json.load(f)
         source_key = source_lang
@@ -708,14 +553,35 @@ def translate_word_document(
                     table_translations_dict[plain_key] = entry[target_key]
         else:
             table_translations_dict = raw
-
+    
     for paragraph in document.paragraphs:
-        idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records, preferential_dict=preferential_dict)
+        idx = _translate_paragraph(
+            paragraph,
+            translation_manager,
+            source_lang,
+            target_lang,
+            use_find_replace,
+            idx,
+            use_cache=use_cache,
+            hyperlink_records=hyperlink_records,
+            preferential_dict=preferential_dict
+        )
     
     for table in document.tables:
         for row in table.rows:
             for cell in row.cells:
-                idx = _translate_table_cell(cell, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records, preferential_dict=preferential_dict, table_translations_dict=table_translations_dict)
+                idx = _translate_table_cell(
+                    cell,
+                    translation_manager,
+                    source_lang,
+                    target_lang,
+                    use_find_replace,
+                    idx,
+                    use_cache=use_cache,
+                    hyperlink_records=hyperlink_records,
+                    preferential_dict=preferential_dict,
+                    table_translations_dict=table_translations_dict
+                )
     
     translated_hf_ids = set()
     
@@ -734,17 +600,37 @@ def translate_word_document(
                 continue
             translated_hf_ids.add(id(hf._element))
             for paragraph in hf.paragraphs:
-                idx = _translate_paragraph(paragraph, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records, preferential_dict=preferential_dict)
+                idx = _translate_paragraph(
+                    paragraph,
+                    translation_manager,
+                    source_lang,
+                    target_lang,
+                    use_find_replace,
+                    idx,
+                    use_cache=use_cache,
+                    hyperlink_records=hyperlink_records,
+                    preferential_dict=preferential_dict
+                )
             for table in hf.tables:
                 for row in table.rows:
                     for cell in row.cells:
-                        idx = _translate_table_cell(cell, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache=use_cache, hyperlink_records=hyperlink_records, preferential_dict=preferential_dict, table_translations_dict=table_translations_dict)
+                        idx = _translate_table_cell(
+                            cell,
+                            translation_manager,
+                            source_lang,
+                            target_lang,
+                            use_find_replace,
+                            idx,
+                            use_cache=use_cache,
+                            hyperlink_records=hyperlink_records,
+                            preferential_dict=preferential_dict,
+                            table_translations_dict=table_translations_dict
+                        )
     
     _set_proofing_language(document, target_lang)
     document.save(output_docx_file)
     
     if hyperlink_records:
-        from scitrans.translate.hyperlink_notes import write_hyperlink_notes
         notes_path = os.path.splitext(output_docx_file)[0] + '_translation_notes.docx'
         write_hyperlink_notes(hyperlink_records, notes_path)
     
