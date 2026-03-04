@@ -1,6 +1,6 @@
 from unittest.mock import patch
 from docx import Document
-from scitrans.translate.word_document import _translate_table_cell, write_hyperlink_notes
+from scitrans.translate.word_document import _translate_table_cell, write_translations_notes
 
 
 class MockTranslator:
@@ -512,23 +512,23 @@ class TestFormattingRulesInTables:
 class TestHyperlinkNotes:
     def test_creates_three_column_table(self, tmp_path):
         records = [
-            {"original_text": "click here", "full_sentence": "Please click here.", "url": "http://example.com"},
-            {"original_text": "link", "full_sentence": "See link.", "url": "http://test.com"},
+            {"original_text": "click here", "full_sentence": "Please click here.", "notes": "http://example.com"},
+            {"original_text": "link", "full_sentence": "See link.", "notes": "http://test.com"},
         ]
         out = str(tmp_path / "notes.docx")
-        write_hyperlink_notes(records, out)
+        write_translations_notes(records, out)
         doc = Document(out)
         table = doc.tables[0]
         assert len(table.columns) == 3
     
     def test_row_count_matches_records(self, tmp_path):
         records = [
-            {"original_text": "a", "full_sentence": "b", "url": "c"},
-            {"original_text": "d", "full_sentence": "e", "url": "f"},
-            {"original_text": "g", "full_sentence": "h", "url": "i"},
+            {"original_text": "a", "full_sentence": "b", "notes": "c"},
+            {"original_text": "d", "full_sentence": "e", "notes": "f"},
+            {"original_text": "g", "full_sentence": "h", "notes": "i"},
         ]
         out = str(tmp_path / "notes.docx")
-        write_hyperlink_notes(records, out)
+        write_translations_notes(records, out)
         doc = Document(out)
         table = doc.tables[0]
         # 1 header row + 3 data rows
@@ -536,15 +536,15 @@ class TestHyperlinkNotes:
     
     def test_header_columns_correct(self, tmp_path):
         out = str(tmp_path / "notes.docx")
-        write_hyperlink_notes([], out)
+        write_translations_notes([], out)
         doc = Document(out)
         table = doc.tables[0]
         headers = [cell.text for cell in table.rows[0].cells]
-        assert headers == ["Original Text", "Full Sentence", "URL"]
+        assert headers == ["Original Text", "Full Sentence", "Notes"]
     
     def test_empty_records_header_only(self, tmp_path):
         out = str(tmp_path / "notes.docx")
-        write_hyperlink_notes([], out)
+        write_translations_notes([], out)
         doc = Document(out)
         table = doc.tables[0]
         assert len(table.rows) == 1

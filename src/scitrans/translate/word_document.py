@@ -11,34 +11,8 @@ from scitrans import config
 from scitrans.rules_based_replacements.token_utils import get_translation_value
 from scitrans.translate.models import create_translator
 from scitrans.translate.utils import split_into_chunks, normalize_apostrophes
-from scitrans.translate.word_formatting import apply_formatting_rules, is_numeric, convert_numeric
-from scitrans.translate.word_formatting import parse_formatted_string
-
-
-# TODO: refactor notes into one module (hyperlinks, formats, etc)
-def write_hyperlink_notes(hyperlink_records, output_path):
-    document = Document()
-    document.add_heading('Hyperlink Translation Notes', level=1)
-    
-    table = document.add_table(rows=1, cols=3)
-    table.style = 'Table Grid'
-    
-    header_cells = table.rows[0].cells
-    header_cells[0].text = 'Original Text'
-    header_cells[1].text = 'Full Sentence'
-    header_cells[2].text = 'URL'  # FIXME for other notes
-    
-    for record in hyperlink_records:
-        row_cells = table.add_row().cells
-        row_cells[0].text = record['original_text']
-        row_cells[1].text = record['full_sentence']
-        row_cells[2].text = record['url']
-    
-    document.save(output_path)
-
-
-def _get_all_runs(paragraph):
-    return list(paragraph.runs)
+from scitrans.translate.word_formatting import apply_formatting_rules, is_numeric, convert_numeric, parse_formatted_string
+from scitrans.translate.word_notes import add_translations_notes, write_translations_notes
 
 
 def _join_run_texts(all_runs):
@@ -46,84 +20,19 @@ def _join_run_texts(all_runs):
 
 
 def _get_run_format_key(run):
-    font_color = None
-    if run.font.color and run.font.color.rgb:
-        font_color = str(run.font.color.rgb)
-    if font_color == '000000':
-        font_color = None
-    
     return (
         run.bold,
         run.italic,
         run.underline,
         run.font.name,
         run.font.size,
-        font_color
+        str(run.font.color)
     )
-
-
-def _merge_identical_runs(paragraph):
-    # FIXME: this should ignore colour
-    #  everything should just use default colour
-    #  making a note when the colour deviates
-    #  ignore_colour=True flag?
-    #  bypass entirely, always merge, note if there are formatting changes in Notes table docx
-    all_runs = _get_all_runs(paragraph)
-    if len(all_runs) <= 1:
-        return
-    
-    run_info = []
-    for run in all_runs:
-        if run.text:
-            run_info.append((run, _get_run_format_key(run)))
-    
-    if len(run_info) <= 1:
-        return
-    
-    i = 0
-    while i < len(run_info) - 1:
-        current_run, current_key = run_info[i]
-        next_run, next_key = run_info[i + 1]
-        
-        if current_key == next_key:
-            current_run.text += next_run.text
-            next_run.text = ''
-            run_info.pop(i + 1)
-        else:
-            i += 1
-
-
-def _build_format_segments(paragraph):
-    segments = []
-    current_segment_runs = []
-    current_format_key = None
-    
-    for run in _get_all_runs(paragraph):
-        if not run.text:
-            continue
-        
-        format_key = _get_run_format_key(run)
-        
-        if current_format_key is None:
-            current_format_key = format_key
-            current_segment_runs = [run]
-        elif format_key == current_format_key:
-            current_segment_runs.append(run)
-        else:
-            if current_segment_runs:
-                segments.append(current_segment_runs)
-            current_format_key = format_key
-            current_segment_runs = [run]
-    
-    if current_segment_runs:
-        segments.append(current_segment_runs)
-    
-    return segments
 
 
 def _has_formatting_differences(paragraph):
     format_keys = set()
-    for run in _get_all_runs(paragraph):
+    for run in list(paragraph.runs):
         if run.text and run.text.strip():
             format_keys.add(_get_run_format_key(run))
             if len(format_keys) > 1:
@@ -131,45 +40,11 @@ def _has_formatting_differences(paragraph):
     return False
 
 
-def _distribute_text_to_runs(translated_text, content_runs, original_lengths):
-    total_original = sum(original_lengths)
-    split_points = []
-    cumulative = 0
-    for length in original_lengths[:-1]:
-        cumulative += length
-        ratio = cumulative / total_original
-        raw_offset = int(ratio * len(translated_text))
-        # Walk forward to nearest space, then fall back to walking backward
-        forward = raw_offset
-        while forward < len(translated_text) and translated_text[forward] != ' ':
-            forward += 1
-        backward = raw_offset
-        while backward > 0 and translated_text[backward] != ' ':
-            backward -= 1
-        if forward < len(translated_text):
-            boundary = forward
-        else:
-            boundary = backward
-        split_points.append(boundary)
+def _merge_runs(paragraph):
+    if _has_formatting_differences(paragraph):
+        add_translations_notes(paragraph, 'inconsistent formatting')
     
-    pieces = []
-    previous = 0
-    for point in split_points:
-        pieces.append(translated_text[previous:point])
-        previous = point
-    pieces.append(translated_text[previous:])
-    # Only strip the outer edges, not internal boundaries
-    if pieces:
-        pieces[0] = pieces[0].lstrip()
-        pieces[-1] = pieces[-1].rstrip()
-    
-    # Fall back if any content run would be left empty while others have text
-    non_empty_pieces = [p for p in pieces if p]
-    if len(non_empty_pieces) < len(content_runs) and len(non_empty_pieces) > 0:
-        pieces = [translated_text] + [''] * (len(content_runs) - 1)
-    
-    for run, piece in zip(content_runs, pieces):
-        run.text = piece
+    paragraph.text = paragraph.text
 
 
 def _chunk_and_translate(
@@ -213,10 +88,11 @@ def _translate_paragraph(
         chunk_by="sentences"
 ):
     _apply_cyan = False
-    p_elem = paragraph._element
+    p_elem = paragraph._element  # FIXME: is this the best way?
     hyperlink_elems = p_elem.findall(qn('w:hyperlink'))
     has_hyperlinks = len(hyperlink_elems) > 0
     
+    # FIXME: clean this block up and refactor
     if hyperlink_records is not None and has_hyperlinks:
         wns = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
         # Build full paragraph text for context (including hyperlink run text)
@@ -246,7 +122,7 @@ def _translate_paragraph(
                 hyperlink_records.append({
                     'original_text': original_text,
                     'full_sentence': full_paragraph_text,
-                    'url': url,
+                    'notes': url,
                 })
         
         # Strip hyperlink XML wrappers — move w:r elements up into w:p
@@ -257,126 +133,67 @@ def _translate_paragraph(
         
         _apply_cyan = True
     
-    all_runs = _get_all_runs(paragraph)
+    all_runs = list(paragraph.runs)
     if not all_runs:
         return idx
     
+    # FIXME merge and join should be fixed and combined
     full_text = _join_run_texts(all_runs)
     
     if not full_text.strip():
         return idx
     
-    # Clean up invisible run boundaries by merging identical adjacent runs
-    _merge_identical_runs(paragraph)
+    # Clean up invisible run boundaries, and note formatting changes
+    _merge_runs(paragraph)
     
     # Re-fetch after merge since runs may have changed
-    all_runs = _get_all_runs(paragraph)
+    all_runs = list(paragraph.runs)
     
-    # Check if paragraph has actual formatting differences
-    if not _has_formatting_differences(paragraph):
-        # No formatting differences - translate as single unit (original simple approach)
-        leading_ws = ''
-        trailing_ws = ''
-        text_to_translate = full_text
-        
-        if text_to_translate and text_to_translate[0].isspace():
-            i = 0
-            while i < len(text_to_translate) and text_to_translate[i].isspace():
-                i += 1
-            leading_ws = text_to_translate[:i]
-            text_to_translate = text_to_translate[i:]
-        
-        if text_to_translate and text_to_translate[-1].isspace():
-            i = len(text_to_translate) - 1
-            while i >= 0 and text_to_translate[i].isspace():
-                i -= 1
-            trailing_ws = text_to_translate[i + 1:]
-            text_to_translate = text_to_translate[:i + 1]
-        
-        if not text_to_translate:
-            return idx
-        
-        translated_text = _chunk_and_translate(
-            text_to_translate,
-            translation_manager,
-            source_lang,
-            target_lang,
-            use_find_replace,
-            idx,
-            use_cache,
-            preferential_dict=preferential_dict,
-            chunk_by=chunk_by
-        )
-        translated_text = normalize_apostrophes(translated_text)
-        
-        first_content_run = None
-        for run in all_runs:
-            if run.text and run.text.strip():
-                first_content_run = run
-                break
-        
-        if first_content_run:
-            first_content_run.text = leading_ws + translated_text + trailing_ws
-            found_first = False
-            for run in all_runs:
-                if run.text and run.text.strip():
-                    if found_first:
-                        run.text = ''
-                    else:
-                        found_first = True
+    content_runs = [run for run in all_runs if run.text and run.text.strip()]
+    full_text = _join_run_texts(all_runs)
     
-    else:
-        # Has formatting differences - translate as single unit and remap proportionally
-        content_runs = [run for run in all_runs if run.text and run.text.strip()]
-        full_text = _join_run_texts(all_runs)
-        original_lengths = [len(run.text) for run in content_runs]
-        
-        text_to_translate = full_text.strip()
-        if not text_to_translate:
-            return idx
-        
-        translated_text = _chunk_and_translate(
-            text_to_translate,
-            translation_manager,
-            source_lang,
-            target_lang,
-            use_find_replace,
-            idx,
-            use_cache,
-            preferential_dict=preferential_dict,
-            chunk_by=chunk_by
-        )
-        translated_text = normalize_apostrophes(translated_text)
-        
-        rule_fired, formatted_runs = apply_formatting_rules(full_text, translated_text, all_runs)
-        
-        if rule_fired and formatted_runs:
-            # Clear all existing run text, then assign from FormattedRun list
-            for run in all_runs:
-                run.text = ''
-            for i, fmt_run in enumerate(formatted_runs):
-                if i < len(content_runs):
-                    content_runs[i].text = fmt_run.text
-                    content_runs[i].italic = fmt_run.italic
-                    if fmt_run.superscript:
-                        content_runs[i].font.superscript = True
-                    if fmt_run.subscript:
-                        content_runs[i].font.subscript = True
-                else:
-                    # More formatted runs than content runs — append to last run
-                    content_runs[-1].text += fmt_run.text
+    text_to_translate = full_text.strip()
+    if not text_to_translate:
+        return idx
+    
+    translated_text = _chunk_and_translate(
+        text_to_translate,
+        translation_manager,
+        source_lang,
+        target_lang,
+        use_find_replace,
+        idx,
+        use_cache,
+        preferential_dict=preferential_dict,
+        chunk_by=chunk_by
+    )
+    translated_text = normalize_apostrophes(translated_text)
+    
+    rule_fired, formatted_runs = apply_formatting_rules(full_text, translated_text, all_runs)
+    
+    for run in all_runs:
+        run.text = ''
+    for i, fmt_run in enumerate(formatted_runs):
+        if i < len(content_runs):
+            content_runs[i].text = fmt_run.text
+            content_runs[i].italic = fmt_run.italic
+            if fmt_run.superscript:
+                content_runs[i].font.superscript = True
+            if fmt_run.subscript:
+                content_runs[i].font.subscript = True
         else:
-            _distribute_text_to_runs(translated_text, content_runs, original_lengths)
+            # More formatted runs than content runs — append to last run
+            content_runs[-1].text += fmt_run.text
     
     if _apply_cyan:
-        
-        for run in _get_all_runs(paragraph):
+        for run in list(paragraph.runs):
             if hasattr(run, 'font') and hasattr(run.font, 'highlight_color'):
                 run.font.highlight_color = WD_COLOR_INDEX.TURQUOISE
     
     return idx + 1
 
 
+# FIXME: refactor into smaller helper functions for each option
 def _translate_table_cell(
         cell,
         translation_manager,
@@ -632,6 +449,6 @@ def translate_word_document(
     
     if hyperlink_records:
         notes_path = os.path.splitext(output_docx_file)[0] + '_translation_notes.docx'
-        write_hyperlink_notes(hyperlink_records, notes_path)
+        write_translations_notes(hyperlink_records, notes_path)  # FIXME: incl formatting notes
     
     return output_docx_file

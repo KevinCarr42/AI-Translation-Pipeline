@@ -71,6 +71,7 @@ def parse_formatted_string(s):
     return results
 
 
+# FIXME: create test once refactored
 def rule_italic_brackets(paragraph_text, runs):
     italic_texts = [run.text for run in runs if run.italic and run.text.strip()]
     if not italic_texts:
@@ -105,14 +106,11 @@ FORMATTING_RULES = [rule_italic_brackets]
 
 def apply_formatting_rules(paragraph_text, translated_text, runs):
     for rule in FORMATTING_RULES:
-        try:
-            result = rule(translated_text, runs)
-        except Exception:
-            logger.warning("Formatting rule %s failed", rule.__name__, exc_info=True)
-            continue
+        result = rule(translated_text, runs)
+        # NOTE: only returns the first rule. refactor?
         if result is not None:
             return True, result
-    return False, None
+    return False, [FormattedRun(translated_text)]
 
 
 def _is_single_numeric(text):

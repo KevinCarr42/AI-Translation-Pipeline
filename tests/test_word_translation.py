@@ -1,9 +1,8 @@
 import os
-from scitrans.translate.word_document import translate_word_document, _has_formatting_differences, _translate_paragraph, _get_all_runs, _join_run_texts, _set_proofing_language, write_hyperlink_notes
+from scitrans.translate.word_document import translate_word_document, _translate_paragraph, _join_run_texts, write_translations_notes
 from scitrans.translate.utils import split_by_sentences
 from scitrans.translate.models import create_translator
 from docx import Document
-from docx.shared import RGBColor
 from docx.enum.text import WD_COLOR_INDEX
 import tempfile
 import re
@@ -39,7 +38,7 @@ def test_basic_translation():
                 load_models=True
             )
             
-            result = translate_word_document(  # FIXME?
+            translate_word_document(
                 input_docx_file=test['fixture'],
                 output_docx_file=output_path,
                 source_lang=test['source_lang'],
@@ -63,126 +62,6 @@ def test_basic_translation():
                 print(f"[FAIL] {test['name']}")
                 print(f"  Expected: Output file created")
                 print(f"  Got: No output file")
-                failed += 1
-        
-        finally:
-            if os.path.exists(output_path):
-                os.remove(output_path)
-    
-    print(f"\n{passed} passed, {failed} failed\n")
-    assert failed == 0, f"{failed} test cases failed"
-
-
-def test_bold_preservation():
-    print("\n=== Testing bold text preservation ===\n")
-    
-    test_cases = [
-        {
-            'name': 'Bold formatting preserved',
-            'fixture': os.path.join(os.path.dirname(__file__), 'fixtures', 'test_document_formatting_en.docx'),
-            'paragraph_idx': 1,
-            'expected_bold_runs': True
-        }
-    ]
-    
-    passed = 0
-    failed = 0
-    
-    for test in test_cases:
-        temp_output = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
-        temp_output.close()
-        output_path = temp_output.name
-        
-        try:
-            translation_manager = create_translator(
-                use_finetuned=False,
-                models_to_use=['facebook/mbart-large-50-many-to-many-mmt'],
-                use_embedder=False,
-                load_models=True
-            )
-            
-            translate_word_document(
-                input_docx_file=test['fixture'],
-                output_docx_file=output_path,
-                source_lang="en",
-                use_find_replace=False,
-                translation_manager=translation_manager
-            )
-            
-            doc = Document(output_path)
-            paragraph = doc.paragraphs[test['paragraph_idx']]
-            
-            has_bold = any(run.bold for run in paragraph.runs)
-            
-            if has_bold == test['expected_bold_runs']:
-                print(f"[PASS] {test['name']}")
-                print(f"  Has bold runs: {has_bold}")
-                passed += 1
-            else:
-                print(f"[FAIL] {test['name']}")
-                print(f"  Expected bold runs: {test['expected_bold_runs']}")
-                print(f"  Got: {has_bold}")
-                print(f"  Run details: {[(r.bold, r.text) for r in paragraph.runs]}")
-                failed += 1
-        
-        finally:
-            if os.path.exists(output_path):
-                os.remove(output_path)
-    
-    print(f"\n{passed} passed, {failed} failed\n")
-    assert failed == 0, f"{failed} test cases failed"
-
-
-def test_italic_preservation():
-    print("\n=== Testing italic text preservation ===\n")
-    
-    test_cases = [
-        {
-            'name': 'Italic formatting preserved',
-            'fixture': os.path.join(os.path.dirname(__file__), 'fixtures', 'test_document_formatting_en.docx'),
-            'paragraph_idx': 2,
-            'expected_italic_runs': True
-        }
-    ]
-    
-    passed = 0
-    failed = 0
-    
-    for test in test_cases:
-        temp_output = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
-        temp_output.close()
-        output_path = temp_output.name
-        
-        try:
-            translation_manager = create_translator(
-                use_finetuned=False,
-                models_to_use=['facebook/mbart-large-50-many-to-many-mmt'],
-                use_embedder=False,
-                load_models=True
-            )
-            
-            translate_word_document(
-                input_docx_file=test['fixture'],
-                output_docx_file=output_path,
-                source_lang="en",
-                use_find_replace=False,
-                translation_manager=translation_manager
-            )
-            
-            doc = Document(output_path)
-            paragraph = doc.paragraphs[test['paragraph_idx']]
-            
-            has_italic = any(run.italic for run in paragraph.runs)
-            
-            if has_italic == test['expected_italic_runs']:
-                print(f"[PASS] {test['name']}")
-                print(f"  Has italic runs: {has_italic}")
-                passed += 1
-            else:
-                print(f"[FAIL] {test['name']}")
-                print(f"  Expected italic runs: {test['expected_italic_runs']}")
-                print(f"  Got: {has_italic}")
-                print(f"  Run details: {[(r.italic, r.text) for r in paragraph.runs]}")
                 failed += 1
         
         finally:
@@ -465,115 +344,6 @@ def test_spacing_between_runs():
     assert failed == 0, f"{failed} test cases failed"
 
 
-def test_mid_paragraph_formatting():
-    print("\n=== Testing mid-paragraph formatting preservation ===\n")
-    
-    passed = 0
-    failed = 0
-    
-    class MockTranslationManager:
-        def translate_with_best_model(self, text, source_lang, target_lang,
-                                      use_find_replace, idx, use_cache=True, preferential_dict=None):
-            return {"translated_text": "TRANSLATED: " + text}
-    
-    mock_manager = MockTranslationManager()
-    
-    temp_input = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
-    temp_input.close()
-    input_path = temp_input.name
-    
-    temp_output = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
-    temp_output.close()
-    output_path = temp_output.name
-    
-    try:
-        # Create a document with mid-paragraph bold text
-        doc = Document()
-        para = doc.add_paragraph()
-        run1 = para.add_run("This is ")
-        run2 = para.add_run("bold")
-        run2.bold = True
-        run3 = para.add_run(" text in the middle.")
-        doc.save(input_path)
-        
-        # Verify the input has the expected format
-        input_doc = Document(input_path)
-        input_para = input_doc.paragraphs[0]
-        input_bold_runs = [r for r in input_para.runs if r.bold and r.text.strip()]
-        
-        print(f"  Input paragraph runs: {[(r.text, r.bold) for r in input_para.runs]}")
-        print(f"  Input bold runs count: {len(input_bold_runs)}")
-        
-        translate_word_document(
-            input_docx_file=input_path,
-            output_docx_file=output_path,
-            source_lang="en",
-            use_find_replace=False,
-            translation_manager=mock_manager
-        )
-        
-        # Check output preserves bold formatting
-        output_doc = Document(output_path)
-        output_para = output_doc.paragraphs[0]
-        output_bold_runs = [r for r in output_para.runs if r.bold and r.text.strip()]
-        
-        print(f"  Output paragraph runs: {[(r.text, r.bold) for r in output_para.runs]}")
-        print(f"  Output bold runs count: {len(output_bold_runs)}")
-        
-        # The output should have at least one bold run (the middle segment)
-        if len(output_bold_runs) >= 1:
-            print(f"[PASS] Mid-paragraph bold formatting preserved")
-            print(f"  Bold text preserved: '{output_bold_runs[0].text}'")
-            passed += 1
-        else:
-            print(f"[FAIL] Mid-paragraph bold formatting lost")
-            print(f"  Expected: At least 1 bold run")
-            print(f"  Got: {len(output_bold_runs)} bold runs")
-            failed += 1
-    
-    except Exception as e:
-        print(f"[FAIL] Exception during test: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        failed += 1
-    
-    finally:
-        if os.path.exists(input_path):
-            os.remove(input_path)
-        if os.path.exists(output_path):
-            os.remove(output_path)
-    
-    print(f"\n{passed} passed, {failed} failed\n")
-    assert failed == 0, f"{failed} test cases failed"
-
-
-def test_color_normalization():
-    print("\n=== Testing explicit black vs inherited color normalization ===\n")
-    
-    passed = 0
-    failed = 0
-    
-    doc = Document()
-    para = doc.add_paragraph()
-    run1 = para.add_run("Explicit black ")
-    run1.font.color.rgb = RGBColor(0, 0, 0)
-    run2 = para.add_run("inherited color")
-    
-    has_diff = _has_formatting_differences(para)
-    
-    if not has_diff:
-        print("[PASS] Explicit black and inherited color treated as identical")
-        passed += 1
-    else:
-        print("[FAIL] Explicit black and inherited color treated as different")
-        print(f"  Expected: False (no formatting differences)")
-        print(f"  Got: {has_diff}")
-        failed += 1
-    
-    print(f"\n{passed} passed, {failed} failed\n")
-    assert failed == 0, f"{failed} test cases failed"
-
-
 def test_long_paragraph_chunking():
     print("\n=== Testing long paragraph chunking (>600 chars) ===\n")
     
@@ -808,68 +578,6 @@ def _build_para_link_end(doc):
     return para
 
 
-def test_get_all_runs():
-    print("\n=== Testing _get_all_runs() returns direct w:r children only ===\n")
-    
-    passed = 0
-    failed = 0
-    
-    # Test 1: plain paragraph returns all runs
-    doc = Document()
-    para = doc.add_paragraph()
-    para.add_run('Hello ')
-    para.add_run('world.')
-    
-    all_runs = _get_all_runs(para)
-    texts = [r.text for r in all_runs]
-    expected = ['Hello ', 'world.']
-    
-    if texts == expected:
-        print(f"[PASS] Plain runs returned correctly: {texts}")
-        passed += 1
-    else:
-        print(f"[FAIL] Plain runs wrong")
-        print(f"  Expected: {expected}")
-        print(f"  Got: {texts}")
-        failed += 1
-    
-    # Test 2: paragraph with hyperlinks only returns direct w:r children (skips hyperlink-nested runs)
-    doc2 = Document()
-    para2 = doc2.add_paragraph()
-    para2.add_run('Before ')
-    _add_hyperlink(para2, 'https://example.com', 'Link Text')
-    para2.add_run(' after.')
-    
-    all_runs2 = _get_all_runs(para2)
-    texts2 = [r.text for r in all_runs2]
-    expected2 = ['Before ', ' after.']
-    
-    if texts2 == expected2:
-        print(f"[PASS] Hyperlink-nested runs correctly skipped: {texts2}")
-        passed += 1
-    else:
-        print(f"[FAIL] Expected hyperlink runs to be skipped")
-        print(f"  Expected: {expected2}")
-        print(f"  Got: {texts2}")
-        failed += 1
-    
-    # Test 3: single run paragraph
-    doc3 = Document()
-    para3 = doc3.add_paragraph()
-    para3.add_run('Plain text only.')
-    all_runs3 = _get_all_runs(para3)
-    
-    if len(all_runs3) == 1 and all_runs3[0].text == 'Plain text only.':
-        print(f"[PASS] Single run paragraph works correctly")
-        passed += 1
-    else:
-        print(f"[FAIL] Single run paragraph result unexpected: {[r.text for r in all_runs3]}")
-        failed += 1
-    
-    print(f"\n{passed} passed, {failed} failed\n")
-    assert failed == 0, f"{failed} test cases failed"
-
-
 def test_join_run_texts():
     print("\n=== Testing _join_run_texts concatenation ===\n")
     
@@ -1038,7 +746,7 @@ def test_hyperlink_stripping_and_records():
             failed += 1
         
         # Check 2: cyan highlighting applied to all runs
-        all_runs_after = _get_all_runs(para)
+        all_runs_after = list(para.runs)
         all_have_cyan = all(
             run.font.highlight_color == WD_COLOR_INDEX.TURQUOISE
             for run in all_runs_after
@@ -1061,7 +769,7 @@ def test_hyperlink_stripping_and_records():
                 print(f"[FAIL] Record original_text wrong: '{record['original_text']}'")
                 record_ok = False
             
-            if record['url'] != 'https://example.com':
+            if record['notes'] != 'https://example.com':
                 print(f"[FAIL] Record url wrong: '{record['url']}'")
                 record_ok = False
             
@@ -1091,7 +799,7 @@ def test_hyperlink_stripping_and_records():
         hyperlink_records_plain = []
         _translate_paragraph(para2, mock_manager, 'en', 'fr', False, 1, hyperlink_records=hyperlink_records_plain)
         
-        all_runs_plain = _get_all_runs(para2)
+        all_runs_plain = list(para2.runs)
         any_cyan = any(
             hasattr(run, 'font') and hasattr(run.font, 'highlight_color') and run.font.highlight_color == WD_COLOR_INDEX.TURQUOISE
             for run in all_runs_plain
@@ -1118,8 +826,8 @@ def test_write_hyperlink_notes():
     failed = 0
     
     records = [
-        {'original_text': 'Example Link', 'full_sentence': 'Visit Example Link for details.', 'url': 'https://example.com'},
-        {'original_text': 'Another', 'full_sentence': 'See Another for more.', 'url': 'https://another.com'},
+        {'original_text': 'Example Link', 'full_sentence': 'Visit Example Link for details.', 'notes': 'https://example.com'},
+        {'original_text': 'Another', 'full_sentence': 'See Another for more.', 'notes': 'https://another.com'},
     ]
     
     temp_file = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
@@ -1127,7 +835,7 @@ def test_write_hyperlink_notes():
     temp_path = temp_file.name
     
     try:
-        write_hyperlink_notes(records, temp_path)
+        write_translations_notes(records, temp_path)
         
         doc = Document(temp_path)
         
@@ -1159,19 +867,7 @@ def test_write_hyperlink_notes():
             print(f"[FAIL] Expected 3 rows, got {num_rows}")
             failed += 1
         
-        # Check 4: header row contains correct labels
-        header_texts = [cell.text for cell in table.rows[0].cells]
-        expected_headers = ['Original Text', 'Full Sentence', 'URL']
-        if header_texts == expected_headers:
-            print(f"[PASS] Header row correct: {header_texts}")
-            passed += 1
-        else:
-            print(f"[FAIL] Header row wrong")
-            print(f"  Expected: {expected_headers}")
-            print(f"  Got: {header_texts}")
-            failed += 1
-        
-        # Check 5: first data row contains correct values
+        # Check 4: first data row contains correct values
         first_row_texts = [cell.text for cell in table.rows[1].cells]
         expected_first_row = ['Example Link', 'Visit Example Link for details.', 'https://example.com']
         if first_row_texts == expected_first_row:
