@@ -10,11 +10,12 @@ from lxml import etree
 from scitrans import config
 from scitrans.rules_based_replacements.token_utils import get_translation_value
 from scitrans.translate.models import create_translator
-from scitrans.translate.utils import _split_into_sentences, normalize_apostrophes
+from scitrans.translate.utils import split_into_chunks, normalize_apostrophes
 from scitrans.translate.word_formatting import apply_formatting_rules, is_numeric, convert_numeric
 from scitrans.translate.word_formatting import parse_formatted_string
 
 
+# TODO: refactor notes into one module (hyperlinks, formats, etc)
 def write_hyperlink_notes(hyperlink_records, output_path):
     document = Document()
     document.add_heading('Hyperlink Translation Notes', level=1)
@@ -25,7 +26,7 @@ def write_hyperlink_notes(hyperlink_records, output_path):
     header_cells = table.rows[0].cells
     header_cells[0].text = 'Original Text'
     header_cells[1].text = 'Full Sentence'
-    header_cells[2].text = 'URL'
+    header_cells[2].text = 'URL'  # FIXME for other notes
     
     for record in hyperlink_records:
         row_cells = table.add_row().cells
@@ -61,10 +62,12 @@ def _get_run_format_key(run):
     )
 
 
-def _merge_identical_runs(paragraph):  # NOTE: add an ignore_colour=True flag?
+def _merge_identical_runs(paragraph):
     # FIXME: this should ignore colour
     #  everything should just use default colour
     #  making a note when the colour deviates
+    #  ignore_colour=True flag?
+    #  bypass entirely, always merge, note if there are formatting changes in Notes table docx
     all_runs = _get_all_runs(paragraph)
     if len(all_runs) <= 1:
         return
@@ -177,33 +180,10 @@ def _chunk_and_translate(
         use_find_replace,
         idx,
         use_cache=True,
-        preferential_dict=None
+        preferential_dict=None,
+        chunk_by="sentences"
 ):
-    MAX_CHAR = 600
-    if len(text) <= MAX_CHAR:
-        result = translation_manager.translate_with_best_model(
-            text=text,
-            source_lang=source_lang,
-            target_lang=target_lang,
-            use_find_replace=use_find_replace,
-            idx=idx,
-            use_cache=use_cache,
-            preferential_dict=preferential_dict
-        )
-        return result.get("translated_text", "[TRANSLATION FAILED]")
-    
-    sentences = _split_into_sentences(text)
-    chunks = []
-    current_chunk = ''
-    for sentence in sentences:
-        if len(current_chunk) + len(sentence) + 1 <= MAX_CHAR:
-            current_chunk += (' ' if current_chunk else '') + sentence
-        else:
-            if current_chunk:
-                chunks.append(current_chunk)
-            current_chunk = sentence
-    if current_chunk:
-        chunks.append(current_chunk)
+    chunks, _ = split_into_chunks(text, chunk_by)
     
     translated_parts = []
     for chunk in chunks:
@@ -229,7 +209,8 @@ def _translate_paragraph(
         idx,
         use_cache=True,
         hyperlink_records=None,
-        preferential_dict=None
+        preferential_dict=None,
+        chunk_by="sentences"
 ):
     _apply_cyan = False
     p_elem = paragraph._element
@@ -316,8 +297,15 @@ def _translate_paragraph(
             return idx
         
         translated_text = _chunk_and_translate(
-            text_to_translate, translation_manager, source_lang, target_lang,
-            use_find_replace, idx, use_cache, preferential_dict=preferential_dict
+            text_to_translate,
+            translation_manager,
+            source_lang,
+            target_lang,
+            use_find_replace,
+            idx,
+            use_cache,
+            preferential_dict=preferential_dict,
+            chunk_by=chunk_by
         )
         translated_text = normalize_apostrophes(translated_text)
         
@@ -348,8 +336,15 @@ def _translate_paragraph(
             return idx
         
         translated_text = _chunk_and_translate(
-            text_to_translate, translation_manager, source_lang, target_lang,
-            use_find_replace, idx, use_cache, preferential_dict=preferential_dict
+            text_to_translate,
+            translation_manager,
+            source_lang,
+            target_lang,
+            use_find_replace,
+            idx,
+            use_cache,
+            preferential_dict=preferential_dict,
+            chunk_by=chunk_by
         )
         translated_text = normalize_apostrophes(translated_text)
         
@@ -392,7 +387,8 @@ def _translate_table_cell(
         use_cache=True,
         hyperlink_records=None,
         preferential_dict=None,
-        table_translations_dict=None
+        table_translations_dict=None,
+        chunk_by="sentences"
 ):
     to_fr = target_lang == "fr"
     cell_text = cell.text
@@ -468,7 +464,8 @@ def _translate_table_cell(
                 idx,
                 use_cache=use_cache,
                 hyperlink_records=hyperlink_records,
-                preferential_dict=preferential_dict
+                preferential_dict=preferential_dict,
+                chunk_by=chunk_by
             )
         return idx
     
@@ -500,7 +497,8 @@ def translate_word_document(
         use_finetuned=True,
         translation_manager=None,
         include_timestamp=True,
-        use_cache=True
+        use_cache=True,
+        chunk_by="sentences"
 ):
     if not output_docx_file:
         base, ext = os.path.splitext(input_docx_file)
@@ -514,8 +512,6 @@ def translate_word_document(
         raise ValueError('source_lang must be either "fr" or "en"')
     
     target_lang = "fr" if source_lang == "en" else "en"
-    
-    # TODO: split by sentences
     
     if not translation_manager:
         translation_manager = create_translator(
@@ -564,7 +560,8 @@ def translate_word_document(
             idx,
             use_cache=use_cache,
             hyperlink_records=hyperlink_records,
-            preferential_dict=preferential_dict
+            preferential_dict=preferential_dict,
+            chunk_by=chunk_by
         )
     
     for table in document.tables:
@@ -580,7 +577,8 @@ def translate_word_document(
                     use_cache=use_cache,
                     hyperlink_records=hyperlink_records,
                     preferential_dict=preferential_dict,
-                    table_translations_dict=table_translations_dict
+                    table_translations_dict=table_translations_dict,
+                    chunk_by=chunk_by
                 )
     
     translated_hf_ids = set()
@@ -609,7 +607,8 @@ def translate_word_document(
                     idx,
                     use_cache=use_cache,
                     hyperlink_records=hyperlink_records,
-                    preferential_dict=preferential_dict
+                    preferential_dict=preferential_dict,
+                    chunk_by=chunk_by
                 )
             for table in hf.tables:
                 for row in table.rows:
@@ -624,7 +623,8 @@ def translate_word_document(
                             use_cache=use_cache,
                             hyperlink_records=hyperlink_records,
                             preferential_dict=preferential_dict,
-                            table_translations_dict=table_translations_dict
+                            table_translations_dict=table_translations_dict,
+                            chunk_by=chunk_by
                         )
     
     _set_proofing_language(document, target_lang)

@@ -2,40 +2,9 @@ import logging
 import os
 
 from scitrans.translate.models import create_translator
-from scitrans.translate.utils import _split_into_sentences, normalize_apostrophes
+from scitrans.translate.utils import split_into_chunks, normalize_apostrophes
 
 logger = logging.getLogger(__name__)
-
-
-def split_by_sentences(text):
-    lines = text.split('\n')
-    chunks = []
-    chunk_metadata = []
-    
-    for line_idx, line in enumerate(lines):
-        if not line.strip():
-            chunks.append('')
-            chunk_metadata.append({
-                'line_idx': line_idx,
-                'sent_idx': 0,
-                'is_last_in_line': True,
-                'is_empty': True
-            })
-            continue
-        
-        sentences = _split_into_sentences(line)
-        for sent_idx, sentence in enumerate(sentences):
-            sentence = sentence.strip()
-            if sentence:
-                chunks.append(sentence)
-                chunk_metadata.append({
-                    'line_idx': line_idx,
-                    'sent_idx': sent_idx,
-                    'is_last_in_line': sent_idx == len(sentences) - 1,
-                    'is_empty': False
-                })
-    
-    return chunks, chunk_metadata
 
 
 def reassemble_sentences(translated_chunks, chunk_metadata):
@@ -54,63 +23,6 @@ def reassemble_sentences(translated_chunks, chunk_metadata):
     return '\n'.join(lines_dict[i] for i in sorted(lines_dict.keys()))
 
 
-def split_by_paragraphs(text):
-    # Notes:
-    #  still get >512 token issues with 1000 characters, use 600 to be conservative
-    MAX_CHAR = 600
-    
-    lines = text.split('\n')
-    chunks = []
-    chunk_metadata = []
-    
-    para_idx = 0
-    for line_idx, line in enumerate(lines):
-        if not line.strip():
-            chunks.append('')
-            chunk_metadata.append({
-                'line_idx': line_idx,
-                'para_idx': para_idx,
-                'is_empty': True
-            })
-            para_idx += 1
-            continue
-        
-        if len(line) <= MAX_CHAR:
-            chunks.append(line)
-            chunk_metadata.append({
-                'line_idx': line_idx,
-                'para_idx': para_idx,
-                'is_last_in_line': True,
-                'is_empty': False
-            })
-        else:
-            sentences = _split_into_sentences(line)
-            line_chunks = []
-            current_chunk = ''
-            
-            for sentence in sentences:
-                if len(current_chunk) + len(sentence) + 1 <= MAX_CHAR:
-                    current_chunk += (' ' if current_chunk else '') + sentence
-                else:
-                    if current_chunk:
-                        line_chunks.append(current_chunk)
-                    current_chunk = sentence
-            
-            if current_chunk:
-                line_chunks.append(current_chunk)
-            
-            for chunk_idx, chunk in enumerate(line_chunks):
-                chunks.append(chunk)
-                chunk_metadata.append({
-                    'line_idx': line_idx,
-                    'para_idx': para_idx,
-                    'is_last_in_line': chunk_idx == len(line_chunks) - 1,
-                    'is_empty': False
-                })
-    
-    return chunks, chunk_metadata
-
-
 def reassemble_paragraphs(translated_chunks, chunk_metadata):
     lines_dict = {}
     for translated_chunk, metadata in zip(translated_chunks, chunk_metadata):
@@ -125,9 +37,6 @@ def reassemble_paragraphs(translated_chunks, chunk_metadata):
             lines_dict[line_idx] = ' '.join(lines_dict[line_idx])
     
     return '\n'.join(lines_dict[i] for i in sorted(lines_dict.keys()))
-
-
-
 
 
 def translate_txt_document(
@@ -155,10 +64,7 @@ def translate_txt_document(
     with open(input_text_file, 'r', encoding='utf-8') as f:
         text = f.read()
     
-    if chunk_by == "paragraphs":
-        chunks, chunk_metadata = split_by_paragraphs(text)
-    else:
-        chunks, chunk_metadata = split_by_sentences(text)
+    chunks, chunk_metadata = split_into_chunks(text, chunk_by)
     
     if not translation_manager:
         translation_manager = create_translator(

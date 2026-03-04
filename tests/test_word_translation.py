@@ -1,6 +1,6 @@
 import os
 from scitrans.translate.word_document import translate_word_document, _has_formatting_differences, _translate_paragraph, _get_all_runs, _join_run_texts, _set_proofing_language, write_hyperlink_notes
-from scitrans.translate.txt_document import _split_into_sentences
+from scitrans.translate.utils import split_by_sentences
 from scitrans.translate.models import create_translator
 from docx import Document
 from docx.shared import RGBColor
@@ -941,8 +941,8 @@ def test_join_run_texts():
     assert failed == 0, f"{failed} test cases failed"
 
 
-def test_split_into_sentences():
-    print("\n=== Testing _split_into_sentences ===\n")
+def test_split_by_sentences():
+    print("\n=== Testing split_by_sentences ===\n")
     
     passed = 0
     failed = 0
@@ -981,7 +981,7 @@ def test_split_into_sentences():
     ]
     
     for test in test_cases:
-        result = _split_into_sentences(test['input'])
+        result, _ = split_by_sentences(test['input'])
         if result == test['expected']:
             print(f"[PASS] {test['name']}")
             passed += 1
