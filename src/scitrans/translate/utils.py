@@ -97,3 +97,35 @@ def split_into_chunks(text, chunk_by="sentences"):
         return split_by_paragraphs(text)
     else:
         return split_by_sentences(text)
+
+
+def reassemble_sentences(translated_chunks, chunk_metadata):
+    lines_dict = {}
+    for i, (translated_chunk, metadata) in enumerate(zip(translated_chunks, chunk_metadata)):
+        line_idx = metadata['line_idx']
+        if line_idx not in lines_dict:
+            lines_dict[line_idx] = []
+        
+        lines_dict[line_idx].append(translated_chunk)
+    
+    for line_idx in lines_dict:
+        if isinstance(lines_dict[line_idx], list):
+            lines_dict[line_idx] = ' '.join(lines_dict[line_idx])
+    
+    return '\n'.join(lines_dict[i] for i in sorted(lines_dict.keys()))
+
+
+def reassemble_paragraphs(translated_chunks, chunk_metadata):
+    lines_dict = {}
+    for translated_chunk, metadata in zip(translated_chunks, chunk_metadata):
+        line_idx = metadata['line_idx']
+        if line_idx not in lines_dict:
+            lines_dict[line_idx] = []
+        
+        lines_dict[line_idx].append(translated_chunk)
+    
+    for line_idx in lines_dict:
+        if isinstance(lines_dict[line_idx], list):
+            lines_dict[line_idx] = ' '.join(lines_dict[line_idx])
+    
+    return '\n'.join(lines_dict[i] for i in sorted(lines_dict.keys()))

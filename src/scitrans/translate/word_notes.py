@@ -3,10 +3,12 @@ from docx.oxml.ns import qn
 
 
 # FIXME:
-#  add formatting notes
+#  add notes
 #  create tests
-def add_translations_notes(paragraph, notes):
-    print(notes)
+def add_translations_notes(paragraph, formatting_records):
+    # TODO for run in paragraph, if formatting, make note
+    #  separate lines for each format?
+    #  or create a string to describe original, and each note ('\n' sep)?
     pass
 
 
@@ -67,7 +69,6 @@ def has_hyperlinks(paragraph, formatting_records):
     return False
 
 
-# FIXME
 def write_translations_notes(translations_notes, output_path):
     document = Document()
     document.add_heading('Hyperlink Translation Notes', level=1)

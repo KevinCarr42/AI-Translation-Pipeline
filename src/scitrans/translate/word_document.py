@@ -10,7 +10,7 @@ from lxml import etree
 from scitrans import config
 from scitrans.rules_based_replacements.token_utils import get_translation_value
 from scitrans.translate.models import create_translator
-from scitrans.translate.utils import split_into_chunks, normalize_apostrophes
+from scitrans.translate.utils import split_into_chunks, reassemble_sentences, reassemble_paragraphs, normalize_apostrophes
 from scitrans.translate.word_formatting import apply_formatting_rules, is_numeric, convert_numeric, parse_formatted_string
 from scitrans.translate.word_notes import add_translations_notes, has_hyperlinks, write_translations_notes
 
@@ -42,6 +42,7 @@ def _has_formatting_differences(paragraph):
 
 def _merge_runs(paragraph):
     if _has_formatting_differences(paragraph):
+        # FIXME: pass formatting_records, make formatting notes
         add_translations_notes(paragraph, 'inconsistent formatting')
     
     paragraph.text = paragraph.text
@@ -58,9 +59,9 @@ def _chunk_and_translate(
         preferential_dict=None,
         chunk_by="sentences"
 ):
-    chunks, _ = split_into_chunks(text, chunk_by)
+    chunks, chunk_metadata = split_into_chunks(text, chunk_by)
     
-    translated_parts = []
+    translated_chunks = []
     for chunk in chunks:
         result = translation_manager.translate_with_best_model(
             text=chunk,
@@ -71,8 +72,12 @@ def _chunk_and_translate(
             use_cache=use_cache,
             preferential_dict=preferential_dict
         )
-        translated_parts.append(result.get("translated_text", "[TRANSLATION FAILED]"))
-    return ' '.join(translated_parts)
+        translated_chunks.append(result.get("translated_text", "[TRANSLATION FAILED]"))
+    
+    if chunk_by == "paragraphs":
+        return reassemble_paragraphs(translated_chunks, chunk_metadata)
+    else:
+        return reassemble_sentences(translated_chunks, chunk_metadata)
 
 
 def _translate_paragraph(
@@ -97,6 +102,8 @@ def _translate_paragraph(
     # Re-fetch after merge since runs may have changed
     all_runs = list(paragraph.runs)
     
+    # FIXME: runs have already been merged, why are we splitting now?
+    #  how is full_text treated versus content_runs/all_runs?
     content_runs = [run for run in all_runs if run.text and run.text.strip()]
     full_text = _join_run_texts(all_runs)
     
@@ -120,7 +127,7 @@ def _translate_paragraph(
     # FIXME: formatting rules should break into formatted runs here
     rule_fired, formatted_runs = apply_formatting_rules(full_text, translated_text, all_runs)
     
-    # FIXME: this should just be formatted runs now, without dataclass params
+    # FIXME: this should just be formatted runs now, without dataclass params?
     for run in all_runs:
         run.text = ''
     for i, fmt_run in enumerate(formatted_runs):
@@ -177,7 +184,6 @@ def _translate_table_cell(
     
     # 2. Exact match in table translations dict
     if table_translations_dict and stripped in table_translations_dict:
-        
         raw_replacement = table_translations_dict[stripped]
         formatted_runs = parse_formatted_string(raw_replacement)
         content_runs = [run for p in cell.paragraphs for run in p.runs if run.text.strip()]

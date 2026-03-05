@@ -2,41 +2,10 @@ import logging
 import os
 
 from scitrans.translate.models import create_translator
-from scitrans.translate.utils import split_into_chunks, normalize_apostrophes
+from scitrans.translate.utils import split_into_chunks, reassemble_sentences, reassemble_paragraphs, normalize_apostrophes
 
 logger = logging.getLogger(__name__)
 
-
-def reassemble_sentences(translated_chunks, chunk_metadata):
-    lines_dict = {}
-    for i, (translated_chunk, metadata) in enumerate(zip(translated_chunks, chunk_metadata)):
-        line_idx = metadata['line_idx']
-        if line_idx not in lines_dict:
-            lines_dict[line_idx] = []
-        
-        lines_dict[line_idx].append(translated_chunk)
-    
-    for line_idx in lines_dict:
-        if isinstance(lines_dict[line_idx], list):
-            lines_dict[line_idx] = ' '.join(lines_dict[line_idx])
-    
-    return '\n'.join(lines_dict[i] for i in sorted(lines_dict.keys()))
-
-
-def reassemble_paragraphs(translated_chunks, chunk_metadata):
-    lines_dict = {}
-    for translated_chunk, metadata in zip(translated_chunks, chunk_metadata):
-        line_idx = metadata['line_idx']
-        if line_idx not in lines_dict:
-            lines_dict[line_idx] = []
-        
-        lines_dict[line_idx].append(translated_chunk)
-    
-    for line_idx in lines_dict:
-        if isinstance(lines_dict[line_idx], list):
-            lines_dict[line_idx] = ' '.join(lines_dict[line_idx])
-    
-    return '\n'.join(lines_dict[i] for i in sorted(lines_dict.keys()))
 
 
 def translate_txt_document(
@@ -95,10 +64,10 @@ def translate_txt_document(
         translated_chunks.append(translated_text)
         next_idx = i
     
-    if chunk_by == "sentences":
-        translated_document = reassemble_sentences(translated_chunks, chunk_metadata)
-    else:
+    if chunk_by == "paragraphs":
         translated_document = reassemble_paragraphs(translated_chunks, chunk_metadata)
+    else:
+        translated_document = reassemble_sentences(translated_chunks, chunk_metadata)
     
     with open(output_text_file, 'w', encoding='utf-8') as f:
         f.write(translated_document)
