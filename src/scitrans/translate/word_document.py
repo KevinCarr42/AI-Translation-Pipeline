@@ -11,39 +11,24 @@ from scitrans import config
 from scitrans.rules_based_replacements.token_utils import get_translation_value
 from scitrans.translate.models import create_translator
 from scitrans.translate.utils import split_into_chunks, reassemble_sentences, reassemble_paragraphs, normalize_apostrophes
-from scitrans.translate.word_formatting import apply_formatting_rules, is_numeric, convert_numeric, parse_formatted_string
-from scitrans.translate.word_notes import add_translations_notes, has_hyperlinks, write_translations_notes
+from scitrans.translate.word_formatting import apply_formatting_rules, is_numeric, convert_numeric, parse_formatted_string, FormattedRun
+from scitrans.translate.word_notes import add_formatting_notes, has_hyperlinks, write_translations_notes
 
 
 def _join_run_texts(all_runs):
     return ''.join(run.text or '' for run in all_runs)
 
 
-def _get_run_format_key(run):
-    return (
-        run.bold,
-        run.italic,
-        run.underline,
-        run.font.name,
-        run.font.size,
-        str(run.font.color)
-    )
-
-
 def _has_formatting_differences(paragraph):
-    format_keys = set()
     for run in list(paragraph.runs):
-        if run.text and run.text.strip():
-            format_keys.add(_get_run_format_key(run))
-            if len(format_keys) > 1:
-                return True
+        if FormattedRun.create(run).has_formatting:
+            return True
     return False
 
 
-def _merge_runs(paragraph):
+def _merge_runs(paragraph, formatting_records):
     if _has_formatting_differences(paragraph):
-        # FIXME: pass formatting_records, make formatting notes
-        add_translations_notes(paragraph, 'inconsistent formatting')
+        add_formatting_notes(paragraph, formatting_records)
     
     paragraph.text = paragraph.text
 
@@ -97,7 +82,7 @@ def _translate_paragraph(
     # FIXME: formatting rules should find the patterns here
     
     # Clean up invisible run boundaries, and note formatting changes
-    _merge_runs(paragraph)
+    _merge_runs(paragraph, formatting_records)
     
     # Re-fetch after merge since runs may have changed
     all_runs = list(paragraph.runs)

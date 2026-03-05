@@ -1,6 +1,7 @@
 import logging
 import re
 from dataclasses import dataclass
+from typing import ClassVar
 
 logger = logging.getLogger(__name__)
 
@@ -9,20 +10,47 @@ BRACKET_PATTERN = re.compile(r'\([^)]+\)')
 
 @dataclass(frozen=True)
 class FormattedRun:
+    _DEFAULT_COLOUR: ClassVar[str] = "default"
+    _FORMATTING_BOOLS: ClassVar[tuple[str, ...]] = ('bold', 'italic', 'underline', 'superscript', 'subscript')
     text: str
+    bold: bool = False
     italic: bool = False
+    underline: bool = False
     superscript: bool = False
     subscript: bool = False
+    colour: str = _DEFAULT_COLOUR
     
-    def __str__(self):
-        s = self.text
-        if self.italic:
-            s = f"/{s}/"
-        if self.superscript:
-            s = f"^{{{s}}}"
-        if self.subscript:
-            s = f"_{{{s}}}"
-        return s
+    @classmethod
+    def create(cls, run):
+        colour = "default"
+        if run.font.color and run.font.color.rgb:
+            colour = str(run.font.color.rgb)
+        return cls(
+            text=run.text,
+            bold=run.bold,
+            italic=run.italic,
+            underline=run.underline,
+            superscript=run.font.superscript or False,
+            subscript=run.font.subscript or False,
+            colour=colour,
+        )
+    
+    @property
+    def has_formatting(self):
+        return any(getattr(self, attr) for attr in self._FORMATTING_BOOLS) or self.colour != self._DEFAULT_COLOUR
+    
+    @property
+    def formatting_notes(self):
+        notes = []
+        for attr in self._FORMATTING_BOOLS:
+            if getattr(self, attr):
+                notes.append(attr)
+        if self.colour != self._DEFAULT_COLOUR:
+            notes.append(f'colour={self.colour}')
+        
+        if notes:
+            return ", ".join(notes)
+        return "no formatting"
 
 
 def parse_formatted_string(s):

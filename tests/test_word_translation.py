@@ -761,7 +761,7 @@ def test_hyperlink_stripping_and_records():
             failed += 1
         
         # Check 3: formatting_records populated correctly
-        if len(formatting_records) == 1:
+        if len(formatting_records) == 1:  # TODO: is there a different format here too?
             record = formatting_records[0]
             record_ok = True
             
@@ -784,6 +784,8 @@ def test_hyperlink_stripping_and_records():
                 failed += 1
         else:
             print(f"[FAIL] Expected 1 hyperlink record, got {len(formatting_records)}")
+            for record in formatting_records:
+                print(record)
             failed += 1
     
     finally:

@@ -1,18 +1,29 @@
 from docx import Document
 from docx.oxml.ns import qn
+from scitrans.translate.word_formatting import FormattedRun
 
 
-# FIXME:
-#  add notes
-#  create tests
-def add_translations_notes(paragraph, formatting_records):
-    # TODO for run in paragraph, if formatting, make note
-    #  separate lines for each format?
-    #  or create a string to describe original, and each note ('\n' sep)?
-    pass
+# TODO: create tests
+def add_formatting_notes(paragraph, formatting_records):
+    full_paragraph_text = paragraph.text
+    original_text = []
+    notes = []
+    
+    for run in list(paragraph.runs):
+        formatted_run = FormattedRun.create(run)
+        
+        if formatted_run.has_formatting and formatted_run.text.strip():
+            original_text.append(run.text)
+            notes.append(formatted_run.formatting_notes)
+    
+    formatting_records.append({
+        'original_text': "\n".join(original_text),
+        'full_sentence': full_paragraph_text,
+        'notes': "\n".join(notes),
+    })
 
 
-# FIXME: can this be simplified
+# FIXME: can this be simplified?
 def _add_hyperlink_notes(paragraph, formatting_records, p_elem, hyperlink_elems):
     wns = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
     # Build full paragraph text for context (including hyperlink run text)
