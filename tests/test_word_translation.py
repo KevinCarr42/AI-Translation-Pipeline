@@ -255,6 +255,10 @@ def test_output_path_generation():
                 failed += 1
                 if os.path.exists(result):
                     os.remove(result)
+            
+            notes_path = os.path.splitext(result)[0] + '_translation_notes.docx'
+            if os.path.exists(notes_path):
+                os.remove(notes_path)
         
         except Exception as e:
             print(f"[FAIL] {test['name']}")
