@@ -12,7 +12,7 @@ from scitrans.rules_based_replacements.token_utils import get_translation_value
 from scitrans.translate.models import create_translator
 from scitrans.translate.utils import split_into_chunks, normalize_apostrophes
 from scitrans.translate.word_formatting import apply_formatting_rules, is_numeric, convert_numeric, parse_formatted_string
-from scitrans.translate.word_notes import add_translations_notes, write_translations_notes
+from scitrans.translate.word_notes import add_translations_notes, has_hyperlinks, write_translations_notes
 
 
 def _join_run_texts(all_runs):
@@ -83,65 +83,13 @@ def _translate_paragraph(
         use_find_replace,
         idx,
         use_cache=True,
-        hyperlink_records=None,
+        formatting_records=None,
         preferential_dict=None,
         chunk_by="sentences"
 ):
-    _apply_cyan = False
-    p_elem = paragraph._element  # FIXME: is this the best way?
-    hyperlink_elems = p_elem.findall(qn('w:hyperlink'))
-    has_hyperlinks = len(hyperlink_elems) > 0
+    _apply_cyan = has_hyperlinks(paragraph, formatting_records)
     
-    # FIXME: clean this block up and refactor
-    if hyperlink_records is not None and has_hyperlinks:
-        wns = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
-        # Build full paragraph text for context (including hyperlink run text)
-        all_text_parts = []
-        for child in p_elem:
-            if child.tag == qn('w:r'):
-                t_elem = child.find(f'{{{wns}}}t')
-                if t_elem is not None and t_elem.text:
-                    all_text_parts.append(t_elem.text)
-            elif child.tag == qn('w:hyperlink'):
-                for r_elem in child.findall(f'{{{wns}}}r'):
-                    t_elem = r_elem.find(f'{{{wns}}}t')
-                    if t_elem is not None and t_elem.text:
-                        all_text_parts.append(t_elem.text)
-        full_paragraph_text = ''.join(all_text_parts)
-        
-        # Collect hyperlink records before stripping
-        for hl_elem in hyperlink_elems:
-            r_id = hl_elem.get(qn('r:id'))
-            if r_id and r_id in paragraph.part.rels:
-                url = paragraph.part.rels[r_id].target_ref
-            else:
-                url = ''
-            for r_elem in hl_elem.findall(f'{{{wns}}}r'):
-                t_elem = r_elem.find(f'{{{wns}}}t')
-                original_text = t_elem.text if t_elem is not None and t_elem.text else ''
-                hyperlink_records.append({
-                    'original_text': original_text,
-                    'full_sentence': full_paragraph_text,
-                    'notes': url,
-                })
-        
-        # Strip hyperlink XML wrappers — move w:r elements up into w:p
-        for hl_elem in list(p_elem.findall(qn('w:hyperlink'))):
-            for r_elem in list(hl_elem.findall(qn('w:r'))):
-                p_elem.insert(list(p_elem).index(hl_elem), r_elem)
-            p_elem.remove(hl_elem)
-        
-        _apply_cyan = True
-    
-    all_runs = list(paragraph.runs)
-    if not all_runs:
-        return idx
-    
-    # FIXME merge and join should be fixed and combined
-    full_text = _join_run_texts(all_runs)
-    
-    if not full_text.strip():
-        return idx
+    # FIXME: formatting rules should find the patterns here
     
     # Clean up invisible run boundaries, and note formatting changes
     _merge_runs(paragraph)
@@ -169,8 +117,10 @@ def _translate_paragraph(
     )
     translated_text = normalize_apostrophes(translated_text)
     
+    # FIXME: formatting rules should break into formatted runs here
     rule_fired, formatted_runs = apply_formatting_rules(full_text, translated_text, all_runs)
     
+    # FIXME: this should just be formatted runs now, without dataclass params
     for run in all_runs:
         run.text = ''
     for i, fmt_run in enumerate(formatted_runs):
@@ -202,7 +152,7 @@ def _translate_table_cell(
         use_find_replace,
         idx,
         use_cache=True,
-        hyperlink_records=None,
+        formatting_records=None,
         preferential_dict=None,
         table_translations_dict=None,
         chunk_by="sentences"
@@ -280,7 +230,7 @@ def _translate_table_cell(
                 use_find_replace,
                 idx,
                 use_cache=use_cache,
-                hyperlink_records=hyperlink_records,
+                formatting_records=formatting_records,
                 preferential_dict=preferential_dict,
                 chunk_by=chunk_by
             )
@@ -340,7 +290,7 @@ def translate_word_document(
     
     document = Document(input_docx_file)
     idx = 1
-    hyperlink_records = []
+    formatting_records = []
     
     preferential_dict = None
     if os.path.exists(config.PREFERENTIAL_JSON_PATH):
@@ -376,7 +326,7 @@ def translate_word_document(
             use_find_replace,
             idx,
             use_cache=use_cache,
-            hyperlink_records=hyperlink_records,
+            formatting_records=formatting_records,
             preferential_dict=preferential_dict,
             chunk_by=chunk_by
         )
@@ -392,7 +342,7 @@ def translate_word_document(
                     use_find_replace,
                     idx,
                     use_cache=use_cache,
-                    hyperlink_records=hyperlink_records,
+                    formatting_records=formatting_records,
                     preferential_dict=preferential_dict,
                     table_translations_dict=table_translations_dict,
                     chunk_by=chunk_by
@@ -423,7 +373,7 @@ def translate_word_document(
                     use_find_replace,
                     idx,
                     use_cache=use_cache,
-                    hyperlink_records=hyperlink_records,
+                    formatting_records=formatting_records,
                     preferential_dict=preferential_dict,
                     chunk_by=chunk_by
                 )
@@ -438,7 +388,7 @@ def translate_word_document(
                             use_find_replace,
                             idx,
                             use_cache=use_cache,
-                            hyperlink_records=hyperlink_records,
+                            formatting_records=formatting_records,
                             preferential_dict=preferential_dict,
                             table_translations_dict=table_translations_dict,
                             chunk_by=chunk_by
@@ -447,8 +397,8 @@ def translate_word_document(
     _set_proofing_language(document, target_lang)
     document.save(output_docx_file)
     
-    if hyperlink_records:
+    if formatting_records:
         notes_path = os.path.splitext(output_docx_file)[0] + '_translation_notes.docx'
-        write_translations_notes(hyperlink_records, notes_path)  # FIXME: incl formatting notes
+        write_translations_notes(formatting_records, notes_path)
     
     return output_docx_file

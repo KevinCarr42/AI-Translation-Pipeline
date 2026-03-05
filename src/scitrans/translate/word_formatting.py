@@ -72,6 +72,10 @@ def parse_formatted_string(s):
 
 
 # FIXME: create test once refactored
+#  TODO: this is actually bad, we should be
+#   checking for the pattern
+#   translating as a block
+#   creating formatted runs
 def rule_italic_brackets(paragraph_text, runs):
     italic_texts = [run.text for run in runs if run.italic and run.text.strip()]
     if not italic_texts:
@@ -107,7 +111,7 @@ FORMATTING_RULES = [rule_italic_brackets]
 def apply_formatting_rules(paragraph_text, translated_text, runs):
     for rule in FORMATTING_RULES:
         result = rule(translated_text, runs)
-        # NOTE: only returns the first rule. refactor?
+        # NOTE: only returns the first rule. refactor to include all rules?
         if result is not None:
             return True, result
     return False, [FormattedRun(translated_text)]

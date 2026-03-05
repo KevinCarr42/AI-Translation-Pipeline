@@ -1,4 +1,5 @@
 from docx import Document
+from docx.oxml.ns import qn
 
 
 # FIXME:
@@ -7,6 +8,63 @@ from docx import Document
 def add_translations_notes(paragraph, notes):
     print(notes)
     pass
+
+
+# FIXME: can this be simplified
+def _add_hyperlink_notes(paragraph, formatting_records, p_elem, hyperlink_elems):
+    wns = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+    # Build full paragraph text for context (including hyperlink run text)
+    all_text_parts = []
+    for child in p_elem:
+        if child.tag == qn('w:r'):
+            t_elem = child.find(f'{{{wns}}}t')
+            if t_elem is not None and t_elem.text:
+                all_text_parts.append(t_elem.text)
+        elif child.tag == qn('w:hyperlink'):
+            for r_elem in child.findall(f'{{{wns}}}r'):
+                t_elem = r_elem.find(f'{{{wns}}}t')
+                if t_elem is not None and t_elem.text:
+                    all_text_parts.append(t_elem.text)
+    full_paragraph_text = ''.join(all_text_parts)
+    
+    # Collect hyperlink records before stripping
+    for hl_elem in hyperlink_elems:
+        r_id = hl_elem.get(qn('r:id'))
+        if r_id and r_id in paragraph.part.rels:
+            url = paragraph.part.rels[r_id].target_ref
+        else:
+            url = ''
+        for r_elem in hl_elem.findall(f'{{{wns}}}r'):
+            t_elem = r_elem.find(f'{{{wns}}}t')
+            original_text = t_elem.text if t_elem is not None and t_elem.text else ''
+            formatting_records.append({
+                'original_text': original_text,
+                'full_sentence': full_paragraph_text,
+                'notes': url,
+            })
+    
+    # Strip hyperlink XML wrappers — move w:r elements up into w:p
+    for hl_elem in list(p_elem.findall(qn('w:hyperlink'))):
+        for r_elem in list(hl_elem.findall(qn('w:r'))):
+            p_elem.insert(list(p_elem).index(hl_elem), r_elem)
+        p_elem.remove(hl_elem)
+
+
+def has_hyperlinks(paragraph, formatting_records):
+    p_elem = paragraph._element
+    hyperlink_elems = p_elem.findall(qn('w:hyperlink'))
+    kwargs = {
+        "paragraph": paragraph,
+        "formatting_records": formatting_records,
+        "p_elem": p_elem,
+        "hyperlink_elems": hyperlink_elems,
+    }
+    
+    if len(hyperlink_elems) > 0:
+        _add_hyperlink_notes(**kwargs)
+        return True
+    
+    return False
 
 
 # FIXME

@@ -733,8 +733,8 @@ def test_hyperlink_stripping_and_records():
         doc = Document(temp_path)
         para = doc.paragraphs[0]
         
-        hyperlink_records = []
-        _translate_paragraph(para, mock_manager, 'en', 'fr', False, 1, hyperlink_records=hyperlink_records)
+        formatting_records = []
+        _translate_paragraph(para, mock_manager, 'en', 'fr', False, 1, formatting_records=formatting_records)
         
         # Check 1: no w:hyperlink elements remain
         hyperlinks_remaining = para._element.findall(ns.qn('w:hyperlink'))
@@ -760,9 +760,9 @@ def test_hyperlink_stripping_and_records():
             print(f"[FAIL] Not all runs have cyan highlighting: {highlight_values}")
             failed += 1
         
-        # Check 3: hyperlink_records populated correctly
-        if len(hyperlink_records) == 1:
-            record = hyperlink_records[0]
+        # Check 3: formatting_records populated correctly
+        if len(formatting_records) == 1:
+            record = formatting_records[0]
             record_ok = True
             
             if record['original_text'] != 'our site':
@@ -778,12 +778,12 @@ def test_hyperlink_stripping_and_records():
                 record_ok = False
             
             if record_ok:
-                print(f"[PASS] hyperlink_records populated correctly: {record}")
+                print(f"[PASS] formatting_records populated correctly: {record}")
                 passed += 1
             else:
                 failed += 1
         else:
-            print(f"[FAIL] Expected 1 hyperlink record, got {len(hyperlink_records)}")
+            print(f"[FAIL] Expected 1 hyperlink record, got {len(formatting_records)}")
             failed += 1
     
     finally:
@@ -797,7 +797,7 @@ def test_hyperlink_stripping_and_records():
         para2.add_run('Plain text without any links.')
         
         hyperlink_records_plain = []
-        _translate_paragraph(para2, mock_manager, 'en', 'fr', False, 1, hyperlink_records=hyperlink_records_plain)
+        _translate_paragraph(para2, mock_manager, 'en', 'fr', False, 1, formatting_records=hyperlink_records_plain)
         
         all_runs_plain = list(para2.runs)
         any_cyan = any(
