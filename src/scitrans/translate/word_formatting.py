@@ -100,6 +100,8 @@ def parse_formatted_string(s):
     
 
 def detect_patterns(paragraph):
+    # TODO: consider refactoring for composing with multiple patterns
+    
     BRACKET_PATTERN = re.compile(r'\([^)]+\)')
 
     italic_brackets = {"apply": False, "expected_count": 0, "ambiguous_notes": None}

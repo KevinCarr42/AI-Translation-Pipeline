@@ -81,7 +81,7 @@ def _translate_paragraph(
     
     text_to_translate = paragraph.text
     if not text_to_translate:
-        return idx  # TODO: add tests, confirm idx only if text is translated
+        return idx
     
     translated_text = _chunk_and_translate(
         text_to_translate,
