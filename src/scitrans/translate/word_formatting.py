@@ -5,8 +5,6 @@ from typing import ClassVar
 
 logger = logging.getLogger(__name__)
 
-BRACKET_PATTERN = re.compile(r'\([^)]+\)')
-
 
 @dataclass(frozen=True)
 class FormattedRun:
@@ -97,52 +95,91 @@ def parse_formatted_string(s):
                 i += 1
             results.append(FormattedRun(text=s[start:i]))
     return results
-
-
-# FIXME: create test once refactored
-#  TODO: this is actually bad, we should be
-#   checking for the pattern
-#   translating as a block
-#   creating formatted runs
-def rule_italic_brackets(paragraph_text, runs):
-    italic_texts = [run.text for run in runs if run.italic and run.text.strip()]
-    if not italic_texts:
-        return None
     
-    for match in BRACKET_PATTERN.finditer(paragraph_text):
-        bracketed_content = match.group()[1:-1]
-        has_italic_inside = any(
-            italic_text in bracketed_content for italic_text in italic_texts
-        )
-        if not has_italic_inside:
-            continue
-        
-        start, end = match.start(), match.end()
-        before = paragraph_text[:start]
-        after = paragraph_text[end:]
-        
-        formatted_runs = [
-            FormattedRun(text=before),
-            FormattedRun(text="("),
-            FormattedRun(text=bracketed_content, italic=True),
-            FormattedRun(text=")"),
-            FormattedRun(text=after),
-        ]
-        return [run for run in formatted_runs if run.text]
+
+BRACKET_PATTERN = re.compile(r'\([^)]+\)')
+PATTERNS_TO_FORMAT = {
+    'italic': [BRACKET_PATTERN],
+    'bold': [],
+    'underline': [],
+}
+
+
+def detect_patterns():
+    for pattern in PATTERNS_TO_DETECT:
+        pass
+
+
+def apply_formatting_rules(paragraph, detected_patterns):
+    # TODO: split by pattern(s)
     
-    return None
+    # TODO: apply appropriate formatting
+    for pattern in patterns:
+        _apply_cyan = has_hyperlinks(paragraph, formatting_records)
+        # do formatting
+        
+        
+# TODO: delete this once refactor is complete
+def old_formatting_stuff_removed():
+    for run in all_runs:
+        run.text = ''
+    for i, fmt_run in enumerate(formatted_runs):
+        if i < len(content_runs):
+            content_runs[i].text = fmt_run.text
+            content_runs[i].italic = fmt_run.italic
+            if fmt_run.superscript:
+                content_runs[i].font.superscript = True
+            if fmt_run.subscript:
+                content_runs[i].font.subscript = True
+        else:
+            # More formatted runs than content runs — append to last run
+            content_runs[-1].text += fmt_run.text
 
+    if _apply_cyan:
+        for run in list(paragraph.runs):
+            if hasattr(run, 'font') and hasattr(run.font, 'highlight_color'):
+                run.font.highlight_color = WD_COLOR_INDEX.TURQUOISE
+         
 
-FORMATTING_RULES = [rule_italic_brackets]
-
-
-def apply_formatting_rules(paragraph_text, translated_text, runs):
-    for rule in FORMATTING_RULES:
-        result = rule(translated_text, runs)
-        # NOTE: only returns the first rule. refactor to include all rules?
-        if result is not None:
-            return True, result
-    return False, [FormattedRun(translated_text)]
+# def rule_italic_brackets(paragraph_text, runs):
+#     italic_texts = [run.text for run in runs if run.italic and run.text.strip()]
+#     if not italic_texts:
+#         return None
+#
+#     for match in BRACKET_PATTERN.finditer(paragraph_text):
+#         bracketed_content = match.group()[1:-1]
+#         has_italic_inside = any(
+#             italic_text in bracketed_content for italic_text in italic_texts
+#         )
+#         if not has_italic_inside:
+#             continue
+#
+#         start, end = match.start(), match.end()
+#         before = paragraph_text[:start]
+#         after = paragraph_text[end:]
+#
+#         formatted_runs = [
+#             FormattedRun(text=before),
+#             FormattedRun(text="("),
+#             FormattedRun(text=bracketed_content, italic=True),
+#             FormattedRun(text=")"),
+#             FormattedRun(text=after),
+#         ]
+#         return [run for run in formatted_runs if run.text]
+#
+#     return None
+#
+#
+# FORMATTING_RULES = [rule_italic_brackets]
+#
+#
+# def apply_formatting_rules(paragraph_text, translated_text, runs):
+#     for rule in FORMATTING_RULES:
+#         result = rule(translated_text, runs)
+#         # NOTE: only returns the first rule. refactor to include all rules?
+#         if result is not None:
+#             return True, result
+#     return False, [FormattedRun(translated_text)]
 
 
 def _is_single_numeric(text):

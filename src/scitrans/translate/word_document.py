@@ -11,12 +11,8 @@ from scitrans import config
 from scitrans.rules_based_replacements.token_utils import get_translation_value
 from scitrans.translate.models import create_translator
 from scitrans.translate.utils import split_into_chunks, reassemble_sentences, reassemble_paragraphs, normalize_apostrophes
-from scitrans.translate.word_formatting import apply_formatting_rules, is_numeric, convert_numeric, parse_formatted_string, FormattedRun
+from scitrans.translate.word_formatting import apply_formatting_rules, is_numeric, convert_numeric, parse_formatted_string, FormattedRun, detect_patterns
 from scitrans.translate.word_notes import add_formatting_notes, has_hyperlinks, write_translations_notes
-
-
-def _join_run_texts(all_runs):
-    return ''.join(run.text or '' for run in all_runs)
 
 
 def _has_formatting_differences(paragraph):
@@ -77,24 +73,16 @@ def _translate_paragraph(
         preferential_dict=None,
         chunk_by="sentences"
 ):
-    _apply_cyan = has_hyperlinks(paragraph, formatting_records)
+    # detect patterns
+    detected_patterns = detect_patterns()
     
-    # FIXME: formatting rules should find the patterns here
-    
-    # Clean up invisible run boundaries, and note formatting changes
+    # merge
     _merge_runs(paragraph, formatting_records)
     
-    # Re-fetch after merge since runs may have changed
-    all_runs = list(paragraph.runs)
-    
-    # FIXME: runs have already been merged, why are we splitting now?
-    #  how is full_text treated versus content_runs/all_runs?
-    content_runs = [run for run in all_runs if run.text and run.text.strip()]
-    full_text = _join_run_texts(all_runs)
-    
-    text_to_translate = full_text.strip()
+    # translate
+    text_to_translate = paragraph.text
     if not text_to_translate:
-        return idx
+        return idx  # TODO: add tests, confirm idx only if text is translated
     
     translated_text = _chunk_and_translate(
         text_to_translate,
@@ -107,30 +95,10 @@ def _translate_paragraph(
         preferential_dict=preferential_dict,
         chunk_by=chunk_by
     )
-    translated_text = normalize_apostrophes(translated_text)
+    paragraph.text = normalize_apostrophes(translated_text)
     
-    # FIXME: formatting rules should break into formatted runs here
-    rule_fired, formatted_runs = apply_formatting_rules(full_text, translated_text, all_runs)
-    
-    # FIXME: this should just be formatted runs now, without dataclass params?
-    for run in all_runs:
-        run.text = ''
-    for i, fmt_run in enumerate(formatted_runs):
-        if i < len(content_runs):
-            content_runs[i].text = fmt_run.text
-            content_runs[i].italic = fmt_run.italic
-            if fmt_run.superscript:
-                content_runs[i].font.superscript = True
-            if fmt_run.subscript:
-                content_runs[i].font.subscript = True
-        else:
-            # More formatted runs than content runs — append to last run
-            content_runs[-1].text += fmt_run.text
-    
-    if _apply_cyan:
-        for run in list(paragraph.runs):
-            if hasattr(run, 'font') and hasattr(run.font, 'highlight_color'):
-                run.font.highlight_color = WD_COLOR_INDEX.TURQUOISE
+    # split into detected patterns with formatting
+    apply_formatting_rules(paragraph, detected_patterns)
     
     return idx + 1
 

@@ -1,5 +1,5 @@
 import os
-from scitrans.translate.word_document import translate_word_document, _translate_paragraph, _join_run_texts, write_translations_notes
+from scitrans.translate.word_document import translate_word_document, _translate_paragraph, write_translations_notes
 from scitrans.translate.utils import split_by_sentences
 from scitrans.translate.models import create_translator
 from docx import Document
@@ -580,77 +580,6 @@ def _build_para_link_end(doc):
     para.add_run('For more information visit ')
     _add_hyperlink(para, 'https://example.com/info', 'the official page')
     return para
-
-
-def test_join_run_texts():
-    print("\n=== Testing _join_run_texts concatenation ===\n")
-    
-    passed = 0
-    failed = 0
-    
-    class FakeRun:
-        def __init__(self, text):
-            self.text = text
-    
-    def make_runs(texts):
-        return [FakeRun(t) for t in texts]
-    
-    # Test 1: runs concatenated directly (Word mid-word splits)
-    result = _join_run_texts(make_runs(['N', 'ewfoundland']))
-    if result == 'Newfoundland':
-        print("[PASS] Runs concatenated directly (mid-word split)")
-        passed += 1
-    else:
-        print(f"[FAIL] Expected 'Newfoundland', got '{result}'")
-        failed += 1
-    
-    # Test 2: existing whitespace preserved
-    result = _join_run_texts(make_runs(['Region ', 'du']))
-    if result == 'Region du':
-        print("[PASS] Existing whitespace preserved between runs")
-        passed += 1
-    else:
-        print(f"[FAIL] Expected 'Region du', got '{result}'")
-        failed += 1
-    
-    # Test 3: single run — no change
-    result = _join_run_texts(make_runs(['Hello world']))
-    if result == 'Hello world':
-        print("[PASS] Single run unchanged")
-        passed += 1
-    else:
-        print(f"[FAIL] Expected 'Hello world', got '{result}'")
-        failed += 1
-    
-    # Test 4: empty text runs — no spaces injected
-    result = _join_run_texts(make_runs(['Hello', '', 'world']))
-    if result == 'Helloworld':
-        print("[PASS] Empty runs joined without space")
-        passed += 1
-    else:
-        print(f"[FAIL] Expected 'Helloworld', got '{result}'")
-        failed += 1
-    
-    # Test 5: None text runs
-    result = _join_run_texts([FakeRun(None), FakeRun('text')])
-    if result == 'text':
-        print("[PASS] None text runs handled correctly")
-        passed += 1
-    else:
-        print(f"[FAIL] Expected 'text', got '{result}'")
-        failed += 1
-    
-    # Test 6: empty list
-    result = _join_run_texts([])
-    if result == '':
-        print("[PASS] Empty list returns empty string")
-        passed += 1
-    else:
-        print(f"[FAIL] Expected '', got '{result}'")
-        failed += 1
-    
-    print(f"\n{passed} passed, {failed} failed\n")
-    assert failed == 0, f"{failed} test cases failed"
 
 
 def test_split_by_sentences():
