@@ -7,6 +7,9 @@ from docx.enum.text import WD_COLOR_INDEX
 
 logger = logging.getLogger(__name__)
 
+BRACKET_PATTERN = re.compile(r'\([^)]+\)')
+_SEPARATOR_RE = re.compile(r'\s+[-\u2013\u2212]\s+')
+
 
 @dataclass(frozen=True)
 class FormattedRun:
@@ -102,8 +105,6 @@ def parse_formatted_string(s):
 def detect_patterns(paragraph):
     # TODO: consider refactoring for composing with multiple patterns
     
-    BRACKET_PATTERN = re.compile(r'\([^)]+\)')
-
     italic_brackets = {"apply": False, "expected_count": 0, "ambiguous_notes": None}
     italic_texts = [run.text for run in paragraph.runs if run.italic and run.text.strip()]
     if italic_texts:
@@ -202,9 +203,6 @@ def _is_single_numeric(text):
     cleaned = re.sub(r'[\s,.\u00a0\u202f\+\-\u2212/%<>()\[\]=#×÷±≤≥*–^°]', '', cleaned)
     
     return cleaned != '' and cleaned.isdigit()
-
-
-_SEPARATOR_RE = re.compile(r'\s+[-\u2013\u2212]\s+')
 
 
 def is_numeric(text):
