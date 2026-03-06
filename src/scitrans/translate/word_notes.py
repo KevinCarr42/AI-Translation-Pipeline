@@ -3,7 +3,6 @@ from docx.oxml.ns import qn
 from scitrans.translate.word_formatting import FormattedRun
 
 
-# TODO: create tests, should this apply highlighting
 def add_formatting_notes(paragraph, formatting_records):
     full_paragraph_text = paragraph.text
     original_text = []
@@ -24,7 +23,6 @@ def add_formatting_notes(paragraph, formatting_records):
 
 
 # FIXME: can this be simplified?
-# TODO: should we apply highlighting inside this, instead of in the translation module?
 def _add_hyperlink_notes(paragraph, formatting_records, p_elem, hyperlink_elems):
     wns = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
     # Build full paragraph text for context (including hyperlink run text)

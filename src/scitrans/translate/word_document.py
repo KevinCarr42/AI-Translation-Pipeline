@@ -12,7 +12,7 @@ from scitrans.rules_based_replacements.token_utils import get_translation_value
 from scitrans.translate.models import create_translator
 from scitrans.translate.utils import split_into_chunks, reassemble_sentences, reassemble_paragraphs, normalize_apostrophes
 from scitrans.translate.word_formatting import apply_formatting_rules, is_numeric, convert_numeric, parse_formatted_string, FormattedRun, detect_patterns
-from scitrans.translate.word_notes import add_formatting_notes, write_translations_notes
+from scitrans.translate.word_notes import add_formatting_notes, has_hyperlinks, write_translations_notes
 
 
 def _has_formatting_differences(paragraph):
@@ -73,7 +73,9 @@ def _translate_paragraph(
         preferential_dict=None,
         chunk_by="sentences"
 ):
-    detected_patterns = detect_patterns(paragraph, formatting_records)
+    has_hl = has_hyperlinks(paragraph, formatting_records)
+    detected_patterns = detect_patterns(paragraph)
+    detected_patterns["has_hyperlinks"] = has_hl
     
     _merge_runs(paragraph, formatting_records)
     

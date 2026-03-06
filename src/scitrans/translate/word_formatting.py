@@ -99,13 +99,8 @@ def parse_formatted_string(s):
     return results
     
 
-BRACKET_PATTERN = re.compile(r'\([^)]+\)')
-
-
-def detect_patterns(paragraph, formatting_records):
-    from scitrans.translate.word_notes import has_hyperlinks
-
-    has_hl = has_hyperlinks(paragraph, formatting_records)
+def detect_patterns(paragraph):
+    BRACKET_PATTERN = re.compile(r'\([^)]+\)')
 
     italic_brackets = {"apply": False, "expected_count": 0, "ambiguous_notes": None}
     italic_texts = [run.text for run in paragraph.runs if run.italic and run.text.strip()]
@@ -141,7 +136,7 @@ def detect_patterns(paragraph, formatting_records):
             italic_brackets["apply"] = True
             italic_brackets["expected_count"] = all_italic_count
 
-    return {"has_hyperlinks": has_hl, "italic_brackets": italic_brackets}
+    return {"italic_brackets": italic_brackets}
 
 
 def apply_formatting_rules(paragraph, detected_patterns, formatting_records):
