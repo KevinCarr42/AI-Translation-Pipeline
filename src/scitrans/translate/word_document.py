@@ -12,7 +12,7 @@ from scitrans.rules_based_replacements.token_utils import get_translation_value
 from scitrans.translate.models import create_translator
 from scitrans.translate.utils import split_into_chunks, reassemble_sentences, reassemble_paragraphs, normalize_apostrophes
 from scitrans.translate.word_formatting import apply_formatting_rules, is_numeric, convert_numeric, parse_formatted_string, FormattedRun, detect_patterns
-from scitrans.translate.word_notes import add_formatting_notes, has_hyperlinks, write_translations_notes
+from scitrans.translate.word_notes import add_formatting_notes, write_translations_notes
 
 
 def _has_formatting_differences(paragraph):
@@ -73,13 +73,10 @@ def _translate_paragraph(
         preferential_dict=None,
         chunk_by="sentences"
 ):
-    # detect patterns
-    detected_patterns = detect_patterns()
+    detected_patterns = detect_patterns(paragraph, formatting_records)
     
-    # merge
     _merge_runs(paragraph, formatting_records)
     
-    # translate
     text_to_translate = paragraph.text
     if not text_to_translate:
         return idx  # TODO: add tests, confirm idx only if text is translated
@@ -97,8 +94,7 @@ def _translate_paragraph(
     )
     paragraph.text = normalize_apostrophes(translated_text)
     
-    # split into detected patterns with formatting
-    apply_formatting_rules(paragraph, detected_patterns)
+    apply_formatting_rules(paragraph, detected_patterns, formatting_records)
     
     return idx + 1
 
