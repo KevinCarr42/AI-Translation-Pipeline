@@ -417,10 +417,6 @@ def _split_run_for_subscript(paragraph, run, suffix_text):
 def _apply_subscript_ordinals(paragraph, ordinals, formatting_records, source_text):
     _fr_ordinal_suffixes = re.compile(r'(\d+)(e|er|ère)\b')
     _en_ordinal_suffixes = re.compile(r'(\d+)(th|st|nd|rd)\b')
-    key_text = source_text  # TODO: what is the point of this?
-    if key_text and len(key_text) > 40: # TODO: delete me
-        print(f'{key_text=}')
-
     for ordinal in ordinals:
         # Try to find the ordinal pattern in translated text
         found = False
@@ -441,8 +437,8 @@ def _apply_subscript_ordinals(paragraph, ordinals, formatting_records, source_te
                 break
         if not found:
             formatting_records.append({
-                'original_text': key_text,
-                'full_paragraph': key_text,
+                'original_text': source_text,
+                'full_paragraph': source_text,
                 'notes': f"Subscript ordinal '{ordinal}' could not be matched in translated text",
             })
 
@@ -450,10 +446,6 @@ def _apply_subscript_ordinals(paragraph, ordinals, formatting_records, source_te
 def _apply_superscript_ordinals(paragraph, ordinals, formatting_records, source_text):
     _fr_ordinal_suffixes = re.compile(r'(\d+)(e|er|ère)\b')
     _en_ordinal_suffixes = re.compile(r'(\d+)(th|st|nd|rd)\b')
-    key_text = source_text  # TODO: what is the point of this?
-    if key_text and len(key_text) > 40: # TODO: delete me
-        print(f'{key_text=}')
-
     for ordinal in ordinals:
         found = False
         text = paragraph.text
@@ -473,8 +465,8 @@ def _apply_superscript_ordinals(paragraph, ordinals, formatting_records, source_
                 break
         if not found:
             formatting_records.append({
-                'original_text': key_text,
-                'full_paragraph': key_text,
+                'original_text': source_text,
+                'full_paragraph': source_text,
                 'notes': f"Superscript ordinal '{ordinal}' could not be matched in translated text",
             })
 
@@ -484,11 +476,10 @@ def apply_formatting_rules(paragraph, detected_patterns, formatting_records, sou
         source_text = paragraph.text
         
     ib = detected_patterns["italic_brackets"]
-    print(f"{ib=}")
 
     if ib["ambiguous_notes"]:
         formatting_records.append({
-            'original_text': source_text,  # why are they both the same?
+            'original_text': source_text,
             'full_paragraph': source_text,
             'notes': ib["ambiguous_notes"],
         })
