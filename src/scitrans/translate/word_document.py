@@ -126,6 +126,31 @@ def _collapse_runs_preserving_shapes(paragraph):
     _flush_group()
 
 
+def _has_only_field_runs(paragraph):
+    p_elem = paragraph._element
+    in_field = 0
+    has_any_run = False
+    for child in p_elem:
+        if child.tag != qn('w:r'):
+            continue
+        has_any_run = True
+        fld_char = child.find(qn('w:fldChar'))
+        if fld_char is not None:
+            fld_type = fld_char.get(qn('w:fldCharType'))
+            if fld_type == 'begin':
+                in_field += 1
+            elif fld_type == 'end':
+                in_field -= 1
+            continue
+        if in_field > 0:
+            continue
+        # Found a run outside any field — paragraph has regular content
+        t_elem = child.find(qn('w:t'))
+        if t_elem is not None and (t_elem.text or '').strip():
+            return False
+    return has_any_run
+
+
 def _has_formatting_differences(paragraph):
     for run in list(paragraph.runs):
         if FormattedRun.create(run).has_formatting:
@@ -206,6 +231,9 @@ def _translate_paragraph(
         add_formatting_notes(paragraph, formatting_records, detected_patterns)
 
     _collapse_runs_preserving_shapes(paragraph)
+
+    if _has_only_field_runs(paragraph):
+        return idx
 
     source_text = paragraph.text
     if not source_text:

@@ -71,27 +71,23 @@ def test_first_page_header_has_tabs():
     assert tab_found, "First page header should contain tabs separating left and right text"
 
 
-@pytest.mark.xfail(reason="Other header left/right text not yet implemented")
 def test_other_header_has_left_and_right_text():
     doc, _, _ = _run_translation()
     header = doc.sections[0].header
 
-    # The non-first-page header should have left and right aligned text
-    # (using a right-aligned tab stop). After translation the header is
-    # currently empty — it should contain text on both sides.
-    header_text = ''.join(p.text for p in header.paragraphs)
-    assert header_text.strip(), "Non-first-page header should have text content"
+    # The non-first-page header uses a 2-column table for left/right layout.
+    # The actual content is in header.tables, not header.paragraphs.
+    assert header.tables, "Non-first-page header should contain a table"
+    table = header.tables[0]
+    row = table.rows[0]
+    assert len(row.cells) >= 2, "Header table should have at least 2 columns"
 
-    # Check that a right-aligned tab stop exists
-    has_right_tab = False
-    for para in header.paragraphs:
-        tabs_elem = para._element.find('.//' + qn('w:tabs'))
-        if tabs_elem is not None:
-            for tab in tabs_elem.findall(qn('w:tab')):
-                if tab.get(qn('w:val')) == 'right':
-                    has_right_tab = True
-                    break
-    assert has_right_tab, "Non-first-page header should have a right-aligned tab stop"
+    left_text = row.cells[0].text.strip()
+    right_text = row.cells[1].text.strip()
+    assert left_text, "Left cell of header table should have text"
+    assert right_text, "Right cell of header table should have text"
+    assert '[TR:' in left_text, f"Left cell should be translated, got: {left_text}"
+    assert '[TR:' in right_text, f"Right cell should be translated, got: {right_text}"
 
 
 def test_first_page_footer_image_tabbed_right():
@@ -126,7 +122,6 @@ def test_first_page_footer_no_page_number():
                 "First page footer should not contain a PAGE field code"
 
 
-@pytest.mark.xfail(reason="Auto-updating page numbering not yet implemented")
 def test_page_numbering_is_auto_updating():
     doc, _, _ = _run_translation()
     footer = doc.sections[0].footer
