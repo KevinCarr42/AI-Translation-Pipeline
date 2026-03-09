@@ -510,17 +510,6 @@ class TestFormattingRulesInTables:
 # 9. Hyperlink notes
 # ---------------------------------------------------------------------------
 class TestHyperlinkNotes:
-    def test_creates_three_column_table(self, tmp_path):
-        records = [
-            {"original_text": "click here", "full_sentence": "Please click here.", "notes": "http://example.com"},
-            {"original_text": "link", "full_sentence": "See link.", "notes": "http://test.com"},
-        ]
-        out = str(tmp_path / "notes.docx")
-        write_translations_notes(records, out)
-        doc = Document(out)
-        table = doc.tables[0]
-        assert len(table.columns) == 3
-    
     def test_row_count_matches_records(self, tmp_path):
         records = [
             {"original_text": "a", "full_sentence": "b", "notes": "c"},
@@ -533,18 +522,3 @@ class TestHyperlinkNotes:
         table = doc.tables[0]
         # 1 header row + 3 data rows
         assert len(table.rows) == 4
-    
-    def test_header_columns_correct(self, tmp_path):
-        out = str(tmp_path / "notes.docx")
-        write_translations_notes([], out)
-        doc = Document(out)
-        table = doc.tables[0]
-        headers = [cell.text for cell in table.rows[0].cells]
-        assert headers == ["Original Text", "Full Sentence", "Notes"]
-    
-    def test_empty_records_header_only(self, tmp_path):
-        out = str(tmp_path / "notes.docx")
-        write_translations_notes([], out)
-        doc = Document(out)
-        table = doc.tables[0]
-        assert len(table.rows) == 1

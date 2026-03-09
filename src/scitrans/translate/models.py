@@ -175,7 +175,7 @@ class OpusTranslationModel(BaseTranslationModel):
         }
         if generation_kwargs:
             generation_arguments.update(generation_kwargs)
-
+        
         output_token_ids = model.generate(**model_inputs, **generation_arguments)
         text_output = tokenizer.batch_decode(output_token_ids, skip_special_tokens=True)[0].strip()
         return self.clean_output(text_output)
@@ -346,7 +346,7 @@ class TranslationManager:
             
             if self.is_valid_translation(translated, text, token_mapping):
                 if i and self.debug:
-                    print(f"\tValid translation following {i} retries.")
+                    print(f"\tValid token replacement following {i} retries.")
                 
                 if self.debug and retry_log and debug_key:
                     print(f'entry added (success after {i + 1}):', model_name)
@@ -374,7 +374,7 @@ class TranslationManager:
             }
         
         if self.debug:
-            print(f"\tNo valid translations found following {i} attempted configs.")
+            print(f"\tNo fully valid token replacements following {i + 1} attempted configs.")
         return None, len(param_variations), None
     
     def check_token_prefix_error(self, translated_text, original_text):

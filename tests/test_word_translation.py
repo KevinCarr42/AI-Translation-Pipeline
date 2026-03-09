@@ -678,24 +678,10 @@ def test_hyperlink_stripping_and_records():
             print(f"[FAIL] Hyperlink XML not stripped — {len(hyperlinks_remaining)} w:hyperlink elements remain")
             failed += 1
         
-        # Check 2: cyan highlighting applied to all runs
-        all_runs_after = list(para.runs)
-        all_have_cyan = all(
-            run.font.highlight_color == WD_COLOR_INDEX.TURQUOISE
-            for run in all_runs_after
-            if run.text and run.text.strip()
-        )
-        if all_have_cyan:
-            print("[PASS] Cyan (turquoise) highlighting applied to all runs")
-            passed += 1
-        else:
-            highlight_values = [(run.text, run.font.highlight_color) for run in all_runs_after]
-            print(f"[FAIL] Not all runs have cyan highlighting: {highlight_values}")
-            failed += 1
-        
-        # Check 3: formatting_records populated correctly
-        if len(formatting_records) == 1:  # TODO: is there a different format here too?
-            record = formatting_records[0]
+        # Check 2: formatting_records contains a hyperlink record
+        hyperlink_records = [r for r in formatting_records if 'https://' in r.get('notes', '')]
+        if len(hyperlink_records) >= 1:
+            record = hyperlink_records[0]
             record_ok = True
             
             if record['original_text'] != 'our site':
@@ -703,7 +689,7 @@ def test_hyperlink_stripping_and_records():
                 record_ok = False
             
             if record['notes'] != 'https://example.com':
-                print(f"[FAIL] Record url wrong: '{record['url']}'")
+                print(f"[FAIL] Record notes wrong: '{record['notes']}'")
                 record_ok = False
             
             if 'Visit' not in record['full_sentence'] or 'our site' not in record['full_sentence']:
@@ -716,7 +702,7 @@ def test_hyperlink_stripping_and_records():
             else:
                 failed += 1
         else:
-            print(f"[FAIL] Expected 1 hyperlink record, got {len(formatting_records)}")
+            print(f"[FAIL] Expected at least 1 hyperlink record, got {len(hyperlink_records)}")
             for record in formatting_records:
                 print(record)
             failed += 1
@@ -754,8 +740,8 @@ def test_hyperlink_stripping_and_records():
     assert failed == 0, f"{failed} test cases failed"
 
 
-def test_write_hyperlink_notes():
-    print("\n=== Testing write_hyperlink_notes creates valid notes document ===\n")
+def test_write_formatting_notes():
+    print("\n=== Testing write_translations_notes creates valid notes document ===\n")
     
     passed = 0
     failed = 0
@@ -784,34 +770,47 @@ def test_write_hyperlink_notes():
         
         table = doc.tables[0]
         
-        # Check 2: table has 3 columns
+        # Check 2: table has 2 columns (new format)
         num_cols = len(table.rows[0].cells) if table.rows else 0
-        if num_cols == 3:
-            print("[PASS] Table has 3 columns")
+        if num_cols == 2:
+            print("[PASS] Table has 2 columns")
             passed += 1
         else:
-            print(f"[FAIL] Expected 3 columns, got {num_cols}")
+            print(f"[FAIL] Expected 2 columns, got {num_cols}")
             failed += 1
         
-        # Check 3: table has 3 rows (1 header + 2 data)
+        # Check 3: table has 3 rows (1 header + 2 data, grouped by full_sentence)
         num_rows = len(table.rows)
         if num_rows == 3:
-            print("[PASS] Table has 3 rows (1 header + 2 data)")
+            print(f"[PASS] Table has {num_rows} rows (1 header + 2 data)")
             passed += 1
         else:
             print(f"[FAIL] Expected 3 rows, got {num_rows}")
             failed += 1
         
-        # Check 4: first data row contains correct values
-        first_row_texts = [cell.text for cell in table.rows[1].cells]
-        expected_first_row = ['Example Link', 'Visit Example Link for details.', 'https://example.com']
-        if first_row_texts == expected_first_row:
-            print(f"[PASS] First data row correct: {first_row_texts}")
+        # Check 4: header row has correct labels
+        header_texts = [cell.text for cell in table.rows[0].cells]
+        if header_texts[0] == 'Full Paragraph (source language)' and header_texts[1] == 'Details':
+            print(f"[PASS] Header row correct: {header_texts}")
             passed += 1
         else:
-            print(f"[FAIL] First data row wrong")
-            print(f"  Expected: {expected_first_row}")
-            print(f"  Got: {first_row_texts}")
+            print(f"[FAIL] Header row wrong: {header_texts}")
+            failed += 1
+        
+        # Check 5: first data row contains the full sentence and details
+        first_row_texts = [cell.text for cell in table.rows[1].cells]
+        if 'Visit Example Link for details.' in first_row_texts[0]:
+            print(f"[PASS] First data row paragraph text correct")
+            passed += 1
+        else:
+            print(f"[FAIL] First data row paragraph text wrong: {first_row_texts[0]}")
+            failed += 1
+        
+        if 'Example Link' in first_row_texts[1] and 'https://example.com' in first_row_texts[1]:
+            print(f"[PASS] First data row details correct")
+            passed += 1
+        else:
+            print(f"[FAIL] First data row details wrong: {first_row_texts[1]}")
             failed += 1
     
     finally:

@@ -3,6 +3,8 @@ import os
 import re
 from datetime import datetime
 
+from copy import deepcopy
+
 from docx import Document
 from docx.enum.text import WD_COLOR_INDEX
 from docx.oxml.ns import qn
@@ -15,6 +17,93 @@ from scitrans.translate.word_formatting import apply_formatting_rules, is_numeri
 from scitrans.translate.word_notes import add_formatting_notes, has_hyperlinks, write_translations_notes
 
 
+_MC_NS = 'http://schemas.openxmlformats.org/markup-compatibility/2006'
+
+
+def _has_shape(elem):
+    return (elem.find(qn('w:drawing')) is not None or
+            elem.find(qn('w:pict')) is not None or
+            elem.find('{%s}AlternateContent' % _MC_NS) is not None)
+
+
+def _extract_non_run_elements(paragraph):
+    p_elem = paragraph._element
+    saved = []
+    for child in list(p_elem):
+        tag = child.tag
+        if tag == qn('w:pPr'):
+            continue
+        # Save non-run elements AND shape-containing runs
+        if tag != qn('w:r') or _has_shape(child):
+            saved.append(deepcopy(child))
+            p_elem.remove(child)
+    return saved
+
+
+def _reinsert_non_run_elements(paragraph, saved):
+    p_elem = paragraph._element
+    for elem in saved:
+        p_elem.append(elem)
+
+
+def _collapse_runs_preserving_shapes(paragraph):
+    p_elem = paragraph._element
+    children = list(p_elem)
+
+    run_tag = qn('w:r')
+
+    merged_text = []
+    run_group = []
+
+    def _flush_group():
+        if not run_group:
+            return
+        first_run = run_group[0]
+        combined = "".join(merged_text)
+        for r in run_group[1:]:
+            p_elem.remove(r)
+        # Rebuild first run with w:t and w:br elements for line breaks
+        for old_t in first_run.findall(qn('w:t')):
+            first_run.remove(old_t)
+        for old_br in first_run.findall(qn('w:br')):
+            first_run.remove(old_br)
+        parts = combined.split('\n')
+        for j, part in enumerate(parts):
+            if j > 0:
+                etree.SubElement(first_run, qn('w:br'))
+            if part:
+                t = etree.SubElement(first_run, qn('w:t'))
+                t.text = part
+                if part[0] == ' ' or part[-1] == ' ':
+                    t.set(qn('xml:space'), 'preserve')
+
+    for child in children:
+        if child.tag != run_tag:
+            _flush_group()
+            run_group.clear()
+            merged_text.clear()
+            continue
+
+        if _has_shape(child):
+            _flush_group()
+            run_group.clear()
+            merged_text.clear()
+            continue
+
+        # Collect text including line breaks from w:br elements
+        run_text_parts = []
+        for sub in child:
+            if sub.tag == qn('w:t'):
+                run_text_parts.append(sub.text or '')
+            elif sub.tag == qn('w:br'):
+                run_text_parts.append('\n')
+        run_text = ''.join(run_text_parts)
+        run_group.append(child)
+        merged_text.append(run_text)
+
+    _flush_group()
+
+
 def _has_formatting_differences(paragraph):
     for run in list(paragraph.runs):
         if FormattedRun.create(run).has_formatting:
@@ -22,11 +111,24 @@ def _has_formatting_differences(paragraph):
     return False
 
 
-def _merge_runs(paragraph, formatting_records):
-    if _has_formatting_differences(paragraph):
-        add_formatting_notes(paragraph, formatting_records)
-    
-    paragraph.text = paragraph.text
+def _convert_newlines_to_breaks(paragraph):
+    for run in list(paragraph.runs):
+        if '\n' not in run.text:
+            continue
+        run_elem = run._element
+        for old_t in run_elem.findall(qn('w:t')):
+            run_elem.remove(old_t)
+        for old_br in run_elem.findall(qn('w:br')):
+            run_elem.remove(old_br)
+        parts = run.text.split('\n')
+        for i, part in enumerate(parts):
+            if i > 0:
+                etree.SubElement(run_elem, qn('w:br'))
+            if part:
+                t = etree.SubElement(run_elem, qn('w:t'))
+                t.text = part
+                if part[0] == ' ' or part[-1] == ' ':
+                    t.set(qn('xml:space'), 'preserve')
 
 
 def _chunk_and_translate(
@@ -75,16 +177,21 @@ def _translate_paragraph(
 ):
     has_hl = has_hyperlinks(paragraph, formatting_records)
     detected_patterns = detect_patterns(paragraph)
-    detected_patterns["has_hyperlinks"] = has_hl
-    
-    _merge_runs(paragraph, formatting_records)
-    
-    text_to_translate = paragraph.text
-    if not text_to_translate:
+
+    has_fmt = _has_formatting_differences(paragraph)
+    if has_fmt:
+        add_formatting_notes(paragraph, formatting_records)
+
+    _collapse_runs_preserving_shapes(paragraph)
+
+    source_text = paragraph.text
+    if not source_text:
         return idx
-    
+
+    saved_elements = _extract_non_run_elements(paragraph)
+
     translated_text = _chunk_and_translate(
-        text_to_translate,
+        source_text,
         translation_manager,
         source_lang,
         target_lang,
@@ -95,9 +202,24 @@ def _translate_paragraph(
         chunk_by=chunk_by
     )
     paragraph.text = normalize_apostrophes(translated_text)
-    
-    apply_formatting_rules(paragraph, detected_patterns, formatting_records)
-    
+
+    _reinsert_non_run_elements(paragraph, saved_elements)
+
+    apply_formatting_rules(paragraph, detected_patterns, formatting_records, source_text)
+
+    # Highlight runs in the translated document
+    if has_hl or has_fmt:
+        color = WD_COLOR_INDEX.TURQUOISE
+        if has_fmt and not has_hl:
+            color = WD_COLOR_INDEX.YELLOW
+        elif has_fmt and has_hl:
+            color = WD_COLOR_INDEX.BRIGHT_GREEN
+        for run in paragraph.runs:
+            if run.text and run.text.strip():
+                run.font.highlight_color = color
+
+    _convert_newlines_to_breaks(paragraph)
+
     return idx + 1
 
 
@@ -213,16 +335,35 @@ def _translate_table_cell(
 def _set_proofing_language(document, target_lang):
     locale_map = {'fr': 'fr-CA', 'en': 'en-CA'}
     locale_code = locale_map[target_lang]
-    
-    for r_elem in document.element.iter(qn('w:r')):
-        rPr = r_elem.find(qn('w:rPr'))
-        if rPr is None:
-            rPr = etree.SubElement(r_elem, qn('w:rPr'))
-            r_elem.insert(0, rPr)
-        lang = rPr.find(qn('w:lang'))
-        if lang is None:
-            lang = etree.SubElement(rPr, qn('w:lang'))
-        lang.set(qn('w:val'), locale_code)
+
+    elements = [document.element]
+
+    header_footer_attrs = [
+        'header', 'footer',
+        'first_page_header', 'first_page_footer',
+        'even_page_header', 'even_page_footer',
+    ]
+    seen_ids = set()
+    for section in document.sections:
+        for attr in header_footer_attrs:
+            hf = getattr(section, attr)
+            if id(hf._element) in seen_ids:
+                continue
+            if hf.is_linked_to_previous:
+                continue
+            seen_ids.add(id(hf._element))
+            elements.append(hf._element)
+
+    for root_elem in elements:
+        for r_elem in root_elem.iter(qn('w:r')):
+            rPr = r_elem.find(qn('w:rPr'))
+            if rPr is None:
+                rPr = etree.SubElement(r_elem, qn('w:rPr'))
+                r_elem.insert(0, rPr)
+            lang = rPr.find(qn('w:lang'))
+            if lang is None:
+                lang = etree.SubElement(rPr, qn('w:lang'))
+            lang.set(qn('w:val'), locale_code)
 
 
 def translate_word_document(

@@ -3,12 +3,12 @@ import re
 from dataclasses import dataclass
 from typing import ClassVar
 
-from docx.enum.text import WD_COLOR_INDEX
-
 logger = logging.getLogger(__name__)
 
 BRACKET_PATTERN = re.compile(r'\([^)]+\)')
 _SEPARATOR_RE = re.compile(r'\s+[-\u2013\u2212]\s+')
+_SPP_PATTERN = re.compile(r'\b(spp?\.)$')
+_SENTENCE_BOUNDARY = re.compile(r'(?<=[.!?])\s+')
 
 
 @dataclass(frozen=True)
@@ -100,19 +100,39 @@ def parse_formatted_string(s):
                 i += 1
             results.append(FormattedRun(text=s[start:i]))
     return results
-    
+
+
+def _merge_adjacent_italic_texts(paragraph):
+    runs = paragraph.runs
+    merged = []
+    i = 0
+    while i < len(runs):
+        if runs[i].italic and runs[i].text.strip():
+            combined = runs[i].text
+            j = i + 1
+            # Absorb whitespace-only runs between italic runs
+            while j < len(runs):
+                if not runs[j].text.strip() and j + 1 < len(runs) and runs[j + 1].italic and runs[j + 1].text.strip():
+                    combined += runs[j].text + runs[j + 1].text
+                    j += 2
+                else:
+                    break
+            merged.append(combined)
+            i = j
+        else:
+            i += 1
+    return merged
+
 
 def detect_patterns(paragraph):
-    # TODO: consider refactoring for composing with multiple patterns
-    
     italic_brackets = {"apply": False, "expected_count": 0, "ambiguous_notes": None}
-    italic_texts = [run.text for run in paragraph.runs if run.italic and run.text.strip()]
+    italic_texts = _merge_adjacent_italic_texts(paragraph)
     if italic_texts:
         full_text = paragraph.text
         bracket_matches = list(BRACKET_PATTERN.finditer(full_text))
         all_italic_count = 0
         any_partial = False
-
+        
         for match in bracket_matches:
             content = match.group()[1:-1]
             # Check if any italic text overlaps this bracket content
@@ -124,12 +144,12 @@ def detect_patterns(paragraph):
             for it in italic_texts:
                 remaining = remaining.replace(it, "")
             entirely_italic = remaining.strip() == ""
-
+            
             if entirely_italic:
                 all_italic_count += 1
             else:
                 any_partial = True
-
+        
         if any_partial:
             italic_brackets["ambiguous_notes"] = (
                 "Italic bracket formatting could not be automatically applied "
@@ -138,58 +158,316 @@ def detect_patterns(paragraph):
         elif all_italic_count > 0:
             italic_brackets["apply"] = True
             italic_brackets["expected_count"] = all_italic_count
+    
+    # Detect superscript numeric runs
+    superscript_numbers = []
+    for run in paragraph.runs:
+        if run.font.superscript and run.text.strip() and is_numeric(run.text.strip()):
+            superscript_numbers.append(run.text.strip())
+    
+    # Detect subscript ordinal suffixes (th, st, nd, rd)
+    _ordinal_suffixes = {'th', 'st', 'nd', 'rd'}
+    subscript_ordinals = []
+    runs = paragraph.runs
+    for i, run in enumerate(runs):
+        if run.font.subscript and run.text.strip().lower() in _ordinal_suffixes and i > 0:
+            prev_text = runs[i - 1].text.rstrip()
+            if prev_text and prev_text[-1].isdigit():
+                subscript_ordinals.append(prev_text.split()[-1] + run.text.strip())
+    
+    result = {"italic_brackets": italic_brackets}
+    if superscript_numbers:
+        result["superscript_numbers"] = superscript_numbers
+    if subscript_ordinals:
+        result["subscript_ordinals"] = subscript_ordinals
+    return result
 
-    return {"italic_brackets": italic_brackets}
+
+def _build_italic_bracket_parts(content):
+    spp_match = _SPP_PATTERN.search(content)
+    if spp_match:
+        main_content = content[:spp_match.start()].rstrip()
+        spp_suffix = spp_match.group(1)
+        parts = []
+        if main_content:
+            parts.append(FormattedRun(text=main_content, italic=True))
+            parts.append(FormattedRun(text=" " + spp_suffix))
+        else:
+            parts.append(FormattedRun(text=spp_suffix))
+        return parts
+    return [FormattedRun(text=content, italic=True)]
 
 
-def apply_formatting_rules(paragraph, detected_patterns, formatting_records):
-    ib = detected_patterns["italic_brackets"]
+def _apply_italic_brackets(paragraph, matches, text):
+    parts = []
+    last_end = 0
+    for match in matches:
+        before = text[last_end:match.start()]
+        if before:
+            parts.append(FormattedRun(text=before))
+        content = match.group()[1:-1]
+        parts.append(FormattedRun(text="("))
+        parts.extend(_build_italic_bracket_parts(content))
+        parts.append(FormattedRun(text=")"))
+        last_end = match.end()
+    remainder = text[last_end:]
+    if remainder:
+        parts.append(FormattedRun(text=remainder))
+    
+    paragraph.clear()
+    for part in parts:
+        run = paragraph.add_run(part.text)
+        if part.italic:
+            run.italic = True
 
-    if ib["ambiguous_notes"]:
-        formatting_records.append({
-            'original_text': paragraph.text,
-            'full_sentence': paragraph.text,
-            'notes': ib["ambiguous_notes"],
-        })
 
-    if ib["apply"]:
-        text = paragraph.text
-        matches = list(BRACKET_PATTERN.finditer(text))
-        if len(matches) == ib["expected_count"]:
-            parts = []
+def _try_italic_brackets_per_sentence(paragraph, total_expected):
+    text = paragraph.text
+    sentences = _SENTENCE_BOUNDARY.split(text)
+    total_found = 0
+    for sentence in sentences:
+        total_found += len(BRACKET_PATTERN.findall(sentence))
+    
+    if total_found != total_expected:
+        return False
+    
+    parts = []
+    for i, sentence in enumerate(sentences):
+        if i > 0:
+            parts.append(FormattedRun(text=" "))
+        matches = list(BRACKET_PATTERN.finditer(sentence))
+        if matches:
             last_end = 0
             for match in matches:
-                before = text[last_end:match.start()]
+                before = sentence[last_end:match.start()]
                 if before:
                     parts.append(FormattedRun(text=before))
                 content = match.group()[1:-1]
                 parts.append(FormattedRun(text="("))
-                parts.append(FormattedRun(text=content, italic=True))
+                parts.extend(_build_italic_bracket_parts(content))
                 parts.append(FormattedRun(text=")"))
                 last_end = match.end()
-            remainder = text[last_end:]
+            remainder = sentence[last_end:]
             if remainder:
                 parts.append(FormattedRun(text=remainder))
-
-            paragraph.clear()
-            for part in parts:
-                run = paragraph.add_run(part.text)
-                if part.italic:
-                    run.italic = True
         else:
+            parts.append(FormattedRun(text=sentence))
+    
+    paragraph.clear()
+    for part in parts:
+        run = paragraph.add_run(part.text)
+        if part.italic:
+            run.italic = True
+    return True
+
+
+def _split_run_for_superscript(paragraph, run, num_text):
+    # TODO: move all imports to the top level
+    from copy import deepcopy
+    from docx.oxml.ns import qn
+    
+    run_elem = run._element
+    text = run.text
+    idx = text.find(num_text)
+    if idx == -1:
+        return False
+    
+    before = text[:idx]
+    after = text[idx + len(num_text):]
+    
+    if before:
+        run.text = before
+        # Create superscript run
+        new_r = deepcopy(run_elem)
+        t_elem = new_r.find(qn('w:t'))
+        t_elem.text = num_text
+        rPr = new_r.find(qn('w:rPr'))
+        if rPr is None:
+            from lxml import etree
+            rPr = etree.SubElement(new_r, qn('w:rPr'))
+            new_r.insert(0, rPr)
+        vert = rPr.find(qn('w:vertAlign'))
+        if vert is None:
+            from lxml import etree
+            vert = etree.SubElement(rPr, qn('w:vertAlign'))
+        vert.set(qn('w:val'), 'superscript')
+        run_elem.addnext(new_r)
+        
+        if after:
+            after_r = deepcopy(run_elem)
+            t_elem = after_r.find(qn('w:t'))
+            t_elem.text = after
+            if after[0] == ' ':
+                t_elem.set(qn('xml:space'), 'preserve')
+            new_r.addnext(after_r)
+    else:
+        run.text = num_text
+        rPr_elem = run_elem.find(qn('w:rPr'))
+        if rPr_elem is None:
+            from lxml import etree
+            rPr_elem = etree.SubElement(run_elem, qn('w:rPr'))
+            run_elem.insert(0, rPr_elem)
+        vert = rPr_elem.find(qn('w:vertAlign'))
+        if vert is None:
+            from lxml import etree
+            vert = etree.SubElement(rPr_elem, qn('w:vertAlign'))
+        vert.set(qn('w:val'), 'superscript')
+        
+        if after:
+            after_r = deepcopy(run_elem)
+            t_elem = after_r.find(qn('w:t'))
+            t_elem.text = after
+            if after[0] == ' ':
+                t_elem.set(qn('xml:space'), 'preserve')
+            # Remove superscript from the after run
+            after_rPr = after_r.find(qn('w:rPr'))
+            if after_rPr is not None:
+                after_vert = after_rPr.find(qn('w:vertAlign'))
+                if after_vert is not None:
+                    after_rPr.remove(after_vert)
+            run_elem.addnext(after_r)
+    
+    return True
+
+
+def _apply_superscript_numbers(paragraph, numbers):
+    for num in numbers:
+        for run in list(paragraph.runs):
+            if num in run.text:
+                if _split_run_for_superscript(paragraph, run, num):
+                    break
+
+
+def _split_run_for_subscript(paragraph, run, suffix_text):
+    from copy import deepcopy
+    from docx.oxml.ns import qn
+    
+    run_elem = run._element
+    text = run.text
+    idx = text.find(suffix_text)
+    if idx == -1:
+        return False
+    
+    before = text[:idx]
+    after = text[idx + len(suffix_text):]
+    
+    if before:
+        run.text = before
+        new_r = deepcopy(run_elem)
+        t_elem = new_r.find(qn('w:t'))
+        t_elem.text = suffix_text
+        rPr = new_r.find(qn('w:rPr'))
+        if rPr is None:
+            from lxml import etree
+            rPr = etree.SubElement(new_r, qn('w:rPr'))
+            new_r.insert(0, rPr)
+        vert = rPr.find(qn('w:vertAlign'))
+        if vert is None:
+            from lxml import etree
+            vert = etree.SubElement(rPr, qn('w:vertAlign'))
+        vert.set(qn('w:val'), 'subscript')
+        run_elem.addnext(new_r)
+        
+        if after:
+            after_r = deepcopy(run_elem)
+            t_elem = after_r.find(qn('w:t'))
+            t_elem.text = after
+            if after[0] == ' ':
+                t_elem.set(qn('xml:space'), 'preserve')
+            new_r.addnext(after_r)
+    else:
+        run.text = suffix_text
+        rPr_elem = run_elem.find(qn('w:rPr'))
+        if rPr_elem is None:
+            from lxml import etree
+            rPr_elem = etree.SubElement(run_elem, qn('w:rPr'))
+            run_elem.insert(0, rPr_elem)
+        vert = rPr_elem.find(qn('w:vertAlign'))
+        if vert is None:
+            from lxml import etree
+            vert = etree.SubElement(rPr_elem, qn('w:vertAlign'))
+        vert.set(qn('w:val'), 'subscript')
+        
+        if after:
+            after_r = deepcopy(run_elem)
+            t_elem = after_r.find(qn('w:t'))
+            t_elem.text = after
+            if after[0] == ' ':
+                t_elem.set(qn('xml:space'), 'preserve')
+            after_rPr = after_r.find(qn('w:rPr'))
+            if after_rPr is not None:
+                after_vert = after_rPr.find(qn('w:vertAlign'))
+                if after_vert is not None:
+                    after_rPr.remove(after_vert)
+            run_elem.addnext(after_r)
+    
+    return True
+
+
+def _apply_subscript_ordinals(paragraph, ordinals, formatting_records, source_text):
+    _fr_ordinal_suffixes = re.compile(r'(\d+)(e|er|ère)\b')
+    _en_ordinal_suffixes = re.compile(r'(\d+)(th|st|nd|rd)\b')
+    
+    for ordinal in ordinals:
+        # Try to find the ordinal pattern in translated text
+        found = False
+        text = paragraph.text
+        for pattern in [_en_ordinal_suffixes, _fr_ordinal_suffixes]:
+            for match in pattern.finditer(text):
+                full_match = match.group(0)
+                suffix = match.group(2)
+                if full_match == ordinal or ordinal.rstrip('thstndrd') == match.group(1):
+                    for run in list(paragraph.runs):
+                        if suffix in run.text:
+                            if _split_run_for_subscript(paragraph, run, suffix):
+                                found = True
+                                break
+                    if found:
+                        break
+            if found:
+                break
+        if not found:
             formatting_records.append({
-                'original_text': paragraph.text,
-                'full_sentence': paragraph.text,
-                'notes': (
-                    "Italic bracket formatting could not be automatically applied "
-                    "— bracket count mismatch after translation"
-                ),
+                'original_text': source_text,
+                'full_sentence': source_text,
+                'notes': f"Subscript ordinal '{ordinal}' could not be matched in translated text",
             })
 
-    if detected_patterns["has_hyperlinks"]:
-        for run in list(paragraph.runs):
-            if run.text and run.text.strip():
-                run.font.highlight_color = WD_COLOR_INDEX.TURQUOISE
+
+def apply_formatting_rules(paragraph, detected_patterns, formatting_records, source_text=None):
+    if source_text is None:
+        source_text = paragraph.text
+    ib = detected_patterns["italic_brackets"]
+    
+    if ib["ambiguous_notes"]:
+        formatting_records.append({
+            'original_text': source_text,
+            'full_sentence': source_text,
+            'notes': ib["ambiguous_notes"],
+        })
+    
+    if ib["apply"]:
+        text = paragraph.text
+        matches = list(BRACKET_PATTERN.finditer(text))
+        if len(matches) == ib["expected_count"]:
+            _apply_italic_brackets(paragraph, matches, text)
+        else:
+            success = _try_italic_brackets_per_sentence(paragraph, ib["expected_count"])
+            if not success:
+                formatting_records.append({
+                    'original_text': source_text,
+                    'full_sentence': source_text,
+                    'notes': (
+                        "Italic bracket formatting could not be automatically applied "
+                        "— bracket count mismatch after translation"
+                    ),
+                })
+    
+    if detected_patterns.get("superscript_numbers"):
+        _apply_superscript_numbers(paragraph, detected_patterns["superscript_numbers"])
+    
+    if detected_patterns.get("subscript_ordinals"):
+        _apply_subscript_ordinals(paragraph, detected_patterns["subscript_ordinals"], formatting_records, source_text)
 
 
 def _is_single_numeric(text):
