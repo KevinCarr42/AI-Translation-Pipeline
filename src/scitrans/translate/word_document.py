@@ -67,19 +67,23 @@ def _collapse_runs_preserving_shapes(paragraph):
             first_run.remove(old_t)
         for old_br in first_run.findall(qn('w:br')):
             first_run.remove(old_br)
-        parts = combined.split('\n')
-        for j, part in enumerate(parts):
-            if j > 0:
+        parts = re.split(r'([\n\x0c])', combined)
+        for piece in parts:
+            if piece == '\n':
                 etree.SubElement(first_run, qn('w:br'))
-            tab_parts = part.split('\t')
-            for k, tab_part in enumerate(tab_parts):
-                if k > 0:
-                    etree.SubElement(first_run, qn('w:tab'))
-                if tab_part:
-                    t = etree.SubElement(first_run, qn('w:t'))
-                    t.text = tab_part
-                    if tab_part[0] == ' ' or tab_part[-1] == ' ':
-                        t.set(qn('xml:space'), 'preserve')
+            elif piece == '\x0c':
+                br = etree.SubElement(first_run, qn('w:br'))
+                br.set(qn('w:type'), 'page')
+            else:
+                tab_parts = piece.split('\t')
+                for k, tab_part in enumerate(tab_parts):
+                    if k > 0:
+                        etree.SubElement(first_run, qn('w:tab'))
+                    if tab_part:
+                        t = etree.SubElement(first_run, qn('w:t'))
+                        t.text = tab_part
+                        if tab_part[0] == ' ' or tab_part[-1] == ' ':
+                            t.set(qn('xml:space'), 'preserve')
 
     in_field = 0
     for child in children:
@@ -116,7 +120,10 @@ def _collapse_runs_preserving_shapes(paragraph):
             if sub.tag == qn('w:t'):
                 run_text_parts.append(sub.text or '')
             elif sub.tag == qn('w:br'):
-                run_text_parts.append('\n')
+                if sub.get(qn('w:type')) == 'page':
+                    run_text_parts.append('\x0c')
+                else:
+                    run_text_parts.append('\n')
             elif sub.tag == qn('w:tab'):
                 run_text_parts.append('\t')
         run_text = ''.join(run_text_parts)
@@ -227,6 +234,7 @@ def _translate_paragraph(
     detected_patterns = detect_patterns(paragraph)
 
     has_fmt = _has_formatting_differences(paragraph)
+    records_before = len(formatting_records) if formatting_records is not None else 0
     if has_fmt:
         add_formatting_notes(paragraph, formatting_records, detected_patterns)
 
@@ -258,12 +266,14 @@ def _translate_paragraph(
 
     apply_formatting_rules(paragraph, detected_patterns, formatting_records, source_text)
 
+    has_fmt_notes = (len(formatting_records) if formatting_records is not None else 0) > records_before
+
     # Highlight runs in the translated document
-    if has_hl or has_fmt:
+    if has_hl or has_fmt_notes:
         color = WD_COLOR_INDEX.TURQUOISE
-        if has_fmt and not has_hl:
+        if has_fmt_notes and not has_hl:
             color = WD_COLOR_INDEX.YELLOW
-        elif has_fmt and has_hl:
+        elif has_fmt_notes and has_hl:
             color = WD_COLOR_INDEX.BRIGHT_GREEN
         for run in paragraph.runs:
             if run.text and run.text.strip():

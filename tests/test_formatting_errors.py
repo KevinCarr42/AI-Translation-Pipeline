@@ -178,7 +178,6 @@ def test_superscript_ordinals_no_formatting_note():
 # Italic / spp. handling tests (expected to fail until code is updated)
 # ---------------------------------------------------------------------------
 
-@pytest.mark.xfail(reason="Italic bracket formatting not applied correctly in table cells")
 def test_table_cell_0_1_no_formatting_note():
     doc, _, notes_doc = _run_translation()
     table = doc.tables[0]
@@ -239,7 +238,6 @@ def test_italic_mismatch_note_uses_check_formatting_key():
     assert found, "Expected a note for the paragraph with italic mismatch"
 
 
-@pytest.mark.xfail(reason="Final paragraph italic+spp not auto-handled correctly")
 def test_final_paragraph_page2_no_formatting_note():
     doc, _, notes_doc = _run_translation()
 
@@ -265,7 +263,6 @@ def test_final_paragraph_page2_no_formatting_note():
 # Additional bug-exposing tests
 # ---------------------------------------------------------------------------
 
-@pytest.mark.xfail(reason="Page breaks destroyed during translation")
 def test_page_breaks_preserved():
     doc, _, _ = _run_translation()
     page_breaks = []
@@ -278,7 +275,6 @@ def test_page_breaks_preserved():
     )
 
 
-@pytest.mark.xfail(reason="Ordinal suffix matching hits wrong run")
 def test_superscript_ordinals_applied_correctly():
     doc, _, _ = _run_translation()
     # Find the paragraph containing "50th" and "75th"
@@ -307,7 +303,6 @@ def test_superscript_ordinals_applied_correctly():
     assert found_75_super, "75th should have superscript 'th' suffix"
 
 
-@pytest.mark.xfail(reason="Highlighting and notes rows generated in different code paths")
 def test_highlighted_paragraphs_match_notes_rows():
     doc, _, notes_doc = _run_translation()
 

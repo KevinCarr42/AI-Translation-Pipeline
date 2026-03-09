@@ -426,11 +426,15 @@ def _apply_subscript_ordinals(paragraph, ordinals, formatting_records, source_te
                 full_match = match.group(0)
                 suffix = match.group(2)
                 if full_match == ordinal or ordinal.rstrip('thstndrd') == match.group(1):
+                    suffix_start = match.start(2)
+                    char_offset = 0
                     for run in list(paragraph.runs):
-                        if suffix in run.text:
+                        run_end = char_offset + len(run.text)
+                        if char_offset <= suffix_start < run_end:
                             if _split_run_for_subscript(paragraph, run, suffix):
                                 found = True
                                 break
+                        char_offset = run_end
                     if found:
                         break
             if found:
@@ -454,11 +458,15 @@ def _apply_superscript_ordinals(paragraph, ordinals, formatting_records, source_
                 full_match = match.group(0)
                 suffix = match.group(2)
                 if full_match == ordinal or ordinal.rstrip('thstndrd') == match.group(1):
+                    suffix_start = match.start(2)
+                    char_offset = 0
                     for run in list(paragraph.runs):
-                        if suffix in run.text:
+                        run_end = char_offset + len(run.text)
+                        if char_offset <= suffix_start < run_end:
                             if _split_run_for_superscript(paragraph, run, suffix):
                                 found = True
                                 break
+                        char_offset = run_end
                     if found:
                         break
             if found:
