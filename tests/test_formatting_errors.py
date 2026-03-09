@@ -53,7 +53,6 @@ def _run_translation():
 # Header / footer structure tests (expected to fail until code is updated)
 # ---------------------------------------------------------------------------
 
-@pytest.mark.xfail(reason="First page header tab preservation not yet implemented")
 def test_first_page_header_has_tabs():
     doc, _, _ = _run_translation()
     first_page_header = doc.sections[0].first_page_header
@@ -153,7 +152,6 @@ def test_page_numbering_is_auto_updating():
 # Superscript / formatting note tests (expected to fail until code is updated)
 # ---------------------------------------------------------------------------
 
-@pytest.mark.xfail(reason="Superscript footnote note suppression not yet implemented")
 def test_superscript_footnote_no_formatting_note():
     _, _, notes_doc = _run_translation()
 
@@ -170,7 +168,6 @@ def test_superscript_footnote_no_formatting_note():
         "Superscript in 'footnote1' should not produce a formatting note"
 
 
-@pytest.mark.xfail(reason="Superscript ordinal note suppression not yet implemented")
 def test_superscript_ordinals_no_formatting_note():
     _, _, notes_doc = _run_translation()
 
@@ -191,7 +188,6 @@ def test_superscript_ordinals_no_formatting_note():
 # Italic / spp. handling tests (expected to fail until code is updated)
 # ---------------------------------------------------------------------------
 
-@pytest.mark.xfail(reason="Table cell italic spp. note suppression not yet implemented")
 def test_table_cell_0_1_no_formatting_note():
     _, _, notes_doc = _run_translation()
 
@@ -214,7 +210,6 @@ def test_table_cell_0_1_no_formatting_note():
                     f"Table cell [0,1] should not have formatting notes, got: {details}"
 
 
-@pytest.mark.xfail(reason="Italic mismatch note key truncation not yet implemented")
 def test_italic_mismatch_note_uses_check_formatting_key():
     _, _, notes_doc = _run_translation()
 
@@ -245,7 +240,6 @@ def test_italic_mismatch_note_uses_check_formatting_key():
     assert found, "Expected a note for the paragraph with italic mismatch"
 
 
-@pytest.mark.xfail(reason="Final paragraph spp. italic note suppression not yet implemented")
 def test_final_paragraph_page2_no_formatting_note():
     _, _, notes_doc = _run_translation()
 

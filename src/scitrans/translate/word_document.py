@@ -71,17 +71,37 @@ def _collapse_runs_preserving_shapes(paragraph):
         for j, part in enumerate(parts):
             if j > 0:
                 etree.SubElement(first_run, qn('w:br'))
-            if part:
-                t = etree.SubElement(first_run, qn('w:t'))
-                t.text = part
-                if part[0] == ' ' or part[-1] == ' ':
-                    t.set(qn('xml:space'), 'preserve')
+            tab_parts = part.split('\t')
+            for k, tab_part in enumerate(tab_parts):
+                if k > 0:
+                    etree.SubElement(first_run, qn('w:tab'))
+                if tab_part:
+                    t = etree.SubElement(first_run, qn('w:t'))
+                    t.text = tab_part
+                    if tab_part[0] == ' ' or tab_part[-1] == ' ':
+                        t.set(qn('xml:space'), 'preserve')
 
+    in_field = 0
     for child in children:
         if child.tag != run_tag:
             _flush_group()
             run_group.clear()
             merged_text.clear()
+            continue
+
+        # Skip runs that are part of a field code (PAGE numbers, etc.)
+        fld_char = child.find(qn('w:fldChar'))
+        if fld_char is not None:
+            fld_type = fld_char.get(qn('w:fldCharType'))
+            if fld_type == 'begin':
+                _flush_group()
+                run_group.clear()
+                merged_text.clear()
+                in_field += 1
+            elif fld_type == 'end':
+                in_field -= 1
+            continue
+        if in_field > 0:
             continue
 
         if _has_shape(child):
@@ -97,6 +117,8 @@ def _collapse_runs_preserving_shapes(paragraph):
                 run_text_parts.append(sub.text or '')
             elif sub.tag == qn('w:br'):
                 run_text_parts.append('\n')
+            elif sub.tag == qn('w:tab'):
+                run_text_parts.append('\t')
         run_text = ''.join(run_text_parts)
         run_group.append(child)
         merged_text.append(run_text)
@@ -116,11 +138,12 @@ def _convert_newlines_to_breaks(paragraph):
         if '\n' not in run.text:
             continue
         run_elem = run._element
+        text = run.text
         for old_t in run_elem.findall(qn('w:t')):
             run_elem.remove(old_t)
         for old_br in run_elem.findall(qn('w:br')):
             run_elem.remove(old_br)
-        parts = run.text.split('\n')
+        parts = text.split('\n')
         for i, part in enumerate(parts):
             if i > 0:
                 etree.SubElement(run_elem, qn('w:br'))
@@ -180,7 +203,7 @@ def _translate_paragraph(
 
     has_fmt = _has_formatting_differences(paragraph)
     if has_fmt:
-        add_formatting_notes(paragraph, formatting_records)
+        add_formatting_notes(paragraph, formatting_records, detected_patterns)
 
     _collapse_runs_preserving_shapes(paragraph)
 

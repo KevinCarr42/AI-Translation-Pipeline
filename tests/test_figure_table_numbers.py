@@ -112,7 +112,6 @@ def _run_docx_translation():
     return doc, mock
 
 
-@pytest.mark.xfail(reason="DOCX Figure number translation not yet implemented")
 def test_docx_figure_number_preserved():
     doc, _ = _run_docx_translation()
 
@@ -121,7 +120,6 @@ def test_docx_figure_number_preserved():
         f"Translated docx should contain 'Figure 1.', got: {all_text[:200]}"
 
 
-@pytest.mark.xfail(reason="DOCX Table number translation not yet implemented")
 def test_docx_table_number_translated():
     doc, _ = _run_docx_translation()
 
@@ -130,7 +128,6 @@ def test_docx_table_number_translated():
         f"Translated docx should contain 'Tableau 1.', got: {all_text[:200]}"
 
 
-@pytest.mark.xfail(reason="DOCX caption style formatting not yet verified")
 def test_docx_caption_style_formatting():
     doc, _ = _run_docx_translation()
 

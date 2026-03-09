@@ -4,13 +4,40 @@ from lxml import etree
 from scitrans.translate.word_formatting import FormattedRun
 
 
-def add_formatting_notes(paragraph, formatting_records):
+def _is_auto_handled(formatted_run, detected_patterns):
+    text = formatted_run.text.strip()
+
+    if formatted_run.superscript and text in (detected_patterns.get('superscript_numbers') or []):
+        return True
+
+    _ordinal_suffixes = {'th', 'st', 'nd', 'rd'}
+    if formatted_run.superscript and text.lower() in _ordinal_suffixes:
+        if detected_patterns.get('superscript_ordinals'):
+            return True
+
+    if formatted_run.subscript and text.lower() in _ordinal_suffixes:
+        if detected_patterns.get('subscript_ordinals'):
+            return True
+
+    ib = detected_patterns.get('italic_brackets', {})
+    if formatted_run.italic and not formatted_run.bold and not formatted_run.superscript and not formatted_run.subscript:
+        if ib.get('apply'):
+            return True
+
+    return False
+
+
+def add_formatting_notes(paragraph, formatting_records, detected_patterns=None):
     full_paragraph_text = paragraph.text
+    if len(full_paragraph_text) > 150:
+        full_paragraph_text = full_paragraph_text[:147] + '...'
 
     for run in list(paragraph.runs):
         formatted_run = FormattedRun.create(run)
 
         if formatted_run.has_formatting and formatted_run.text.strip():
+            if detected_patterns and _is_auto_handled(formatted_run, detected_patterns):
+                continue
             formatting_records.append({
                 'original_text': run.text,
                 'full_sentence': full_paragraph_text,

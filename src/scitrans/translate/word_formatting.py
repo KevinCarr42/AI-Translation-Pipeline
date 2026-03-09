@@ -143,7 +143,8 @@ def detect_patterns(paragraph):
             remaining = content
             for it in italic_texts:
                 remaining = remaining.replace(it, "")
-            entirely_italic = remaining.strip() == ""
+            remaining_stripped = remaining.strip()
+            entirely_italic = remaining_stripped == "" or bool(_SPP_PATTERN.search(remaining_stripped))
             
             if entirely_italic:
                 all_italic_count += 1
@@ -174,12 +175,21 @@ def detect_patterns(paragraph):
             prev_text = runs[i - 1].text.rstrip()
             if prev_text and prev_text[-1].isdigit():
                 subscript_ordinals.append(prev_text.split()[-1] + run.text.strip())
-    
+
+    superscript_ordinals = []
+    for i, run in enumerate(runs):
+        if run.font.superscript and run.text.strip().lower() in _ordinal_suffixes and i > 0:
+            prev_text = runs[i - 1].text.rstrip()
+            if prev_text and prev_text[-1].isdigit():
+                superscript_ordinals.append(prev_text.split()[-1] + run.text.strip())
+
     result = {"italic_brackets": italic_brackets}
     if superscript_numbers:
         result["superscript_numbers"] = superscript_numbers
     if subscript_ordinals:
         result["subscript_ordinals"] = subscript_ordinals
+    if superscript_ordinals:
+        result["superscript_ordinals"] = superscript_ordinals
     return result
 
 
@@ -407,7 +417,10 @@ def _split_run_for_subscript(paragraph, run, suffix_text):
 def _apply_subscript_ordinals(paragraph, ordinals, formatting_records, source_text):
     _fr_ordinal_suffixes = re.compile(r'(\d+)(e|er|ère)\b')
     _en_ordinal_suffixes = re.compile(r'(\d+)(th|st|nd|rd)\b')
-    
+    key_text = source_text
+    if key_text and len(key_text) > 150:
+        key_text = key_text[:147] + '...'
+
     for ordinal in ordinals:
         # Try to find the ordinal pattern in translated text
         found = False
@@ -428,24 +441,59 @@ def _apply_subscript_ordinals(paragraph, ordinals, formatting_records, source_te
                 break
         if not found:
             formatting_records.append({
-                'original_text': source_text,
-                'full_sentence': source_text,
+                'original_text': key_text,
+                'full_sentence': key_text,
                 'notes': f"Subscript ordinal '{ordinal}' could not be matched in translated text",
+            })
+
+
+def _apply_superscript_ordinals(paragraph, ordinals, formatting_records, source_text):
+    _fr_ordinal_suffixes = re.compile(r'(\d+)(e|er|ère)\b')
+    _en_ordinal_suffixes = re.compile(r'(\d+)(th|st|nd|rd)\b')
+    key_text = source_text
+    if key_text and len(key_text) > 150:
+        key_text = key_text[:147] + '...'
+
+    for ordinal in ordinals:
+        found = False
+        text = paragraph.text
+        for pattern in [_en_ordinal_suffixes, _fr_ordinal_suffixes]:
+            for match in pattern.finditer(text):
+                full_match = match.group(0)
+                suffix = match.group(2)
+                if full_match == ordinal or ordinal.rstrip('thstndrd') == match.group(1):
+                    for run in list(paragraph.runs):
+                        if suffix in run.text:
+                            if _split_run_for_superscript(paragraph, run, suffix):
+                                found = True
+                                break
+                    if found:
+                        break
+            if found:
+                break
+        if not found:
+            formatting_records.append({
+                'original_text': key_text,
+                'full_sentence': key_text,
+                'notes': f"Superscript ordinal '{ordinal}' could not be matched in translated text",
             })
 
 
 def apply_formatting_rules(paragraph, detected_patterns, formatting_records, source_text=None):
     if source_text is None:
         source_text = paragraph.text
+    key_text = source_text
+    if key_text and len(key_text) > 150:
+        key_text = key_text[:147] + '...'
     ib = detected_patterns["italic_brackets"]
-    
+
     if ib["ambiguous_notes"]:
         formatting_records.append({
-            'original_text': source_text,
-            'full_sentence': source_text,
+            'original_text': key_text,
+            'full_sentence': key_text,
             'notes': ib["ambiguous_notes"],
         })
-    
+
     if ib["apply"]:
         text = paragraph.text
         matches = list(BRACKET_PATTERN.finditer(text))
@@ -455,8 +503,8 @@ def apply_formatting_rules(paragraph, detected_patterns, formatting_records, sou
             success = _try_italic_brackets_per_sentence(paragraph, ib["expected_count"])
             if not success:
                 formatting_records.append({
-                    'original_text': source_text,
-                    'full_sentence': source_text,
+                    'original_text': key_text,
+                    'full_sentence': key_text,
                     'notes': (
                         "Italic bracket formatting could not be automatically applied "
                         "— bracket count mismatch after translation"
@@ -468,6 +516,9 @@ def apply_formatting_rules(paragraph, detected_patterns, formatting_records, sou
     
     if detected_patterns.get("subscript_ordinals"):
         _apply_subscript_ordinals(paragraph, detected_patterns["subscript_ordinals"], formatting_records, source_text)
+
+    if detected_patterns.get("superscript_ordinals"):
+        _apply_superscript_ordinals(paragraph, detected_patterns["superscript_ordinals"], formatting_records, source_text)
 
 
 def _is_single_numeric(text):
