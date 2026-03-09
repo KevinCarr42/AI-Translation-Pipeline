@@ -692,8 +692,8 @@ def test_hyperlink_stripping_and_records():
                 print(f"[FAIL] Record notes wrong: '{record['notes']}'")
                 record_ok = False
             
-            if 'Visit' not in record['full_sentence'] or 'our site' not in record['full_sentence']:
-                print(f"[FAIL] Record full_sentence missing expected text: '{record['full_sentence']}'")
+            if 'Visit' not in record['full_paragraph'] or 'our site' not in record['full_paragraph']:
+                print(f"[FAIL] Record full_paragraph missing expected text: '{record['full_paragraph']}'")
                 record_ok = False
             
             if record_ok:
@@ -747,8 +747,8 @@ def test_write_formatting_notes():
     failed = 0
     
     records = [
-        {'original_text': 'Example Link', 'full_sentence': 'Visit Example Link for details.', 'notes': 'https://example.com'},
-        {'original_text': 'Another', 'full_sentence': 'See Another for more.', 'notes': 'https://another.com'},
+        {'original_text': 'Example Link', 'full_paragraph': 'Visit Example Link for details.', 'notes': 'https://example.com'},
+        {'original_text': 'Another', 'full_paragraph': 'See Another for more.', 'notes': 'https://another.com'},
     ]
     
     temp_file = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
@@ -779,7 +779,7 @@ def test_write_formatting_notes():
             print(f"[FAIL] Expected 2 columns, got {num_cols}")
             failed += 1
         
-        # Check 3: table has 3 rows (1 header + 2 data, grouped by full_sentence)
+        # Check 3: table has 3 rows (1 header + 2 data, grouped by full_paragraph)
         num_rows = len(table.rows)
         if num_rows == 3:
             print(f"[PASS] Table has {num_rows} rows (1 header + 2 data)")

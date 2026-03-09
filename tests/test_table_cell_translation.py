@@ -512,9 +512,9 @@ class TestFormattingRulesInTables:
 class TestHyperlinkNotes:
     def test_row_count_matches_records(self, tmp_path):
         records = [
-            {"original_text": "a", "full_sentence": "b", "notes": "c"},
-            {"original_text": "d", "full_sentence": "e", "notes": "f"},
-            {"original_text": "g", "full_sentence": "h", "notes": "i"},
+            {"original_text": "a", "full_paragraph": "b", "notes": "c"},
+            {"original_text": "d", "full_paragraph": "e", "notes": "f"},
+            {"original_text": "g", "full_paragraph": "h", "notes": "i"},
         ]
         out = str(tmp_path / "notes.docx")
         write_translations_notes(records, out)

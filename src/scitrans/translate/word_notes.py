@@ -6,41 +6,39 @@ from scitrans.translate.word_formatting import FormattedRun
 
 def _is_auto_handled(formatted_run, detected_patterns):
     text = formatted_run.text.strip()
-
+    
     if formatted_run.superscript and text in (detected_patterns.get('superscript_numbers') or []):
         return True
-
+    
     _ordinal_suffixes = {'th', 'st', 'nd', 'rd'}
     if formatted_run.superscript and text.lower() in _ordinal_suffixes:
         if detected_patterns.get('superscript_ordinals'):
             return True
-
+    
     if formatted_run.subscript and text.lower() in _ordinal_suffixes:
         if detected_patterns.get('subscript_ordinals'):
             return True
-
+    
     ib = detected_patterns.get('italic_brackets', {})
     if formatted_run.italic and not formatted_run.bold and not formatted_run.superscript and not formatted_run.subscript:
         if ib.get('apply'):
             return True
-
+    
     return False
 
 
 def add_formatting_notes(paragraph, formatting_records, detected_patterns=None):
     full_paragraph_text = paragraph.text
-    if len(full_paragraph_text) > 150:
-        full_paragraph_text = full_paragraph_text[:147] + '...'
-
+    
     for run in list(paragraph.runs):
         formatted_run = FormattedRun.create(run)
-
+        
         if formatted_run.has_formatting and formatted_run.text.strip():
             if detected_patterns and _is_auto_handled(formatted_run, detected_patterns):
                 continue
             formatting_records.append({
                 'original_text': run.text,
-                'full_sentence': full_paragraph_text,
+                'full_paragraph': full_paragraph_text,
                 'notes': formatted_run.formatting_notes,
                 'type': 'formatting',
             })
@@ -69,13 +67,13 @@ def has_hyperlinks(paragraph, formatting_records):
         for r_elem in list(hl_elem.findall(qn('w:r'))):
             p_elem.insert(list(p_elem).index(hl_elem), r_elem)
         p_elem.remove(hl_elem)
-
+    
     # Add hyperlink notes
     full_paragraph_text = paragraph.text
     for original_text, url in hyperlink_data:
         formatting_records.append({
             'original_text': original_text,
-            'full_sentence': full_paragraph_text,
+            'full_paragraph': full_paragraph_text,
             'notes': url,
             'type': 'hyperlink',
         })
@@ -109,7 +107,7 @@ def _filter_notes(records):
 def _group_notes_by_paragraph(records):
     groups = {}
     for record in records:
-        key = record.get('full_sentence', '')
+        key = record.get('full_paragraph', '')
         if key not in groups:
             groups[key] = []
         # Deduplicate by (original_text, notes) within each group
@@ -162,7 +160,7 @@ def _write_bulleted_details(cell, details_list):
         for run in paragraph.runs:
             run.font.size = Pt(11)
             run.font.name = 'Calibri'
-
+    
     _set_cell_shading(cell, _get_cell_color(details_list))
 
 
@@ -198,9 +196,9 @@ def write_translations_notes(translations_notes, output_path):
             run.font.name = 'Calibri'
             run.bold = True
     
-    for full_sentence, details in grouped.items():
+    for full_paragraph, details in grouped.items():
         row_cells = table.add_row().cells
-        row_cells[0].text = full_sentence
+        row_cells[0].text = full_paragraph
         for run in row_cells[0].paragraphs[0].runs:
             run.font.size = Pt(11)
             run.font.name = 'Calibri'
