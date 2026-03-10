@@ -4,6 +4,8 @@ import pytest
 from docx import Document
 from docx.oxml.ns import qn
 from scitrans.translate.word_document import translate_word_document
+from scitrans.translate.word_formatting import _apply_superscript_ordinals
+from scitrans.translate.word_notes import _group_notes_by_paragraph
 
 FIXTURE_PATH = os.path.join(os.path.dirname(__file__), 'fixtures', 'test_formatting_errors_en.docx')
 
@@ -182,7 +184,7 @@ def test_table_cell_0_1_no_formatting_note():
     doc, _, notes_doc = _run_translation()
     table = doc.tables[0]
     cell = table.rows[0].cells[1]
-
+    
     # The cell should have italic text inside brackets (species names)
     has_italic_in_brackets = False
     for para in cell.paragraphs:
@@ -197,7 +199,7 @@ def test_table_cell_0_1_no_formatting_note():
     assert has_italic_in_brackets, (
         "Table cell [0,1] should have italic text inside brackets for species names"
     )
-
+    
     # If the cell is highlighted, there should be a notes row for it
     is_highlighted = any(
         run.font.highlight_color is not None
@@ -240,14 +242,14 @@ def test_italic_mismatch_note_uses_check_formatting_key():
 
 def test_final_paragraph_page2_no_formatting_note():
     doc, _, notes_doc = _run_translation()
-
+    
     # Find the final body paragraph that starts with "Shrimp remains..."
     target_para = None
     for para in doc.paragraphs:
         if para.text and 'Shrimp remains' in para.text:
             target_para = para
     assert target_para is not None
-
+    
     # It should NOT be highlighted (italic+spp should be auto-handled)
     is_highlighted = any(
         run.font.highlight_color is not None
@@ -284,7 +286,7 @@ def test_superscript_ordinals_applied_correctly():
             target_para = para
             break
     assert target_para is not None, "Could not find paragraph with 50th/75th"
-
+    
     # Check runs: the suffix after each number should be superscript
     runs = target_para.runs
     found_50_super = False
@@ -298,14 +300,14 @@ def test_superscript_ordinals_applied_correctly():
             next_run = runs[i + 1]
             if next_run.font.superscript and next_run.text.startswith('th'):
                 found_75_super = True
-
+    
     assert found_50_super, "50th should have superscript 'th' suffix"
     assert found_75_super, "75th should have superscript 'th' suffix"
 
 
 def test_highlighted_paragraphs_match_notes_rows():
     doc, _, notes_doc = _run_translation()
-
+    
     # Count highlighted paragraphs across body + tables
     highlighted_count = 0
     seen_texts = set()
@@ -324,12 +326,115 @@ def test_highlighted_paragraphs_match_notes_rows():
                             highlighted_count += 1
                             seen_texts.add(para.text)
                             break
-
+    
     assert notes_doc is not None, "Expected a notes document"
     notes_rows = len(notes_doc.tables[0].rows) - 1  # subtract header row
-
+    
     assert highlighted_count == notes_rows, (
         f"Highlighted paragraphs ({highlighted_count}) should equal "
         f"notes rows ({notes_rows})"
     )
 
+
+# ---------------------------------------------------------------------------
+# Superscript ordinals: French "e" suffix must only superscript after the
+# target number, not the first "e" found in the run.
+# ---------------------------------------------------------------------------
+
+def test_superscript_ordinals_french_targets_correct_position():
+    # Simulates French translation output where "50th" -> "50e" and "75th" -> "75e"
+    # The "e" after each number should be superscripted, NOT random "e" chars
+    # in surrounding words like "ne", "entraîner", "Cette", etc.
+    doc = Document()
+    para = doc.add_paragraph(
+        "Cette note de bas de page ne doit pas entraîner. Les 50e ou 75e percentiles."
+    )
+    formatting_records = []
+    _apply_superscript_ordinals(para, ['50th', '75th'], formatting_records, 'source')
+
+    # Reconstruct the full text with superscript positions marked
+    full_text = ""
+    superscripted_positions = []
+    for run in para.runs:
+        if run.font.superscript:
+            for ch in run.text:
+                superscripted_positions.append(len(full_text))
+                full_text += ch
+        else:
+            full_text += run.text
+
+    # The only superscripted characters should be the "e" in "50e" and "75e"
+    idx_50e = full_text.find("50e")
+    idx_75e = full_text.find("75e")
+    assert idx_50e != -1, f"Could not find '50e' in reconstructed text: {full_text!r}"
+    assert idx_75e != -1, f"Could not find '75e' in reconstructed text: {full_text!r}"
+
+    expected_positions = {idx_50e + 2, idx_75e + 2}  # the "e" after the digits
+    actual_positions = set(superscripted_positions)
+
+    assert actual_positions == expected_positions, (
+        f"Superscript should only be at positions {expected_positions} "
+        f"(the 'e' in '50e' and '75e'), but was at {actual_positions}. "
+        f"Text: {full_text!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Deduplication: same paragraph with multiple records sharing the same URL
+# should collapse to one row (the URL-fragment duplication bug).
+# ---------------------------------------------------------------------------
+
+def test_dedup_same_paragraph_same_url_fragments():
+    # Simulates the bug where a hyperlink spanning multiple runs creates
+    # multiple records with different original_text but the same URL
+    records = [
+        {'original_text': 'A', 'full_paragraph': 'Miller full text', 'notes': 'https://example.com/doc', 'type': 'hyperlink'},
+        {'original_text': 'Near', 'full_paragraph': 'Miller full text', 'notes': 'https://example.com/doc', 'type': 'hyperlink'},
+        {'original_text': 'l', 'full_paragraph': 'Miller full text', 'notes': 'https://example.com/doc', 'type': 'hyperlink'},
+        {'original_text': 'y Successful', 'full_paragraph': 'Miller full text', 'notes': 'https://example.com/doc', 'type': 'hyperlink'},
+    ]
+    groups = _group_notes_by_paragraph(records)
+    total_rows = sum(len(v) for v in groups.values())
+    assert total_rows == 1, (
+        f"Same paragraph + same URL should produce 1 row, got {total_rows}"
+    )
+
+
+def test_dedup_same_paragraph_different_errors_kept():
+    # Different errors within the same paragraph should each get a row
+    records = [
+        {'original_text': 'bold text', 'full_paragraph': 'Full paragraph', 'notes': 'bold', 'type': 'formatting'},
+        {'original_text': 'italic text', 'full_paragraph': 'Full paragraph', 'notes': 'italic', 'type': 'formatting'},
+    ]
+    groups = _group_notes_by_paragraph(records)
+    total_rows = sum(len(v) for v in groups.values())
+    assert total_rows == 2, (
+        f"Different errors in same paragraph should produce 2 rows, got {total_rows}"
+    )
+
+
+def test_dedup_different_paragraphs_similar_errors_not_collapsed():
+    # Different paragraphs with similar errors should NOT be collapsed
+    records = [
+        {'original_text': 'text', 'full_paragraph': 'First paragraph text', 'notes': 'italic', 'type': 'formatting'},
+        {'original_text': 'text', 'full_paragraph': 'Second paragraph text', 'notes': 'italic', 'type': 'formatting'},
+    ]
+    groups = _group_notes_by_paragraph(records)
+    total_rows = sum(len(v) for v in groups.values())
+    assert total_rows == 2, (
+        f"Different paragraphs should each get a row even with similar errors, got {total_rows}"
+    )
+
+
+def test_dedup_exact_duplicates_within_paragraph_collapsed():
+    # Identical records from the same paragraph should collapse to 1
+    records = [
+        {'original_text': 'text', 'full_paragraph': 'Same paragraph', 'notes': 'italic', 'type': 'formatting'},
+        {'original_text': 'text', 'full_paragraph': 'Same paragraph', 'notes': 'italic', 'type': 'formatting'},
+        {'original_text': 'text', 'full_paragraph': 'Same paragraph', 'notes': 'italic', 'type': 'formatting'},
+    ]
+    groups = _group_notes_by_paragraph(records)
+    total_rows = sum(len(v) for v in groups.values())
+    assert total_rows == 1, (
+        f"Exact duplicate records in same paragraph should collapse to 1, got {total_rows}"
+    )
