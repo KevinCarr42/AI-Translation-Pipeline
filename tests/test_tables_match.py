@@ -32,6 +32,7 @@ def translation_context(request, tmp_path):
     }
 
 
+@pytest.mark.slow
 class TestDocumentTranslations:
     def test_paragraphs(self, translation_context, subtests):
         doc = translation_context["doc"]

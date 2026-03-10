@@ -103,6 +103,7 @@ This follows the **Arrange, Act, Assert** pattern and uses the fixtures defined 
 ```py
 import pytest
 
+
 class TestCalculator:
     @pytest.mark.parametrize("a, b, expected", [
         (1, 2, 3),
@@ -113,7 +114,7 @@ class TestCalculator:
         from src.calculator import add
         result = add(a, b)
         assert result == expected
-
+    
     def test_division_by_zero(self):
         from src.calculator import divide
         with pytest.raises(ZeroDivisionError, match="division by zero"):
@@ -135,5 +136,38 @@ markers = [
 ]
 ```
 
+## Project-Specific Conventions
 
-<br><br><br><br>
+### Shared Fixtures (`conftest.py`)
+
+* **`MockTranslator`:** Use the shared `MockTranslator` from `conftest.py` (prefix `[TR:...]`). Do not redefine it in individual test files.
+* **`run_word_translation(fixture_name, source_lang, mock=None)`:** Handles temp file creation/cleanup and JSON notes loading. Returns `(doc, mock, notes_data)`.
+* **`all_notes_text(notes_data)`:** Flattens JSON notes into a single string for substring searches.
+* **`notes_entry_count(notes_data)`:** Returns total entries across paragraphs + tables sections.
+
+### Notes Format
+
+Translation notes are JSON (`_translation_notes.json`), not `.docx`. When asserting on notes content, work with the dict structure:
+
+```py
+# Check if a paragraph has a note
+has_note = any(
+    prefix in entry['full_paragraph']
+    for section in ['paragraphs', 'tables']
+    for entry in notes_data.get(section, [])
+)
+```
+
+### Markers
+
+* **`@pytest.mark.slow`:** Tests that load real ML models (e.g., mbart). Deselect with `-m "not slow"`.
+
+### Module-Scoped Fixtures for Expensive Setup
+
+When multiple tests share the same translated document, use `scope="module"` to avoid re-running the translation:
+
+```py
+@pytest.fixture(scope="module")
+def translated():
+    return run_word_translation('fixture.docx', 'en')
+```

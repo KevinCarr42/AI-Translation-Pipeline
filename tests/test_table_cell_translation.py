@@ -1,6 +1,8 @@
 from unittest.mock import patch
 from docx import Document
-from scitrans.translate.word_document import _translate_table_cell, write_translations_notes
+import json
+from scitrans.translate.word_document import _translate_table_cell
+from scitrans.translate.word_notes import write_notes_json
 
 
 class MockTranslator:
@@ -510,15 +512,15 @@ class TestFormattingRulesInTables:
 # 9. Hyperlink notes
 # ---------------------------------------------------------------------------
 class TestHyperlinkNotes:
-    def test_row_count_matches_records(self, tmp_path):
+    def test_entry_count_matches_records(self, tmp_path):
         records = [
-            {"original_text": "a", "full_paragraph": "b", "notes": "c"},
-            {"original_text": "d", "full_paragraph": "e", "notes": "f"},
-            {"original_text": "g", "full_paragraph": "h", "notes": "i"},
+            {"original_text": "a", "full_paragraph": "b", "notes": "c", "type": "formatting"},
+            {"original_text": "d", "full_paragraph": "e", "notes": "f", "type": "formatting"},
+            {"original_text": "g", "full_paragraph": "h", "notes": "i", "type": "formatting"},
         ]
-        out = str(tmp_path / "notes.docx")
-        write_translations_notes(records, out)
-        doc = Document(out)
-        table = doc.tables[0]
-        # 1 header row + 3 data rows
-        assert len(table.rows) == 4
+        out = str(tmp_path / "notes.json")
+        write_notes_json(records, out)
+        with open(out, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        total = len(data.get('paragraphs', [])) + len(data.get('tables', []))
+        assert total == 3
