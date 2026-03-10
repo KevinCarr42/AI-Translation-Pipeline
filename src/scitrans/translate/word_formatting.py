@@ -271,14 +271,14 @@ def _try_italic_brackets_per_sentence(paragraph, total_expected):
     return True
 
 
-def _split_run_for_superscript(paragraph, run, num_text):
+def _split_run_for_superscript(paragraph, run, num_text, offset=None):
     # TODO: move all imports to the top level
     from copy import deepcopy
     from docx.oxml.ns import qn
-    
+
     run_elem = run._element
     text = run.text
-    idx = text.find(num_text)
+    idx = offset if offset is not None else text.find(num_text)
     if idx == -1:
         return False
     
@@ -348,13 +348,13 @@ def _apply_superscript_numbers(paragraph, numbers):
                     break
 
 
-def _split_run_for_subscript(paragraph, run, suffix_text):
+def _split_run_for_subscript(paragraph, run, suffix_text, offset=None):
     from copy import deepcopy
     from docx.oxml.ns import qn
-    
+
     run_elem = run._element
     text = run.text
-    idx = text.find(suffix_text)
+    idx = offset if offset is not None else text.find(suffix_text)
     if idx == -1:
         return False
     
@@ -431,7 +431,8 @@ def _apply_subscript_ordinals(paragraph, ordinals, formatting_records, source_te
                     for run in list(paragraph.runs):
                         run_end = char_offset + len(run.text)
                         if char_offset <= suffix_start < run_end:
-                            if _split_run_for_subscript(paragraph, run, suffix):
+                            local_offset = suffix_start - char_offset
+                            if _split_run_for_subscript(paragraph, run, suffix, offset=local_offset):
                                 found = True
                                 break
                         char_offset = run_end
@@ -463,7 +464,8 @@ def _apply_superscript_ordinals(paragraph, ordinals, formatting_records, source_
                     for run in list(paragraph.runs):
                         run_end = char_offset + len(run.text)
                         if char_offset <= suffix_start < run_end:
-                            if _split_run_for_superscript(paragraph, run, suffix):
+                            local_offset = suffix_start - char_offset
+                            if _split_run_for_superscript(paragraph, run, suffix, offset=local_offset):
                                 found = True
                                 break
                         char_offset = run_end

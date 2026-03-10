@@ -110,9 +110,9 @@ def _group_notes_by_paragraph(records):
         key = record.get('full_paragraph', '')
         if key not in groups:
             groups[key] = []
-        # Deduplicate by (original_text, notes) within each group
-        dedup_key = (record.get('original_text', ''), record.get('notes', ''))
-        existing = [(r.get('original_text', ''), r.get('notes', '')) for r in groups[key]]
+        # Deduplicate by notes within each paragraph group
+        dedup_key = record.get('notes', '')
+        existing = [r.get('notes', '') for r in groups[key]]
         if dedup_key not in existing:
             groups[key].append(record)
     return groups
