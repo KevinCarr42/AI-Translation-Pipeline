@@ -1,7 +1,11 @@
 import logging
 import re
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import ClassVar
+
+from docx.oxml.ns import qn
+from lxml import etree
 
 logger = logging.getLogger(__name__)
 
@@ -9,6 +13,8 @@ BRACKET_PATTERN = re.compile(r'\([^)]+\)')
 _SEPARATOR_RE = re.compile(r'\s+[-\u2013\u2212]\s+')
 _SPP_PATTERN = re.compile(r'\b(spp?\.)$')
 _SENTENCE_BOUNDARY = re.compile(r'(?<=[.!?])\s+')
+_FR_ORDINAL_SUFFIXES = re.compile(r'(\d+)(e|er|ère)\b')
+_EN_ORDINAL_SUFFIXES = re.compile(r'(\d+)(th|st|nd|rd)\b')
 
 
 @dataclass(frozen=True)
@@ -175,14 +181,14 @@ def detect_patterns(paragraph):
             prev_text = runs[i - 1].text.rstrip()
             if prev_text and prev_text[-1].isdigit():
                 subscript_ordinals.append(prev_text.split()[-1] + run.text.strip())
-
+    
     superscript_ordinals = []
     for i, run in enumerate(runs):
         if run.font.superscript and run.text.strip().lower() in _ordinal_suffixes and i > 0:
             prev_text = runs[i - 1].text.rstrip()
             if prev_text and prev_text[-1].isdigit():
                 superscript_ordinals.append(prev_text.split()[-1] + run.text.strip())
-
+    
     result = {"italic_brackets": italic_brackets}
     if superscript_numbers:
         result["superscript_numbers"] = superscript_numbers
@@ -192,6 +198,10 @@ def detect_patterns(paragraph):
         result["superscript_ordinals"] = superscript_ordinals
     return result
 
+
+# ---------------------------------------------------------------------------
+# Italic bracket helpers
+# ---------------------------------------------------------------------------
 
 def _build_italic_bracket_parts(content):
     spp_match = _SPP_PATTERN.search(content)
@@ -208,7 +218,7 @@ def _build_italic_bracket_parts(content):
     return [FormattedRun(text=content, italic=True)]
 
 
-def _apply_italic_brackets(paragraph, matches, text):
+def _build_parts_from_bracket_matches(text, matches):
     parts = []
     last_end = 0
     for match in matches:
@@ -223,7 +233,10 @@ def _apply_italic_brackets(paragraph, matches, text):
     remainder = text[last_end:]
     if remainder:
         parts.append(FormattedRun(text=remainder))
-    
+    return parts
+
+
+def _write_formatted_parts_to_paragraph(paragraph, parts):
     paragraph.clear()
     for part in parts:
         run = paragraph.add_run(part.text)
@@ -231,12 +244,15 @@ def _apply_italic_brackets(paragraph, matches, text):
             run.italic = True
 
 
+def _apply_italic_brackets(paragraph, matches, text):
+    parts = _build_parts_from_bracket_matches(text, matches)
+    _write_formatted_parts_to_paragraph(paragraph, parts)
+
+
 def _try_italic_brackets_per_sentence(paragraph, total_expected):
     text = paragraph.text
     sentences = _SENTENCE_BOUNDARY.split(text)
-    total_found = 0
-    for sentence in sentences:
-        total_found += len(BRACKET_PATTERN.findall(sentence))
+    total_found = sum(len(BRACKET_PATTERN.findall(s)) for s in sentences)
     
     if total_found != total_expected:
         return False
@@ -247,60 +263,41 @@ def _try_italic_brackets_per_sentence(paragraph, total_expected):
             parts.append(FormattedRun(text=" "))
         matches = list(BRACKET_PATTERN.finditer(sentence))
         if matches:
-            last_end = 0
-            for match in matches:
-                before = sentence[last_end:match.start()]
-                if before:
-                    parts.append(FormattedRun(text=before))
-                content = match.group()[1:-1]
-                parts.append(FormattedRun(text="("))
-                parts.extend(_build_italic_bracket_parts(content))
-                parts.append(FormattedRun(text=")"))
-                last_end = match.end()
-            remainder = sentence[last_end:]
-            if remainder:
-                parts.append(FormattedRun(text=remainder))
+            parts.extend(_build_parts_from_bracket_matches(sentence, matches))
         else:
             parts.append(FormattedRun(text=sentence))
     
-    paragraph.clear()
-    for part in parts:
-        run = paragraph.add_run(part.text)
-        if part.italic:
-            run.italic = True
+    _write_formatted_parts_to_paragraph(paragraph, parts)
     return True
 
 
-def _split_run_for_superscript(paragraph, run, num_text, offset=None):
-    # TODO: move all imports to the top level
-    from copy import deepcopy
-    from docx.oxml.ns import qn
+# ---------------------------------------------------------------------------
+# Vertical alignment (superscript / subscript) — unified run splitter
+# ---------------------------------------------------------------------------
 
+def _split_run_for_vertical_align(paragraph, run, text_fragment, align_type, offset=None):
     run_elem = run._element
     text = run.text
-    idx = offset if offset is not None else text.find(num_text)
+    idx = offset if offset is not None else text.find(text_fragment)
     if idx == -1:
         return False
     
     before = text[:idx]
-    after = text[idx + len(num_text):]
+    after = text[idx + len(text_fragment):]
     
     if before:
         run.text = before
-        # Create superscript run
         new_r = deepcopy(run_elem)
         t_elem = new_r.find(qn('w:t'))
-        t_elem.text = num_text
+        t_elem.text = text_fragment
         rPr = new_r.find(qn('w:rPr'))
         if rPr is None:
-            from lxml import etree
             rPr = etree.SubElement(new_r, qn('w:rPr'))
             new_r.insert(0, rPr)
         vert = rPr.find(qn('w:vertAlign'))
         if vert is None:
-            from lxml import etree
             vert = etree.SubElement(rPr, qn('w:vertAlign'))
-        vert.set(qn('w:val'), 'superscript')
+        vert.set(qn('w:val'), align_type)
         run_elem.addnext(new_r)
         
         if after:
@@ -311,17 +308,15 @@ def _split_run_for_superscript(paragraph, run, num_text, offset=None):
                 t_elem.set(qn('xml:space'), 'preserve')
             new_r.addnext(after_r)
     else:
-        run.text = num_text
+        run.text = text_fragment
         rPr_elem = run_elem.find(qn('w:rPr'))
         if rPr_elem is None:
-            from lxml import etree
             rPr_elem = etree.SubElement(run_elem, qn('w:rPr'))
             run_elem.insert(0, rPr_elem)
         vert = rPr_elem.find(qn('w:vertAlign'))
         if vert is None:
-            from lxml import etree
             vert = etree.SubElement(rPr_elem, qn('w:vertAlign'))
-        vert.set(qn('w:val'), 'superscript')
+        vert.set(qn('w:val'), align_type)
         
         if after:
             after_r = deepcopy(run_elem)
@@ -329,7 +324,6 @@ def _split_run_for_superscript(paragraph, run, num_text, offset=None):
             t_elem.text = after
             if after[0] == ' ':
                 t_elem.set(qn('xml:space'), 'preserve')
-            # Remove superscript from the after run
             after_rPr = after_r.find(qn('w:rPr'))
             if after_rPr is not None:
                 after_vert = after_rPr.find(qn('w:vertAlign'))
@@ -344,84 +338,15 @@ def _apply_superscript_numbers(paragraph, numbers):
     for num in numbers:
         for run in list(paragraph.runs):
             if num in run.text:
-                if _split_run_for_superscript(paragraph, run, num):
+                if _split_run_for_vertical_align(paragraph, run, num, 'superscript'):
                     break
 
 
-def _split_run_for_subscript(paragraph, run, suffix_text, offset=None):
-    from copy import deepcopy
-    from docx.oxml.ns import qn
-
-    run_elem = run._element
-    text = run.text
-    idx = offset if offset is not None else text.find(suffix_text)
-    if idx == -1:
-        return False
-    
-    before = text[:idx]
-    after = text[idx + len(suffix_text):]
-    
-    if before:
-        run.text = before
-        new_r = deepcopy(run_elem)
-        t_elem = new_r.find(qn('w:t'))
-        t_elem.text = suffix_text
-        rPr = new_r.find(qn('w:rPr'))
-        if rPr is None:
-            from lxml import etree
-            rPr = etree.SubElement(new_r, qn('w:rPr'))
-            new_r.insert(0, rPr)
-        vert = rPr.find(qn('w:vertAlign'))
-        if vert is None:
-            from lxml import etree
-            vert = etree.SubElement(rPr, qn('w:vertAlign'))
-        vert.set(qn('w:val'), 'subscript')
-        run_elem.addnext(new_r)
-        
-        if after:
-            after_r = deepcopy(run_elem)
-            t_elem = after_r.find(qn('w:t'))
-            t_elem.text = after
-            if after[0] == ' ':
-                t_elem.set(qn('xml:space'), 'preserve')
-            new_r.addnext(after_r)
-    else:
-        run.text = suffix_text
-        rPr_elem = run_elem.find(qn('w:rPr'))
-        if rPr_elem is None:
-            from lxml import etree
-            rPr_elem = etree.SubElement(run_elem, qn('w:rPr'))
-            run_elem.insert(0, rPr_elem)
-        vert = rPr_elem.find(qn('w:vertAlign'))
-        if vert is None:
-            from lxml import etree
-            vert = etree.SubElement(rPr_elem, qn('w:vertAlign'))
-        vert.set(qn('w:val'), 'subscript')
-        
-        if after:
-            after_r = deepcopy(run_elem)
-            t_elem = after_r.find(qn('w:t'))
-            t_elem.text = after
-            if after[0] == ' ':
-                t_elem.set(qn('xml:space'), 'preserve')
-            after_rPr = after_r.find(qn('w:rPr'))
-            if after_rPr is not None:
-                after_vert = after_rPr.find(qn('w:vertAlign'))
-                if after_vert is not None:
-                    after_rPr.remove(after_vert)
-            run_elem.addnext(after_r)
-    
-    return True
-
-
-def _apply_subscript_ordinals(paragraph, ordinals, formatting_records, source_text):
-    _fr_ordinal_suffixes = re.compile(r'(\d+)(e|er|ère)\b')
-    _en_ordinal_suffixes = re.compile(r'(\d+)(th|st|nd|rd)\b')
+def _apply_ordinals(paragraph, ordinals, formatting_records, source_text, align_type, location=None):
     for ordinal in ordinals:
-        # Try to find the ordinal pattern in translated text
         found = False
         text = paragraph.text
-        for pattern in [_en_ordinal_suffixes, _fr_ordinal_suffixes]:
+        for pattern in [_EN_ORDINAL_SUFFIXES, _FR_ORDINAL_SUFFIXES]:
             for match in pattern.finditer(text):
                 full_match = match.group(0)
                 suffix = match.group(2)
@@ -432,7 +357,7 @@ def _apply_subscript_ordinals(paragraph, ordinals, formatting_records, source_te
                         run_end = char_offset + len(run.text)
                         if char_offset <= suffix_start < run_end:
                             local_offset = suffix_start - char_offset
-                            if _split_run_for_subscript(paragraph, run, suffix, offset=local_offset):
+                            if _split_run_for_vertical_align(paragraph, run, suffix, align_type, offset=local_offset):
                                 found = True
                                 break
                         char_offset = run_end
@@ -441,59 +366,44 @@ def _apply_subscript_ordinals(paragraph, ordinals, formatting_records, source_te
             if found:
                 break
         if not found:
-            formatting_records.append({
+            record = {
                 'original_text': source_text,
                 'full_paragraph': source_text,
-                'notes': f"Subscript ordinal '{ordinal}' could not be matched in translated text",
-            })
+                'notes': f"{align_type.capitalize()} ordinal '{ordinal}' could not be matched in translated text",
+            }
+            if location:
+                record['location'] = location
+            formatting_records.append(record)
+
+
+# Backward-compatible wrappers (used by tests)
+def _apply_subscript_ordinals(paragraph, ordinals, formatting_records, source_text):
+    _apply_ordinals(paragraph, ordinals, formatting_records, source_text, 'subscript')
 
 
 def _apply_superscript_ordinals(paragraph, ordinals, formatting_records, source_text):
-    _fr_ordinal_suffixes = re.compile(r'(\d+)(e|er|ère)\b')
-    _en_ordinal_suffixes = re.compile(r'(\d+)(th|st|nd|rd)\b')
-    for ordinal in ordinals:
-        found = False
-        text = paragraph.text
-        for pattern in [_en_ordinal_suffixes, _fr_ordinal_suffixes]:
-            for match in pattern.finditer(text):
-                full_match = match.group(0)
-                suffix = match.group(2)
-                if full_match == ordinal or ordinal.rstrip('thstndrd') == match.group(1):
-                    suffix_start = match.start(2)
-                    char_offset = 0
-                    for run in list(paragraph.runs):
-                        run_end = char_offset + len(run.text)
-                        if char_offset <= suffix_start < run_end:
-                            local_offset = suffix_start - char_offset
-                            if _split_run_for_superscript(paragraph, run, suffix, offset=local_offset):
-                                found = True
-                                break
-                        char_offset = run_end
-                    if found:
-                        break
-            if found:
-                break
-        if not found:
-            formatting_records.append({
-                'original_text': source_text,
-                'full_paragraph': source_text,
-                'notes': f"Superscript ordinal '{ordinal}' could not be matched in translated text",
-            })
+    _apply_ordinals(paragraph, ordinals, formatting_records, source_text, 'superscript')
 
 
-def apply_formatting_rules(paragraph, detected_patterns, formatting_records, source_text=None):
-    if source_text is None:
-        source_text = paragraph.text
-        
-    ib = detected_patterns["italic_brackets"]
+# ---------------------------------------------------------------------------
+# Formatting rules registry
+# ---------------------------------------------------------------------------
 
+def _rule_italic_brackets(paragraph, detected_patterns, formatting_records, source_text, location):
+    ib = detected_patterns.get("italic_brackets")
+    if not ib:
+        return
+    
     if ib["ambiguous_notes"]:
-        formatting_records.append({
+        record = {
             'original_text': source_text,
             'full_paragraph': source_text,
             'notes': ib["ambiguous_notes"],
-        })
-
+        }
+        if location:
+            record['location'] = location
+        formatting_records.append(record)
+    
     if ib["apply"]:
         text = paragraph.text
         matches = list(BRACKET_PATTERN.finditer(text))
@@ -502,24 +412,55 @@ def apply_formatting_rules(paragraph, detected_patterns, formatting_records, sou
         else:
             success = _try_italic_brackets_per_sentence(paragraph, ib["expected_count"])
             if not success:
-                formatting_records.append({
+                record = {
                     'original_text': "check formatting",
                     'full_paragraph': source_text,
                     'notes': (
                         "Italic bracket formatting could not be automatically applied "
                         "— bracket count mismatch after translation"
                     ),
-                })
-    
-    if detected_patterns.get("superscript_numbers"):
-        _apply_superscript_numbers(paragraph, detected_patterns["superscript_numbers"])
-    
-    if detected_patterns.get("subscript_ordinals"):
-        _apply_subscript_ordinals(paragraph, detected_patterns["subscript_ordinals"], formatting_records, source_text)
+                }
+                if location:
+                    record['location'] = location
+                formatting_records.append(record)
 
-    if detected_patterns.get("superscript_ordinals"):
-        _apply_superscript_ordinals(paragraph, detected_patterns["superscript_ordinals"], formatting_records, source_text)
 
+def _rule_superscript_numbers(paragraph, detected_patterns, formatting_records, source_text, location):
+    numbers = detected_patterns.get("superscript_numbers")
+    if numbers:
+        _apply_superscript_numbers(paragraph, numbers)
+
+
+def _rule_subscript_ordinals(paragraph, detected_patterns, formatting_records, source_text, location):
+    ordinals = detected_patterns.get("subscript_ordinals")
+    if ordinals:
+        _apply_ordinals(paragraph, ordinals, formatting_records, source_text, 'subscript', location)
+
+
+def _rule_superscript_ordinals(paragraph, detected_patterns, formatting_records, source_text, location):
+    ordinals = detected_patterns.get("superscript_ordinals")
+    if ordinals:
+        _apply_ordinals(paragraph, ordinals, formatting_records, source_text, 'superscript', location)
+
+
+FORMATTING_RULES = [
+    ("italic_brackets", _rule_italic_brackets),
+    ("superscript_numbers", _rule_superscript_numbers),
+    ("subscript_ordinals", _rule_subscript_ordinals),
+    ("superscript_ordinals", _rule_superscript_ordinals),
+]
+
+
+def apply_formatting_rules(paragraph, detected_patterns, formatting_records, source_text=None, location=None):
+    if source_text is None:
+        source_text = paragraph.text
+    for rule_name, rule_fn in FORMATTING_RULES:
+        rule_fn(paragraph, detected_patterns, formatting_records, source_text, location)
+
+
+# ---------------------------------------------------------------------------
+# Numeric detection and conversion
+# ---------------------------------------------------------------------------
 
 def _is_single_numeric(text):
     if re.search(r'\d/\d', text):

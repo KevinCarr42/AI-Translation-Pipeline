@@ -14,8 +14,7 @@ from scitrans.rules_based_replacements.token_utils import get_translation_value
 from scitrans.translate.models import create_translator
 from scitrans.translate.utils import split_into_chunks, reassemble_sentences, reassemble_paragraphs, normalize_apostrophes
 from scitrans.translate.word_formatting import apply_formatting_rules, is_numeric, convert_numeric, parse_formatted_string, FormattedRun, detect_patterns
-from scitrans.translate.word_notes import add_formatting_notes, has_hyperlinks, write_translations_notes
-
+from scitrans.translate.word_notes import add_formatting_notes, has_hyperlinks, write_notes_json, write_translations_notes
 
 _MC_NS = 'http://schemas.openxmlformats.org/markup-compatibility/2006'
 
@@ -49,12 +48,12 @@ def _reinsert_non_run_elements(paragraph, saved):
 def _collapse_runs_preserving_shapes(paragraph):
     p_elem = paragraph._element
     children = list(p_elem)
-
+    
     run_tag = qn('w:r')
-
+    
     merged_text = []
     run_group = []
-
+    
     def _flush_group():
         if not run_group:
             return
@@ -84,7 +83,7 @@ def _collapse_runs_preserving_shapes(paragraph):
                         t.text = tab_part
                         if tab_part[0] == ' ' or tab_part[-1] == ' ':
                             t.set(qn('xml:space'), 'preserve')
-
+    
     in_field = 0
     for child in children:
         if child.tag != run_tag:
@@ -92,7 +91,7 @@ def _collapse_runs_preserving_shapes(paragraph):
             run_group.clear()
             merged_text.clear()
             continue
-
+        
         # Skip runs that are part of a field code (PAGE numbers, etc.)
         fld_char = child.find(qn('w:fldChar'))
         if fld_char is not None:
@@ -107,13 +106,13 @@ def _collapse_runs_preserving_shapes(paragraph):
             continue
         if in_field > 0:
             continue
-
+        
         if _has_shape(child):
             _flush_group()
             run_group.clear()
             merged_text.clear()
             continue
-
+        
         # Collect text including line breaks from w:br elements
         run_text_parts = []
         for sub in child:
@@ -129,7 +128,7 @@ def _collapse_runs_preserving_shapes(paragraph):
         run_text = ''.join(run_text_parts)
         run_group.append(child)
         merged_text.append(run_text)
-
+    
     _flush_group()
 
 
@@ -228,27 +227,28 @@ def _translate_paragraph(
         use_cache=True,
         formatting_records=None,
         preferential_dict=None,
-        chunk_by="sentences"
+        chunk_by="sentences",
+        location=None
 ):
-    has_hl = has_hyperlinks(paragraph, formatting_records)
+    has_hl = has_hyperlinks(paragraph, formatting_records, location=location)
     detected_patterns = detect_patterns(paragraph)
-
+    
     has_fmt = _has_formatting_differences(paragraph)
     records_before = len(formatting_records) if formatting_records is not None else 0
     if has_fmt:
-        add_formatting_notes(paragraph, formatting_records, detected_patterns)
-
+        add_formatting_notes(paragraph, formatting_records, detected_patterns, location=location)
+    
     _collapse_runs_preserving_shapes(paragraph)
-
+    
     if _has_only_field_runs(paragraph):
         return idx
-
+    
     source_text = paragraph.text
     if not source_text:
         return idx
-
+    
     saved_elements = _extract_non_run_elements(paragraph)
-
+    
     translated_text = _chunk_and_translate(
         source_text,
         translation_manager,
@@ -261,13 +261,13 @@ def _translate_paragraph(
         chunk_by=chunk_by
     )
     paragraph.text = normalize_apostrophes(translated_text)
-
+    
     _reinsert_non_run_elements(paragraph, saved_elements)
-
-    apply_formatting_rules(paragraph, detected_patterns, formatting_records, source_text)
-
+    
+    apply_formatting_rules(paragraph, detected_patterns, formatting_records, source_text, location=location)
+    
     has_fmt_notes = (len(formatting_records) if formatting_records is not None else 0) > records_before
-
+    
     # Highlight runs in the translated document
     if has_hl or has_fmt_notes:
         color = WD_COLOR_INDEX.TURQUOISE
@@ -278,9 +278,9 @@ def _translate_paragraph(
         for run in paragraph.runs:
             if run.text and run.text.strip():
                 run.font.highlight_color = color
-
+    
     _convert_newlines_to_breaks(paragraph)
-
+    
     return idx + 1
 
 
@@ -338,7 +338,7 @@ def _apply_preferential_replacement(cell, match_translation):
 
 def _apply_ai_translation(cell, translation_manager, source_lang, target_lang,
                           use_find_replace, idx, use_cache, formatting_records,
-                          preferential_dict, chunk_by):
+                          preferential_dict, chunk_by, location=None):
     for paragraph in cell.paragraphs:
         idx = _translate_paragraph(
             paragraph,
@@ -350,7 +350,8 @@ def _apply_ai_translation(cell, translation_manager, source_lang, target_lang,
             use_cache=use_cache,
             formatting_records=formatting_records,
             preferential_dict=preferential_dict,
-            chunk_by=chunk_by
+            chunk_by=chunk_by,
+            location=location
         )
     return idx
 
@@ -366,7 +367,8 @@ def _translate_table_cell(
         formatting_records=None,
         preferential_dict=None,
         table_translations_dict=None,
-        chunk_by="sentences"
+        chunk_by="sentences",
+        location=None
 ):
     to_fr = target_lang == "fr"
     cell_text = cell.text
@@ -387,7 +389,7 @@ def _translate_table_cell(
         return _apply_ai_translation(
             cell, translation_manager, source_lang, target_lang,
             use_find_replace, idx, use_cache, formatting_records,
-            preferential_dict, chunk_by
+            preferential_dict, chunk_by, location=location
         )
     
     return idx
@@ -396,9 +398,9 @@ def _translate_table_cell(
 def _set_proofing_language(document, target_lang):
     locale_map = {'fr': 'fr-CA', 'en': 'en-CA'}
     locale_code = locale_map[target_lang]
-
+    
     elements = [document.element]
-
+    
     header_footer_attrs = [
         'header', 'footer',
         'first_page_header', 'first_page_footer',
@@ -414,7 +416,7 @@ def _set_proofing_language(document, target_lang):
                 continue
             seen_ids.add(id(hf._element))
             elements.append(hf._element)
-
+    
     for root_elem in elements:
         for r_elem in root_elem.iter(qn('w:r')):
             rPr = r_elem.find(qn('w:rPr'))
@@ -489,7 +491,8 @@ def translate_word_document(
         else:
             table_translations_dict = raw
     
-    for paragraph in document.paragraphs:
+    for para_idx, paragraph in enumerate(document.paragraphs):
+        location = {"section": "paragraphs", "index": para_idx}
         idx = _translate_paragraph(
             paragraph,
             translation_manager,
@@ -500,12 +503,14 @@ def translate_word_document(
             use_cache=use_cache,
             formatting_records=formatting_records,
             preferential_dict=preferential_dict,
-            chunk_by=chunk_by
+            chunk_by=chunk_by,
+            location=location
         )
     
-    for table in document.tables:
-        for row in table.rows:
-            for cell in row.cells:
+    for table_idx, table in enumerate(document.tables):
+        for row_idx, row in enumerate(table.rows):
+            for cell_idx, cell in enumerate(row.cells):
+                location = {"section": "tables", "table": table_idx, "row": row_idx, "cell": cell_idx}
                 idx = _translate_table_cell(
                     cell,
                     translation_manager,
@@ -517,7 +522,8 @@ def translate_word_document(
                     formatting_records=formatting_records,
                     preferential_dict=preferential_dict,
                     table_translations_dict=table_translations_dict,
-                    chunk_by=chunk_by
+                    chunk_by=chunk_by,
+                    location=location
                 )
     
     translated_hf_ids = set()
@@ -537,6 +543,7 @@ def translate_word_document(
                 continue
             translated_hf_ids.add(id(hf._element))
             for paragraph in hf.paragraphs:
+                location = {"section": "headers_footers", "type": attr}
                 idx = _translate_paragraph(
                     paragraph,
                     translation_manager,
@@ -547,11 +554,13 @@ def translate_word_document(
                     use_cache=use_cache,
                     formatting_records=formatting_records,
                     preferential_dict=preferential_dict,
-                    chunk_by=chunk_by
+                    chunk_by=chunk_by,
+                    location=location
                 )
             for table in hf.tables:
                 for row in table.rows:
                     for cell in row.cells:
+                        location = {"section": "headers_footers", "type": attr, "in_table": True}
                         idx = _translate_table_cell(
                             cell,
                             translation_manager,
@@ -563,14 +572,15 @@ def translate_word_document(
                             formatting_records=formatting_records,
                             preferential_dict=preferential_dict,
                             table_translations_dict=table_translations_dict,
-                            chunk_by=chunk_by
+                            chunk_by=chunk_by,
+                            location=location
                         )
     
     _set_proofing_language(document, target_lang)
     document.save(output_docx_file)
     
     if formatting_records:
-        notes_path = os.path.splitext(output_docx_file)[0] + '_translation_notes.docx'
-        write_translations_notes(formatting_records, notes_path)
+        notes_path = os.path.splitext(output_docx_file)[0] + '_translation_notes.json'
+        write_notes_json(formatting_records, notes_path)
     
     return output_docx_file

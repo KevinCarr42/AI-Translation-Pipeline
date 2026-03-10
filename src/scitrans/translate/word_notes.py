@@ -1,6 +1,6 @@
-from docx import Document
+import json
+
 from docx.oxml.ns import qn
-from lxml import etree
 from scitrans.translate.word_formatting import FormattedRun
 
 
@@ -27,7 +27,7 @@ def _is_auto_handled(formatted_run, detected_patterns):
     return False
 
 
-def add_formatting_notes(paragraph, formatting_records, detected_patterns=None):
+def add_formatting_notes(paragraph, formatting_records, detected_patterns=None, location=None):
     full_paragraph_text = paragraph.text
     
     for run in list(paragraph.runs):
@@ -36,15 +36,18 @@ def add_formatting_notes(paragraph, formatting_records, detected_patterns=None):
         if formatted_run.has_formatting and formatted_run.text.strip():
             if detected_patterns and _is_auto_handled(formatted_run, detected_patterns):
                 continue
-            formatting_records.append({
+            record = {
                 'original_text': run.text,
                 'full_paragraph': full_paragraph_text,
                 'notes': formatted_run.formatting_notes,
                 'type': 'formatting',
-            })
+            }
+            if location:
+                record['location'] = location
+            formatting_records.append(record)
 
 
-def has_hyperlinks(paragraph, formatting_records):
+def has_hyperlinks(paragraph, formatting_records, location=None):
     p_elem = paragraph._element
     hyperlink_elems = list(p_elem.findall(qn('w:hyperlink')))
     if not hyperlink_elems:
@@ -71,12 +74,15 @@ def has_hyperlinks(paragraph, formatting_records):
     # Add hyperlink notes
     full_paragraph_text = paragraph.text
     for original_text, url in hyperlink_data:
-        formatting_records.append({
+        record = {
             'original_text': original_text,
             'full_paragraph': full_paragraph_text,
             'notes': url,
-            'type': 'hyperlink',
-        })
+            'type': 'url',
+        }
+        if location:
+            record['location'] = location
+        formatting_records.append(record)
     
     return True
 
@@ -118,90 +124,62 @@ def _group_notes_by_paragraph(records):
     return groups
 
 
-def _get_cell_color(details_list):
+def _get_note_type(details_list):
     has_formatting = any(d.get('type') == 'formatting' for d in details_list)
-    has_hyperlink = any(d.get('type') == 'hyperlink' for d in details_list)
-    if has_formatting and has_hyperlink:
-        return 'BRIGHT_GREEN'
-    if has_hyperlink:
-        return 'TURQUOISE'
-    return 'YELLOW'
+    has_url = any(d.get('type') == 'url' for d in details_list)
+    if has_formatting and has_url:
+        return 'mixed'
+    if has_url:
+        return 'url'
+    return 'formatting'
 
 
-def _set_cell_shading(cell, color_name):
-    color_map = {
-        'YELLOW': 'FFFF00',
-        'TURQUOISE': '00FFFF',
-        'BRIGHT_GREEN': '00FF00',
-    }
-    hex_color = color_map.get(color_name, 'FFFF00')
-    tc = cell._tc
-    tcPr = tc.get_or_add_tcPr()
-    shading = tcPr.find(qn('w:shd'))
-    if shading is None:
-        shading = etree.SubElement(tcPr, qn('w:shd'))
-    shading.set(qn('w:val'), 'clear')
-    shading.set(qn('w:color'), 'auto')
-    shading.set(qn('w:fill'), hex_color)
-
-
-def _write_bulleted_details(cell, details_list):
-    from docx.shared import Pt
-    cell.text = ''
-    for i, detail in enumerate(details_list):
-        original = detail.get('original_text', '')
-        notes = detail.get('notes', '')
-        line = f'- "{original}": {notes}'
-        if i == 0:
-            paragraph = cell.paragraphs[0]
-            paragraph.text = line
-        else:
-            paragraph = cell.add_paragraph(line)
-        for run in paragraph.runs:
-            run.font.size = Pt(11)
-            run.font.name = 'Calibri'
-    
-    _set_cell_shading(cell, _get_cell_color(details_list))
-
-
-def write_translations_notes(translations_notes, output_path):
-    from docx.shared import Inches, Pt
-    
-    filtered = _filter_notes(translations_notes)
+def write_notes_json(formatting_records, output_path):
+    filtered = _filter_notes(formatting_records)
     if not filtered:
         return
     
     grouped = _group_notes_by_paragraph(filtered)
     
-    document = Document()
-    
-    # Set narrow margins
-    for section in document.sections:
-        section.top_margin = Inches(0.5)
-        section.bottom_margin = Inches(0.5)
-        section.left_margin = Inches(0.5)
-        section.right_margin = Inches(0.5)
-    
-    heading = document.add_heading('Formatting Notes', level=1)
-    
-    table = document.add_table(rows=1, cols=2)
-    table.style = 'Table Grid'
-    
-    header_cells = table.rows[0].cells
-    header_cells[0].text = 'Full Paragraph (source language)'
-    header_cells[1].text = 'Details'
-    for cell in header_cells:
-        for run in cell.paragraphs[0].runs:
-            run.font.size = Pt(11)
-            run.font.name = 'Calibri'
-            run.bold = True
+    paragraphs_section = []
+    tables_section = []
     
     for full_paragraph, details in grouped.items():
-        row_cells = table.add_row().cells
-        row_cells[0].text = full_paragraph
-        for run in row_cells[0].paragraphs[0].runs:
-            run.font.size = Pt(11)
-            run.font.name = 'Calibri'
-        _write_bulleted_details(row_cells[1], details)
+        # Determine which section based on location of first record that has one
+        location = None
+        for d in details:
+            if 'location' in d:
+                location = d['location']
+                break
+        
+        entry = {
+            'full_paragraph': full_paragraph,
+            'type': _get_note_type(details),
+            'notes': [
+                {
+                    'original_text': d.get('original_text', ''),
+                    'detail': d.get('notes', ''),
+                    'type': d.get('type', 'formatting'),
+                }
+                for d in details
+            ],
+        }
+        if location:
+            entry['location'] = location
+        
+        if location and location.get('section') == 'tables':
+            tables_section.append(entry)
+        else:
+            paragraphs_section.append(entry)
     
-    document.save(output_path)
+    output = {
+        'paragraphs': paragraphs_section,
+        'tables': tables_section,
+    }
+    
+    with open(output_path, 'w', encoding='utf-8') as f:
+        json.dump(output, f, indent=2, ensure_ascii=False)
+
+
+# Backward-compatible alias
+write_translations_notes = write_notes_json
