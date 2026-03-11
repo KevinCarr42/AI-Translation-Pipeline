@@ -2,7 +2,7 @@
 
 ### Leveraging AI for efficient and accurate translation of scientific reports
 
-<img src="docs/images/banner.png" width="1000">
+<img src="data/docs/images/banner.png" width="1000">
 
 ## Project Overview
 
@@ -56,15 +56,15 @@ transformation and create the training data set.
 
 **Many older documents lack both French and English text**
 
-<img src="docs/images/yearly_translated_pubs.png" width="1000">
+<img src="data/docs/images/yearly_translated_pubs.png" width="1000">
 
 **Published documents vary widely in length and quality**
 
-<img src="docs/images/similarity_vs_length.png" width="1000">
+<img src="data/docs/images/similarity_vs_length.png" width="1000">
 
 **An advanced matching algorithm was created to correlate French and English**
 
-<img src="docs/images/pathfinding.gif" width="1000">
+<img src="data/docs/images/pathfinding.gif" width="1000">
 
 ## Phase 2: Model Fine-Tuning
 
