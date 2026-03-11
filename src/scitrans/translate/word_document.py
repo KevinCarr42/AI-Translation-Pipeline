@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 import re
@@ -60,6 +61,32 @@ def _has_formatting_differences(paragraph):
     return any(run.text.strip() and FormattedRun.create(run) != first_format for run in paragraph.runs[1:])
 
 
+def _isolate_run_tabs(paragraph):
+    for run in list(paragraph.runs):
+        if '\t' in run.text and run.text != '\t':
+            parts = run.text.split('\t')
+            for i, part in enumerate(parts):
+                if part:
+                    new_r = copy.deepcopy(run._element)
+                    for child in list(new_r):
+                        if child.tag in (qn('w:t'), qn('w:tab')):
+                            new_r.remove(child)
+                    t = OxmlElement('w:t')
+                    t.text = part
+                    if part.startswith(' ') or part.endswith(' '):
+                        t.set(qn('xml:space'), 'preserve')
+                    new_r.append(t)
+                    run._element.addprevious(new_r)
+                if i < len(parts) - 1:
+                    tab_r = copy.deepcopy(run._element)
+                    for child in list(tab_r):
+                        if child.tag in (qn('w:t'), qn('w:tab')):
+                            tab_r.remove(child)
+                    tab_r.append(OxmlElement('w:tab'))
+                    run._element.addprevious(tab_r)
+            paragraph._element.remove(run._element)
+
+
 def _collapse_runs_preserving_shapes(paragraph):
     if len(paragraph.runs) < 2:
         return
@@ -74,7 +101,8 @@ def _collapse_runs_preserving_shapes(paragraph):
         has_special = (
                 next_elem.findall(qn('w:drawing')) or current_elem.findall(qn('w:drawing')) or
                 next_elem.findall(qn('w:fldChar')) or current_elem.findall(qn('w:fldChar')) or
-                next_elem.findall(qn('w:instrText')) or current_elem.findall(qn('w:instrText'))
+                next_elem.findall(qn('w:instrText')) or current_elem.findall(qn('w:instrText')) or
+                next_elem.findall(qn('w:tab')) or current_elem.findall(qn('w:tab'))
         )
         if has_special:
             current_run = next_run
@@ -171,6 +199,22 @@ def _convert_newlines_to_breaks(paragraph):
                     run._element.append(t)
 
 
+def _group_text_runs_between_tabs(paragraph):
+    groups = []
+    current_group = []
+    for run in paragraph.runs:
+        if run._element.findall(qn('w:tab')):
+            if current_group:
+                groups.append(current_group)
+                current_group = []
+            groups.append(None)
+        else:
+            current_group.append(run)
+    if current_group:
+        groups.append(current_group)
+    return groups
+
+
 def _translate_paragraph(
         paragraph, translation_manager, source_lang, target_lang,
         use_find_replace, idx, use_cache=True, formatting_records=None,
@@ -184,23 +228,46 @@ def _translate_paragraph(
     if has_fmt:
         add_formatting_notes(paragraph, formatting_records, detected_rules=detected, location=location)
     
-    _collapse_runs_preserving_shapes(paragraph)
-    
-    if _has_only_field_runs(paragraph):
-        return idx
-    
     source_text = paragraph.text
-    if not source_text:
+    if not source_text or not source_text.strip():
         return idx
     
     saved_elements = _extract_non_run_elements(paragraph)
     
-    translated_text = _chunk_and_translate(
-        source_text, translation_manager, source_lang, target_lang,
-        use_find_replace, idx, use_cache, preferential_dict=preferential_dict,
-        chunk_by=chunk_by
-    )
-    paragraph.text = normalize_apostrophes(translated_text)
+    _isolate_run_tabs(paragraph)
+    _collapse_runs_preserving_shapes(paragraph)
+    
+    if _has_only_field_runs(paragraph):
+        _reinsert_non_run_elements(paragraph, saved_elements)
+        return idx
+    
+    groups = _group_text_runs_between_tabs(paragraph)
+    has_tabs = any(g is None for g in groups)
+    
+    if has_tabs:
+        for group in groups:
+            if group is None:
+                continue
+            group_text = ''.join(run.text or '' for run in group)
+            if not group_text.strip():
+                continue
+            translated_segment = _chunk_and_translate(
+                group_text, translation_manager, source_lang, target_lang,
+                use_find_replace, idx, use_cache, preferential_dict=preferential_dict,
+                chunk_by=chunk_by
+            )
+            group[0].text = normalize_apostrophes(translated_segment)
+            for run in group[1:]:
+                run.text = ''
+    else:
+        full_text = paragraph.text
+        if full_text and full_text.strip():
+            translated_text = _chunk_and_translate(
+                full_text, translation_manager, source_lang, target_lang,
+                use_find_replace, idx, use_cache, preferential_dict=preferential_dict,
+                chunk_by=chunk_by
+            )
+            paragraph.text = normalize_apostrophes(translated_text)
     
     _reinsert_non_run_elements(paragraph, saved_elements)
     
