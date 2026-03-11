@@ -80,7 +80,7 @@ your-repo/
 
 ```
 
-## 7. Global `conftest.py` (The Template)
+## 9. Global `conftest.py` (The Template)
 
 Use this for shared resources like database engines, API clients, or mock user data.
 
@@ -122,7 +122,7 @@ class TestCalculator:
 
 ```
 
-### 3. Configuration (`pyproject.toml`)
+## 11. Configuration (`pyproject.toml`)
 
 Registering marks here prevents "unknown mark" warnings and enforces strict testing.
 
@@ -135,6 +135,31 @@ markers = [
     "serial",
 ]
 ```
+
+## 12. Testing Word Documents (The Hybrid Approach)
+
+Do not run the full `translate_word_document` pipeline to test a single formatting rule or regex. It is too slow and couples unrelated features. Use a two-tiered testing approach:
+
+* **Tier 1: In-Memory Unit Tests (Fast & Isolated)**
+  To test a `FormattingRule`, instantiate a blank `docx.Document()` in memory, add a paragraph with your test string, and pass it directly to the rule.
+
+  ```python
+  def test_superscript_rule():
+      doc = Document()
+      para = doc.add_paragraph("Test 50th percentile")
+      rule = SuperscriptOrdinalsRule()
+      
+      matches = rule.detect(para)
+      rule.apply(para, matches)
+      
+      assert para.runs[1].font.superscript is True
+  ```
+
+* **Tier 2: Pipeline Integration Tests (Slow & Comprehensive)**
+
+* Use the module-scoped translated fixture with a single, heavily loaded .docx file to test the interaction of components (e.g., ensuring headers, footers, tables, and notes JSON all generate correctly together).
+
+  * **Rule:** If you are testing how a specific translation error is handled, write an in-memory test. If you are testing where it ended up in the document, use the integration fixture.
 
 ## Project-Specific Conventions
 
