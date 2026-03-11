@@ -1,7 +1,7 @@
 import pytest
 from docx import Document
 from docx.oxml.ns import qn
-from scitrans.translate.word_formatting import _apply_superscript_ordinals, apply_formatting_rules
+from scitrans.translate.word_formatting import SuperscriptOrdinalsRule, apply_formatting_rules
 from scitrans.translate.word_notes import _group_notes_by_paragraph, write_notes_json
 from tests.conftest import run_word_translation, all_notes_text, notes_entry_count
 
@@ -260,8 +260,7 @@ def test_superscript_ordinals_french_targets_correct_position():
     para = doc.add_paragraph(
         "Cette note de bas de page ne doit pas entraîner. Les 50e ou 75e percentiles."
     )
-    formatting_records = []
-    _apply_superscript_ordinals(para, ['50th', '75th'], formatting_records, 'source')
+    SuperscriptOrdinalsRule().apply(para, ['50th', '75th'])
     
     full_text = ""
     superscripted_positions = []
@@ -371,17 +370,8 @@ def test_italic_brackets_with_extra_bracket_from_translation():
     )
     para = doc.add_paragraph(translated_text)
     
-    # Source had 3 italic brackets — simulate what detect_patterns would find
-    detected_patterns = {
-        "italic_brackets": {
-            "apply": True,
-            "expected_count": 3,
-            "ambiguous_notes": None,
-        }
-    }
-    
     formatting_records = []
-    apply_formatting_rules(para, detected_patterns, formatting_records, "source text")
+    apply_formatting_rules(para, formatting_records, "source text")
     
     # The species name brackets should have italic content
     has_italic = any(run.italic for run in para.runs if run.text.strip())

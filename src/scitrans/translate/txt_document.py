@@ -2,10 +2,9 @@ import logging
 import os
 
 from scitrans.translate.models import create_translator
-from scitrans.translate.utils import split_into_chunks, reassemble_sentences, reassemble_paragraphs, normalize_apostrophes
+from scitrans.translate.utils import split_into_chunks, reassemble_chunks, normalize_apostrophes
 
 logger = logging.getLogger(__name__)
-
 
 
 def translate_txt_document(
@@ -44,6 +43,7 @@ def translate_txt_document(
         )
     
     translated_chunks = []
+    next_idx = start_idx
     for i, (chunk, metadata) in enumerate(zip(chunks, chunk_metadata), start_idx + 1):
         if metadata.get('is_empty', False):
             translated_chunks.append('')
@@ -64,10 +64,7 @@ def translate_txt_document(
         translated_chunks.append(translated_text)
         next_idx = i
     
-    if chunk_by == "paragraphs":
-        translated_document = reassemble_paragraphs(translated_chunks, chunk_metadata)
-    else:
-        translated_document = reassemble_sentences(translated_chunks, chunk_metadata)
+    translated_document = reassemble_chunks(translated_chunks, chunk_metadata)
     
     with open(output_text_file, 'w', encoding='utf-8') as f:
         f.write(translated_document)

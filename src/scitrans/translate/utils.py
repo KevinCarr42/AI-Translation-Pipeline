@@ -1,28 +1,20 @@
 import re
 
+_PROTECTED_LABEL_PATTERN = re.compile(r'\b(Figure|Fig|Table|Tableau)\.?\s*\d+\.?', re.IGNORECASE)
+_PLACEHOLDER = '\x00'
+
 
 def normalize_apostrophes(text):
     return text.replace("'", "'").replace("'", "'")
 
 
-_PROTECTED_LABEL_PATTERN = re.compile(
-    r'\b(?:Figure|Fig|Table|Tableau)\.?\s*\d+\.?', re.IGNORECASE
-)
-_PLACEHOLDER = '\x00'
+def _protect_labels(match):
+    return match.group(0).replace('.', _PLACEHOLDER)
 
 
 def _split_into_sentences(text):
-    protected_positions = []
-    for match in _PROTECTED_LABEL_PATTERN.finditer(text):
-        for i, ch in enumerate(match.group()):
-            if ch == '.':
-                protected_positions.append(match.start() + i)
-    
-    chars = list(text)
-    for pos in protected_positions:
-        chars[pos] = _PLACEHOLDER
-    
-    sentences = re.split(r'(?<=[.!?])\s+', ''.join(chars))
+    protected_text = _PROTECTED_LABEL_PATTERN.sub(_protect_labels, text)
+    sentences = re.split(r'(?<=[.!?])\s+', protected_text)
     return [s.replace(_PLACEHOLDER, '.') for s in sentences]
 
 
@@ -34,19 +26,14 @@ def split_by_sentences(text):
     for line_idx, line in enumerate(lines):
         if not line.strip():
             chunks.append('')
-            chunk_metadata.append({
-                'line_idx': line_idx,
-                'sent_idx': 0,
-                'is_last_in_line': True,
-                'is_empty': True
-            })
+            chunk_metadata.append({'line_idx': line_idx, 'sent_idx': 0, 'is_last_in_line': True, 'is_empty': True})
             continue
         
         sentences = _split_into_sentences(line)
         for sent_idx, sentence in enumerate(sentences):
-            sentence = sentence.strip()
-            if sentence:
-                chunks.append(sentence)
+            stripped = sentence.strip()
+            if stripped:
+                chunks.append(stripped)
                 chunk_metadata.append({
                     'line_idx': line_idx,
                     'sent_idx': sent_idx,
@@ -58,10 +45,7 @@ def split_by_sentences(text):
 
 
 def split_by_paragraphs(text):
-    # Notes:
-    #  still get >512 token issues with 1000 characters, use 600 to be conservative
     MAX_CHAR = 600
-    
     lines = text.split('\n')
     chunks = []
     chunk_metadata = []
@@ -70,24 +54,19 @@ def split_by_paragraphs(text):
     for line_idx, line in enumerate(lines):
         if not line.strip():
             chunks.append('')
-            chunk_metadata.append({
-                'line_idx': line_idx,
-                'para_idx': para_idx,
-                'is_empty': True
-            })
+            chunk_metadata.append({'line_idx': line_idx, 'para_idx': para_idx, 'is_empty': True})
             para_idx += 1
             continue
         
         if len(line) <= MAX_CHAR:
             chunks.append(line)
-            chunk_metadata.append({
-                'line_idx': line_idx,
-                'para_idx': para_idx,
-                'is_last_in_line': True,
-                'is_empty': False
-            })
+            chunk_metadata.append({'line_idx': line_idx, 'para_idx': para_idx, 'is_last_in_line': True, 'is_empty': False})
         else:
-            chunks, chunk_metadata = split_by_sentences(line)
+            s_chunks, s_meta = split_by_sentences(line)
+            for meta in s_meta:
+                meta['para_idx'] = para_idx
+            chunks.extend(s_chunks)
+            chunk_metadata.extend(s_meta)
     
     return chunks, chunk_metadata
 
@@ -95,37 +74,25 @@ def split_by_paragraphs(text):
 def split_into_chunks(text, chunk_by="sentences"):
     if chunk_by == "paragraphs":
         return split_by_paragraphs(text)
-    else:
-        return split_by_sentences(text)
+    return split_by_sentences(text)
+
+
+def reassemble_chunks(translated_chunks, chunk_metadata):
+    lines_dict = {}
+    for chunk, metadata in zip(translated_chunks, chunk_metadata):
+        line_idx = metadata['line_idx']
+        lines_dict.setdefault(line_idx, []).append(chunk)
+    
+    for line_idx, parts in lines_dict.items():
+        if isinstance(parts, list):
+            lines_dict[line_idx] = ' '.join(parts)
+    
+    return '\n'.join(lines_dict[i] for i in sorted(lines_dict.keys()))
 
 
 def reassemble_sentences(translated_chunks, chunk_metadata):
-    lines_dict = {}
-    for i, (translated_chunk, metadata) in enumerate(zip(translated_chunks, chunk_metadata)):
-        line_idx = metadata['line_idx']
-        if line_idx not in lines_dict:
-            lines_dict[line_idx] = []
-        
-        lines_dict[line_idx].append(translated_chunk)
-    
-    for line_idx in lines_dict:
-        if isinstance(lines_dict[line_idx], list):
-            lines_dict[line_idx] = ' '.join(lines_dict[line_idx])
-    
-    return '\n'.join(lines_dict[i] for i in sorted(lines_dict.keys()))
+    return reassemble_chunks(translated_chunks, chunk_metadata)
 
 
 def reassemble_paragraphs(translated_chunks, chunk_metadata):
-    lines_dict = {}
-    for translated_chunk, metadata in zip(translated_chunks, chunk_metadata):
-        line_idx = metadata['line_idx']
-        if line_idx not in lines_dict:
-            lines_dict[line_idx] = []
-        
-        lines_dict[line_idx].append(translated_chunk)
-    
-    for line_idx in lines_dict:
-        if isinstance(lines_dict[line_idx], list):
-            lines_dict[line_idx] = ' '.join(lines_dict[line_idx])
-    
-    return '\n'.join(lines_dict[i] for i in sorted(lines_dict.keys()))
+    return reassemble_chunks(translated_chunks, chunk_metadata)
