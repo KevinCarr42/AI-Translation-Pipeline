@@ -1,7 +1,7 @@
 import pytest
 from docx import Document
 from docx.oxml.ns import qn
-from scitrans.translate.word_formatting import SuperscriptOrdinalsRule, apply_formatting_rules
+from scitrans.translate.word_formatting import SuperscriptOrdinalsRule, ItalicBracketsRule, apply_formatting_rules
 from scitrans.translate.word_notes import _group_notes_by_paragraph, write_notes_json
 from tests.conftest import run_word_translation, all_notes_text, notes_entry_count
 
@@ -331,6 +331,15 @@ class TestGroupNotesByParagraph:
         total_rows = sum(len(v) for v in groups.values())
         assert total_rows == 1, f"Exact duplicates should collapse to 1, got {total_rows}"
     
+    def test_same_notes_no_location_collapsed(self):
+        records = [
+            {'original_text': 'text', 'full_paragraph': 'Same paragraph', 'notes': 'italic', 'type': 'formatting'},
+            {'original_text': 'text', 'full_paragraph': 'Same paragraph', 'notes': 'italic', 'type': 'formatting'},
+        ]
+        groups = _group_notes_by_paragraph(records)
+        total_rows = sum(len(v) for v in groups.values())
+        assert total_rows == 1, f"Same notes without location should collapse to 1, got {total_rows}"
+
     def test_same_text_different_locations_not_collapsed(self):
         # Same paragraph text in body and table cell should get separate notes entries
         records = [
@@ -369,17 +378,21 @@ def test_italic_brackets_with_extra_bracket_from_translation():
         "Redfish (Sebastes spp.)."
     )
     para = doc.add_paragraph(translated_text)
-    
+
+    # Source had 3 italic brackets — pass detected patterns from source
+    italic_rule = ItalicBracketsRule()
+    detected = {italic_rule: 3}
+
     formatting_records = []
-    apply_formatting_rules(para, formatting_records, "source text")
-    
+    apply_formatting_rules(para, formatting_records, "source text", detected=detected)
+
     # The species name brackets should have italic content
     has_italic = any(run.italic for run in para.runs if run.text.strip())
     assert has_italic, (
         "Italic bracket rule should still apply italic to species brackets "
         "even when translation adds extra non-species brackets"
     )
-    
+
     # Should NOT have a "check formatting" note for species brackets
     check_notes = [
         r for r in formatting_records
@@ -389,3 +402,39 @@ def test_italic_brackets_with_extra_bracket_from_translation():
         f"Should not produce 'check formatting' note when species brackets "
         f"are clearly identifiable. Got: {check_notes}"
     )
+
+
+def test_italic_brackets_fewer_than_expected_produces_note():
+    doc = Document()
+    para = doc.add_paragraph("Only one bracket (species name) in the text.")
+
+    italic_rule = ItalicBracketsRule()
+    detected = {italic_rule: 3}
+
+    formatting_records = []
+    apply_formatting_rules(para, formatting_records, "source text", detected=detected)
+
+    check_notes = [
+        r for r in formatting_records
+        if 'check formatting' in r.get('original_text', '')
+    ]
+    assert len(check_notes) == 1, (
+        f"Should produce 'check formatting' note when fewer brackets than expected. Got: {check_notes}"
+    )
+
+
+def test_italic_brackets_exact_count_applies_correctly():
+    doc = Document()
+    para = doc.add_paragraph("Species include (Gadus morhua) and (Sebastes spp.).")
+
+    italic_rule = ItalicBracketsRule()
+    detected = {italic_rule: 2}
+
+    formatting_records = []
+    apply_formatting_rules(para, formatting_records, "source text", detected=detected)
+
+    has_italic = any(run.italic for run in para.runs if run.text.strip())
+    assert has_italic, "Italic should be applied when bracket count matches exactly"
+
+    check_notes = [r for r in formatting_records if 'check formatting' in r.get('original_text', '')]
+    assert len(check_notes) == 0, "No notes should be produced when count matches"

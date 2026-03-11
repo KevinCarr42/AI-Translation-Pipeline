@@ -68,14 +68,21 @@ def _filter_notes(records):
     return filtered
 
 
+def _location_section(record):
+    location = record.get('location')
+    if not location:
+        return None
+    return (location.get('section'), location.get('index'), location.get('table'), location.get('row'), location.get('cell'))
+
+
 def _group_notes_by_paragraph(records):
     groups = {}
     for record in records:
         key = record.get('full_paragraph', '')
         if key not in groups:
             groups[key] = []
-        dedup_key = record.get('notes', '')
-        existing = [r.get('notes', '') for r in groups[key]]
+        dedup_key = (record.get('notes', ''), _location_section(record))
+        existing = [(r.get('notes', ''), _location_section(r)) for r in groups[key]]
         if dedup_key not in existing:
             groups[key].append(record)
     return groups
@@ -133,10 +140,10 @@ def write_notes_json(formatting_records, output_path):
 
 def add_formatting_notes(paragraph, formatting_records, detected_rules=None, location=None):
     full_paragraph_text = paragraph.text
-
+    
     for run in list(paragraph.runs):
         formatted_run = FormattedRun.create(run)
-
+        
         if formatted_run.has_formatting and formatted_run.text.strip():
             if detected_rules and RuleRegistry.is_auto_handled(formatted_run, detected_rules):
                 continue

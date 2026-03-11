@@ -66,20 +66,20 @@ def _collapse_runs_preserving_shapes(paragraph):
     p_element = paragraph._element
     runs = list(paragraph.runs)
     current_run = runs[0]
-
+    
     for next_run in runs[1:]:
         current_elem = current_run._element
         next_elem = next_run._element
-
+        
         has_special = (
-            next_elem.findall(qn('w:drawing')) or current_elem.findall(qn('w:drawing')) or
-            next_elem.findall(qn('w:fldChar')) or current_elem.findall(qn('w:fldChar')) or
-            next_elem.findall(qn('w:instrText')) or current_elem.findall(qn('w:instrText'))
+                next_elem.findall(qn('w:drawing')) or current_elem.findall(qn('w:drawing')) or
+                next_elem.findall(qn('w:fldChar')) or current_elem.findall(qn('w:fldChar')) or
+                next_elem.findall(qn('w:instrText')) or current_elem.findall(qn('w:instrText'))
         )
         if has_special:
             current_run = next_run
             continue
-
+        
         if FormattedRun.create(current_run) == FormattedRun.create(next_run):
             current_run.text += next_run.text
             p_element.remove(next_run._element)
@@ -180,7 +180,7 @@ def _translate_paragraph(
     detected = RuleRegistry.detect_all(paragraph)
     has_fmt = _has_formatting_differences(paragraph)
     records_before = len(formatting_records) if formatting_records is not None else 0
-
+    
     if has_fmt:
         add_formatting_notes(paragraph, formatting_records, detected_rules=detected, location=location)
     
@@ -230,12 +230,12 @@ def _translate_table_cell(
 ):
     to_fr = target_lang == "fr"
     cell_text = cell.text
-
+    
     if not cell_text or not cell_text.strip():
         return idx
-
+    
     stripped = cell_text.strip()
-
+    
     if config.NUMERIC_CONVERSION_CONFIG.get("enabled") and is_numeric(stripped):
         converted = convert_numeric(stripped, to_fr=to_fr)
         for paragraph in cell.paragraphs:
@@ -287,7 +287,7 @@ def _translate_table_cell(
                 chunk_by=chunk_by, location=location
             )
         return idx
-
+    
     return idx
 
 
@@ -311,9 +311,9 @@ def _find_preferential_match(stripped, source_lang, preferential_dict):
 def _set_proofing_language(document, target_lang):
     locale_map = {'fr': 'fr-CA', 'en': 'en-CA'}
     locale_code = locale_map[target_lang]
-
+    
     elements = [document.element]
-
+    
     header_footer_attrs = [
         'header', 'footer',
         'first_page_header', 'first_page_footer',
@@ -327,7 +327,7 @@ def _set_proofing_language(document, target_lang):
                 continue
             seen_ids.add(id(hf._element))
             elements.append(hf._element)
-
+    
     for root_elem in elements:
         for r_elem in root_elem.iter(qn('w:r')):
             rPr = r_elem.find(qn('w:rPr'))

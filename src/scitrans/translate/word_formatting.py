@@ -70,7 +70,7 @@ class RuleRegistry:
                 success = rule.apply(paragraph, matches)
                 if not success or getattr(rule, 'always_note', False):
                     rule.add_notes(formatting_records, source_text, location)
-
+    
     @classmethod
     def detect_all(cls, paragraph):
         detected = {}
@@ -79,14 +79,14 @@ class RuleRegistry:
             if matches is not None and matches != []:
                 detected[rule] = matches
         return detected
-
+    
     @classmethod
     def apply_detected(cls, paragraph, detected, formatting_records, source_text, location):
         for rule, matches in detected.items():
             success = rule.apply(paragraph, matches)
             if not success or getattr(rule, 'always_note', False):
                 rule.add_notes(formatting_records, source_text, location)
-
+    
     @classmethod
     def is_auto_handled(cls, formatted_run, detected_rules):
         for rule in detected_rules:
@@ -178,10 +178,10 @@ def _split_run_for_vertical_align(paragraph, run, text_fragment, align_type, off
 class SuperscriptNumbersRule(FormattingRule):
     def detect(self, paragraph):
         return [run.text.strip() for run in paragraph.runs if run.font.superscript and run.text.strip() and is_numeric(run.text.strip())]
-
+    
     def handles_run(self, formatted_run):
         return formatted_run.superscript and is_numeric(formatted_run.text.strip())
-
+    
     def apply(self, paragraph, matches):
         for num in matches:
             for run in list(paragraph.runs):
@@ -194,7 +194,7 @@ class SuperscriptNumbersRule(FormattingRule):
 @RuleRegistry.register
 class SubscriptOrdinalsRule(FormattingRule):
     note_message = "Subscript ordinal could not be matched in translated text"
-
+    
     def detect(self, paragraph):
         _ordinal_suffixes = {'th', 'st', 'nd', 'rd'}
         matches = []
@@ -205,11 +205,11 @@ class SubscriptOrdinalsRule(FormattingRule):
                 if prev_text and prev_text[-1].isdigit():
                     matches.append(prev_text.split()[-1] + run.text.strip())
         return matches
-
+    
     def handles_run(self, formatted_run):
         _suffixes = {'th', 'st', 'nd', 'rd'}
         return formatted_run.subscript and formatted_run.text.strip().lower() in _suffixes
-
+    
     def apply(self, paragraph, matches):
         all_found = True
         for ordinal in matches:
@@ -240,7 +240,7 @@ class SubscriptOrdinalsRule(FormattingRule):
 @RuleRegistry.register
 class SuperscriptOrdinalsRule(FormattingRule):
     note_message = "Superscript ordinal could not be matched in translated text"
-
+    
     def detect(self, paragraph):
         _ordinal_suffixes = {'th', 'st', 'nd', 'rd'}
         matches = []
@@ -251,11 +251,11 @@ class SuperscriptOrdinalsRule(FormattingRule):
                 if prev_text and prev_text[-1].isdigit():
                     matches.append(prev_text.split()[-1] + run.text.strip())
         return matches
-
+    
     def handles_run(self, formatted_run):
         _suffixes = {'th', 'st', 'nd', 'rd'}
         return formatted_run.superscript and formatted_run.text.strip().lower() in _suffixes
-
+    
     def apply(self, paragraph, matches):
         all_found = True
         for ordinal in matches:
@@ -287,7 +287,7 @@ class SuperscriptOrdinalsRule(FormattingRule):
 class ItalicBracketsRule(FormattingRule):
     def handles_run(self, formatted_run):
         return formatted_run.italic and not formatted_run.bold and not formatted_run.superscript and not formatted_run.subscript
-
+    
     def add_notes(self, formatting_records, source_text, location):
         record = {
             'original_text': 'check formatting',
@@ -297,7 +297,7 @@ class ItalicBracketsRule(FormattingRule):
         if location:
             record['location'] = location
         formatting_records.append(record)
-
+    
     def detect(self, paragraph):
         runs = paragraph.runs
         merged = []
@@ -339,8 +339,6 @@ class ItalicBracketsRule(FormattingRule):
                 any_partial = True
         
         if any_partial:
-            self.note_message = "Italic bracket formatting could not be automatically applied — partial italic detected in bracketed text"
-            self.always_note = True
             return None
         
         if all_italic_count > 0:
@@ -355,9 +353,21 @@ class ItalicBracketsRule(FormattingRule):
             return True
         
         sentences = _SENTENCE_BOUNDARY.split(text)
-        total_found = sum(len(BRACKET_PATTERN.findall(s)) for s in sentences)
+        sentence_counts = [len(BRACKET_PATTERN.findall(s)) for s in sentences]
+        total_found = sum(sentence_counts)
         
-        if total_found != expected_count:
+        if total_found == expected_count:
+            apply_indices = set(range(len(sentences)))
+        elif total_found > expected_count:
+            apply_indices = set()
+            for i, count in enumerate(sentence_counts):
+                if count == expected_count:
+                    apply_indices = {i}
+                    break
+        else:
+            apply_indices = set()
+        
+        if not apply_indices:
             self.note_message = "Italic bracket formatting could not be automatically applied — bracket count mismatch after translation"
             return False
         
@@ -366,7 +376,7 @@ class ItalicBracketsRule(FormattingRule):
             if i > 0:
                 parts.append(FormattedRun(text=" "))
             s_matches = list(BRACKET_PATTERN.finditer(sentence))
-            if s_matches:
+            if s_matches and i in apply_indices:
                 parts.extend(self._build_parts(sentence, s_matches))
             else:
                 parts.append(FormattedRun(text=sentence))
@@ -515,4 +525,3 @@ def apply_formatting_rules(paragraph, formatting_records, source_text=None, loca
         RuleRegistry.apply_detected(paragraph, detected, formatting_records, source_text, location)
     else:
         RuleRegistry.apply_all(paragraph, formatting_records, source_text, location)
-
