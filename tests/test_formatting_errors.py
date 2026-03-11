@@ -1,8 +1,11 @@
 import pytest
 from docx import Document
+from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+
+from scitrans.translate.word_document import _translate_paragraph, _collapse_runs_preserving_shapes
 from scitrans.translate.word_formatting import SuperscriptOrdinalsRule, ItalicBracketsRule, apply_formatting_rules
-from scitrans.translate.word_notes import _group_notes_by_paragraph, write_notes_json
+from scitrans.translate.word_notes import _group_notes_by_paragraph
 from tests.conftest import run_word_translation, all_notes_text, notes_entry_count
 
 FIXTURE = 'test_formatting_errors_en.docx'
@@ -11,6 +14,11 @@ FIXTURE = 'test_formatting_errors_en.docx'
 @pytest.fixture(scope="module")
 def translated():
     return run_word_translation(FIXTURE, 'en')
+
+
+@pytest.fixture
+def empty_doc():
+    return Document()
 
 
 # ---------------------------------------------------------------------------
@@ -80,6 +88,89 @@ def test_page_numbering_is_auto_updating(translated):
     assert has_page_field, (
         "Footer should contain a PAGE field code for auto-updating page numbers"
     )
+
+
+def test_first_page_footer_preserves_tab_alignment(translated):
+    doc, _, _ = translated
+    first_page_footer = doc.sections[0].first_page_footer
+    
+    target_para = next((p for p in first_page_footer.paragraphs if p._element.findall('.//' + qn('w:drawing'))), None)
+    assert target_para is not None, "Could not find a paragraph with a drawing in the footer"
+    
+    elements_in_order = []
+    for run in target_para._element.findall(qn('w:r')):
+        for child in run:
+            if child.tag == qn('w:t') and child.text and child.text.strip():
+                elements_in_order.append('text')
+            elif child.tag == qn('w:tab'):
+                elements_in_order.append('tab')
+            elif child.tag == qn('w:drawing'):
+                elements_in_order.append('drawing')
+    
+    assert 'drawing' in elements_in_order, "Drawing not found in runs"
+    drawing_idx = elements_in_order.index('drawing')
+    
+    assert drawing_idx > 0, "Drawing is the first element, expected text and tab before it"
+    assert elements_in_order[drawing_idx - 1] == 'tab', (
+        f"Expected a tab immediately before the image. "
+        f"Full sequence: {elements_in_order}"
+    )
+
+
+def test_collapse_runs_preserves_tabs(empty_doc):
+    para = empty_doc.add_paragraph()
+    
+    para.add_run("Left")
+    para.add_run("\t")
+    para.add_run("Right")
+    
+    _collapse_runs_preserving_shapes(para)
+    
+    assert len(para.runs) == 3, f"Expected 3 isolated runs, got {len(para.runs)}"
+    assert len(para.runs[1]._element.findall(qn('w:tab'))) == 1
+
+
+def test_collapse_runs_preserves_tabs_v2(empty_doc):
+    para = empty_doc.add_paragraph()
+    
+    para.add_run("Left")
+    para.add_run("\tRight")
+    
+    _collapse_runs_preserving_shapes(para)
+    
+    # assert len(para.runs) == 3, f"Expected 3 isolated runs, got {len(para.runs)}"  # TODO future behaviour
+    assert len(para.runs[1]._element.findall(qn('w:tab'))) == 1
+
+
+def test_translate_paragraph_preserves_inline_tabs(empty_doc, mock_translator):
+    # Simulate the paragraph state after _collapse_runs_preserving_shapes
+    para = empty_doc.add_paragraph()
+    para.add_run("Left text")
+    
+    tab_run = para.add_run()
+    tab_run._element.append(OxmlElement('w:tab'))
+    
+    para.add_run("Right text")
+    
+    _translate_paragraph(
+        paragraph=para,
+        translation_manager=mock_translator,
+        source_lang="en",
+        target_lang="fr",
+        use_find_replace=False,
+        idx=1,
+        use_cache=False,
+        formatting_records=[],
+        preferential_dict=None,
+        chunk_by="sentences",
+        location=None
+    )
+    
+    # Verify the tab run was skipped and preserved, while text runs were translated
+    assert len(para.runs) == 3
+    assert len(para.runs[1]._element.findall(qn('w:tab'))) == 1
+    assert "TR:" in para.runs[0].text
+    assert "TR:" in para.runs[2].text
 
 
 # ---------------------------------------------------------------------------
@@ -339,7 +430,7 @@ class TestGroupNotesByParagraph:
         groups = _group_notes_by_paragraph(records)
         total_rows = sum(len(v) for v in groups.values())
         assert total_rows == 1, f"Same notes without location should collapse to 1, got {total_rows}"
-
+    
     def test_same_text_different_locations_not_collapsed(self):
         # Same paragraph text in body and table cell should get separate notes entries
         records = [
@@ -378,21 +469,21 @@ def test_italic_brackets_with_extra_bracket_from_translation():
         "Redfish (Sebastes spp.)."
     )
     para = doc.add_paragraph(translated_text)
-
+    
     # Source had 3 italic brackets — pass detected patterns from source
     italic_rule = ItalicBracketsRule()
     detected = {italic_rule: 3}
-
+    
     formatting_records = []
     apply_formatting_rules(para, formatting_records, "source text", detected=detected)
-
+    
     # The species name brackets should have italic content
     has_italic = any(run.italic for run in para.runs if run.text.strip())
     assert has_italic, (
         "Italic bracket rule should still apply italic to species brackets "
         "even when translation adds extra non-species brackets"
     )
-
+    
     # Should NOT have a "check formatting" note for species brackets
     check_notes = [
         r for r in formatting_records
@@ -407,13 +498,13 @@ def test_italic_brackets_with_extra_bracket_from_translation():
 def test_italic_brackets_fewer_than_expected_produces_note():
     doc = Document()
     para = doc.add_paragraph("Only one bracket (species name) in the text.")
-
+    
     italic_rule = ItalicBracketsRule()
     detected = {italic_rule: 3}
-
+    
     formatting_records = []
     apply_formatting_rules(para, formatting_records, "source text", detected=detected)
-
+    
     check_notes = [
         r for r in formatting_records
         if 'check formatting' in r.get('original_text', '')
@@ -426,15 +517,15 @@ def test_italic_brackets_fewer_than_expected_produces_note():
 def test_italic_brackets_exact_count_applies_correctly():
     doc = Document()
     para = doc.add_paragraph("Species include (Gadus morhua) and (Sebastes spp.).")
-
+    
     italic_rule = ItalicBracketsRule()
     detected = {italic_rule: 2}
-
+    
     formatting_records = []
     apply_formatting_rules(para, formatting_records, "source text", detected=detected)
-
+    
     has_italic = any(run.italic for run in para.runs if run.text.strip())
     assert has_italic, "Italic should be applied when bracket count matches exactly"
-
+    
     check_notes = [r for r in formatting_records if 'check formatting' in r.get('original_text', '')]
     assert len(check_notes) == 0, "No notes should be produced when count matches"

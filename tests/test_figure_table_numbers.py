@@ -1,6 +1,5 @@
 import os
 import tempfile
-import pytest
 from docx import Document
 from scitrans.translate.txt_document import translate_txt_document
 from scitrans.translate.word_document import translate_word_document
