@@ -11,5 +11,7 @@ def print_timing(message):
             result = func(*args, **kwargs)
             print(f"→ done in {(time.perf_counter() - t0) / 60:.2f} min")
             return result
+        
         return wrapper
+    
     return decorator

@@ -3,7 +3,8 @@ import spacy
 
 from scitrans.rules_based_replacements.token_utils import (
     create_replacement_token, load_translations, get_search_patterns,
-    get_translation_value, build_english_to_french_lookup
+    get_translation_value, build_english_to_french_lookup,
+    normalize_translations
 )
 
 _spacy_models = {}
@@ -69,6 +70,7 @@ def preprocess_for_translation(text, translations_file, source_lang='fr'):
     else:
         translations = translations_data
     
+    translations = normalize_translations(translations)
     patterns = get_search_patterns(translations, source_lang)
     
     en_to_fr_lookup = None

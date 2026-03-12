@@ -17,7 +17,7 @@ from scitrans.translate.word_formatting import FormattedRun
 from scitrans.translate.word_formatting import apply_formatting_rules, RuleRegistry
 from scitrans.translate.word_notes import add_formatting_notes, extract_hyperlink_notes, write_notes_json, json_to_word_tables
 from scitrans.translate.word_formatting import is_numeric, convert_numeric, parse_formatted_string
-from scitrans.rules_based_replacements.token_utils import get_translation_value
+from scitrans.rules_based_replacements.token_utils import get_translation_value, normalize_translations
 
 _MC_NS = 'http://schemas.openxmlformats.org/markup-compatibility/2006'
 
@@ -361,6 +361,7 @@ def _translate_table_cell(
 def _find_preferential_match(stripped, source_lang, preferential_dict):
     lookup_key = stripped.lower()
     pref_translations = preferential_dict.get("translations", preferential_dict)
+    pref_translations = normalize_translations(pref_translations)
     for category, terms in pref_translations.items():
         for term_key, term_data in terms.items():
             if term_key.lower() == lookup_key:

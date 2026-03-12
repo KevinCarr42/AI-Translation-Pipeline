@@ -20,8 +20,6 @@ TRAINING_DATA_OUTPUT = EXTERNAL_DATA_DIR / "pipeline_training_data.jsonl"
 TESTING_DATA_OUTPUT = EXTERNAL_DATA_DIR / "pipeline_testing_data.jsonl"
 
 # translations folders
-# TODO: update when refactoring and debugging is complete
-# PREFERENTIAL_JSON_PATH = EXTERNAL_DATA_DIR / "preferential_translations.json"
 PREFERENTIAL_JSON_PATH = INTERNAL_DATA_DIR / "preferential_translations.json"
 
 TABLE_TRANSLATIONS_JSON_PATH = EXTERNAL_DATA_DIR / "table_translations.json"
