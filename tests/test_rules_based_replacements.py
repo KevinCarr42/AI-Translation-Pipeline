@@ -557,3 +557,202 @@ class TestLoadTranslations:
         data = load_translations(str(p))
         assert 'translations' in data
         assert 'nomenclature' in data['translations']
+
+
+# ---------------------------------------------------------------------------
+# Real JSON integration — validates the actual data file works with the code
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(scope="module")
+def real_translations():
+    from scitrans import config
+    return load_translations(str(config.PREFERENTIAL_JSON_PATH))
+
+
+@pytest.fixture(scope="module")
+def real_translations_inner(real_translations):
+    if 'translations' in real_translations:
+        return real_translations['translations']
+    return real_translations
+
+
+class TestRealJsonStructure:
+    def test_file_loads_without_error(self, real_translations):
+        assert real_translations is not None
+    
+    def test_has_metadata_and_translations(self, real_translations):
+        assert 'metadata' in real_translations
+        assert 'translations' in real_translations
+    
+    def test_has_all_categories(self, real_translations_inner):
+        assert 'nomenclature' in real_translations_inner
+        assert 'taxon' in real_translations_inner
+        assert 'acronym' in real_translations_inner
+        assert 'site' in real_translations_inner
+    
+    def test_categories_are_non_empty(self, real_translations_inner):
+        for category, entries in real_translations_inner.items():
+            assert len(entries) > 0, f"{category} is empty"
+
+
+class TestRealJsonSearchPatterns:
+    def test_french_patterns_no_errors(self, real_translations_inner):
+        patterns = get_search_patterns(real_translations_inner, source_lang='fr')
+        assert set(patterns.keys()) == {'nomenclature', 'taxon', 'acronym', 'site'}
+        for category, terms in patterns.items():
+            assert len(terms) > 0, f"no French patterns for {category}"
+    
+    def test_english_patterns_no_errors(self, real_translations_inner):
+        patterns = get_search_patterns(real_translations_inner, source_lang='en')
+        assert set(patterns.keys()) == {'nomenclature', 'taxon', 'acronym', 'site'}
+        for category, terms in patterns.items():
+            assert len(terms) > 0, f"no English patterns for {category}"
+    
+    def test_french_patterns_contain_known_term(self, real_translations_inner):
+        patterns = get_search_patterns(real_translations_inner, source_lang='fr')
+        assert 'surveillance acoustique' in patterns['nomenclature']
+    
+    def test_english_patterns_contain_known_term(self, real_translations_inner):
+        patterns = get_search_patterns(real_translations_inner, source_lang='en')
+        assert 'acoustic monitoring' in patterns['nomenclature']
+    
+    def test_patterns_sorted_longest_first(self, real_translations_inner):
+        patterns = get_search_patterns(real_translations_inner, source_lang='fr')
+        for category, terms in patterns.items():
+            for i in range(len(terms) - 1):
+                assert len(terms[i]) >= len(terms[i + 1]), (
+                    f"{category}: '{terms[i]}' shorter than '{terms[i + 1]}'"
+                )
+
+
+class TestRealJsonLookups:
+    def test_english_to_french_lookup_builds(self, real_translations_inner):
+        lookup = build_english_to_french_lookup(real_translations_inner)
+        assert len(lookup) > 0
+    
+    def test_english_to_french_known_term(self, real_translations_inner):
+        lookup = build_english_to_french_lookup(real_translations_inner)
+        assert 'acoustic monitoring' in lookup
+        category, french_key, term_data = lookup['acoustic monitoring']
+        assert category == 'nomenclature'
+        assert french_key == 'surveillance acoustique'
+    
+    def test_term_index_builds(self, real_translations_inner):
+        fr_idx, en_idx = build_term_index(real_translations_inner)
+        assert len(fr_idx) > 0
+        assert len(en_idx) > 0
+    
+    def test_term_index_known_entries(self, real_translations_inner):
+        fr_idx, en_idx = build_term_index(real_translations_inner)
+        assert 'surveillance acoustique' in fr_idx
+        assert 'acoustic monitoring' in en_idx
+
+
+class TestRealJsonPreprocess:
+    @patch('scitrans.rules_based_replacements.replacements.detect_person_names', return_value=[])
+    def test_french_nomenclature(self, mock_names, real_translations):
+        text = "La surveillance acoustique est essentielle."
+        result, mapping = preprocess_for_translation(text, real_translations, source_lang='fr')
+        
+        assert len(mapping) == 1
+        token = list(mapping.keys())[0]
+        assert mapping[token]['category'] == 'nomenclature'
+        assert mapping[token]['original_text'] == 'surveillance acoustique'
+        assert mapping[token]['translation'] == 'acoustic monitoring'
+        assert token in result
+        assert 'surveillance acoustique' not in result
+    
+    @patch('scitrans.rules_based_replacements.replacements.detect_person_names', return_value=[])
+    def test_french_taxon(self, mock_names, real_translations):
+        text = "La Morue franche est en déclin."
+        result, mapping = preprocess_for_translation(text, real_translations, source_lang='fr')
+        
+        tokens_by_cat = {v['category']: v for v in mapping.values()}
+        assert 'taxon' in tokens_by_cat
+        assert tokens_by_cat['taxon']['translation'] == 'Atlantic Cod'
+    
+    @patch('scitrans.rules_based_replacements.replacements.detect_person_names', return_value=[])
+    def test_french_acronym(self, mock_names, real_translations):
+        text = "Le RAA définit les règles."
+        result, mapping = preprocess_for_translation(text, real_translations, source_lang='fr')
+        
+        tokens_by_cat = {v['category']: v for v in mapping.values()}
+        assert 'acronym' in tokens_by_cat
+    
+    @patch('scitrans.rules_based_replacements.replacements.detect_person_names', return_value=[])
+    def test_french_site(self, mock_names, real_translations):
+        text = "Près du Mont Turbulent."
+        result, mapping = preprocess_for_translation(text, real_translations, source_lang='fr')
+        
+        tokens_by_cat = {v['category']: v for v in mapping.values()}
+        assert 'site' in tokens_by_cat
+        assert tokens_by_cat['site']['translation'] == 'Mount Turbulent'
+    
+    @patch('scitrans.rules_based_replacements.replacements.detect_person_names', return_value=[])
+    def test_english_nomenclature(self, mock_names, real_translations):
+        text = "The acoustic monitoring program is running."
+        result, mapping = preprocess_for_translation(text, real_translations, source_lang='en')
+        
+        token = list(mapping.keys())[0]
+        assert mapping[token]['translation'] == 'surveillance acoustique'
+    
+    @patch('scitrans.rules_based_replacements.replacements.detect_person_names', return_value=[])
+    def test_english_taxon(self, mock_names, real_translations):
+        text = "The American Eel population is declining."
+        result, mapping = preprocess_for_translation(text, real_translations, source_lang='en')
+        
+        tokens_by_cat = {v['category']: v for v in mapping.values()}
+        assert 'taxon' in tokens_by_cat
+    
+    @patch('scitrans.rules_based_replacements.replacements.detect_person_names', return_value=[])
+    def test_multiple_categories_in_one_sentence(self, mock_names, real_translations):
+        text = "Le RAA concerne la surveillance acoustique de la Morue franche."
+        result, mapping = preprocess_for_translation(text, real_translations, source_lang='fr')
+        
+        categories = {v['category'] for v in mapping.values()}
+        assert len(categories) >= 2
+
+
+class TestRealJsonRoundTrip:
+    @patch('scitrans.rules_based_replacements.replacements.detect_person_names', return_value=[])
+    def test_fr_to_en_round_trip(self, mock_names, real_translations):
+        text = "La surveillance acoustique de la Morue franche près du Mont Turbulent."
+        preprocessed, mapping = preprocess_for_translation(text, real_translations, source_lang='fr')
+        
+        # Simulate translator preserving tokens
+        translated = preprocessed
+        
+        result = postprocess_translation(translated, mapping)
+        assert validate_tokens_replaced(result, mapping)
+        assert 'acoustic monitoring' in result
+        assert 'Atlantic Cod' in result
+        assert 'Mount Turbulent' in result
+    
+    @patch('scitrans.rules_based_replacements.replacements.detect_person_names', return_value=[])
+    def test_en_to_fr_round_trip(self, mock_names, real_translations):
+        text = "The acoustic monitoring of American Eel near Mount Turbulent."
+        preprocessed, mapping = preprocess_for_translation(text, real_translations, source_lang='en')
+        
+        translated = preprocessed
+        result = postprocess_translation(translated, mapping)
+        assert validate_tokens_replaced(result, mapping)
+        assert 'surveillance acoustique' in result
+    
+    @patch('scitrans.rules_based_replacements.replacements.detect_person_names', return_value=[])
+    def test_no_leftover_tokens_after_postprocess(self, mock_names, real_translations):
+        text = "RAA et surveillance acoustique et Morue franche et Mont Turbulent."
+        preprocessed, mapping = preprocess_for_translation(text, real_translations, source_lang='fr')
+        
+        result = postprocess_translation(preprocessed, mapping)
+        assert validate_tokens_replaced(result, mapping)
+    
+    @patch('scitrans.rules_based_replacements.replacements.detect_person_names', return_value=[])
+    def test_apply_reverse_wrappers(self, mock_names, real_translations):
+        text = "La surveillance acoustique est essentielle."
+        
+        preprocessed, mapping = apply_preferential_translations(
+            text, 'fr', 'en', real_translations
+        )
+        result = reverse_preferential_translations(preprocessed, mapping)
+        assert result is not None
+        assert 'acoustic monitoring' in result
