@@ -33,21 +33,22 @@ def translation_context(request, tmp_path):
 
 
 @pytest.mark.slow
-class TestDocumentTranslations:
-    def test_paragraphs(self, translation_context, subtests):
-        doc = translation_context["doc"]
-        goal = translation_context["doc_goal"]
-        
-        for i, (p, p_goal) in enumerate(zip(doc.paragraphs, goal.paragraphs)):
-            with subtests.test(msg=f"Paragraph {i}", direction=translation_context["direction"]):
-                assert p.text == p_goal.text
+def test_paragraphs(translation_context, subtests):
+    doc = translation_context["doc"]
+    goal = translation_context["doc_goal"]
     
-    def test_tables(self, translation_context, subtests):
-        doc = translation_context["doc"]
-        goal = translation_context["doc_goal"]
-        
-        for t_idx, (t, t_goal) in enumerate(zip(doc.tables, goal.tables)):
-            for r_idx, (r, r_goal) in enumerate(zip(t.rows, t_goal.rows)):
-                for c_idx, (c, c_goal) in enumerate(zip(r.cells, r_goal.cells)):
-                    with subtests.test(msg="Cell", table=t_idx, row=r_idx, col=c_idx):
-                        assert c.text == c_goal.text
+    for i, (p, p_goal) in enumerate(zip(doc.paragraphs, goal.paragraphs)):
+        with subtests.test(msg=f"Paragraph {i}", direction=translation_context["direction"]):
+            assert p.text == p_goal.text
+
+
+@pytest.mark.slow
+def test_tables(translation_context, subtests):
+    doc = translation_context["doc"]
+    goal = translation_context["doc_goal"]
+    
+    for t_idx, (t, t_goal) in enumerate(zip(doc.tables, goal.tables)):
+        for r_idx, (r, r_goal) in enumerate(zip(t.rows, t_goal.rows)):
+            for c_idx, (c, c_goal) in enumerate(zip(r.cells, r_goal.cells)):
+                with subtests.test(msg="Cell", table=t_idx, row=r_idx, col=c_idx):
+                    assert c.text == c_goal.text

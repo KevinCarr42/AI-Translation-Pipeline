@@ -117,29 +117,28 @@ def test_first_page_footer_preserves_tab_alignment(translated):
     )
 
 
-def test_collapse_runs_preserves_tabs(empty_doc):
-    para = empty_doc.add_paragraph()
+def test_collapse_runs_preserves_tabs(empty_doc, subtests):
+    with subtests.test('text run, tab run, text run'):
+        para = empty_doc.add_paragraph()
+        
+        para.add_run("Left")
+        para.add_run("\t")
+        para.add_run("Right")
+        
+        _collapse_runs_preserving_shapes(para)
+        
+        assert len(para.runs) == 3, f"Expected 3 isolated runs, got {len(para.runs)}"
+        assert len(para.runs[1]._element.findall(qn('w:tab'))) == 1
     
-    para.add_run("Left")
-    para.add_run("\t")
-    para.add_run("Right")
-    
-    _collapse_runs_preserving_shapes(para)
-    
-    assert len(para.runs) == 3, f"Expected 3 isolated runs, got {len(para.runs)}"
-    assert len(para.runs[1]._element.findall(qn('w:tab'))) == 1
-
-
-def test_collapse_runs_preserves_tabs_v2(empty_doc):
-    para = empty_doc.add_paragraph()
-    
-    para.add_run("Left")
-    para.add_run("\tRight")
-    
-    _collapse_runs_preserving_shapes(para)
-    
-    # assert len(para.runs) == 3, f"Expected 3 isolated runs, got {len(para.runs)}"  # TODO future behaviour
-    assert len(para.runs[1]._element.findall(qn('w:tab'))) == 1
+    with subtests.test('text run, tab + text run'):
+        para = empty_doc.add_paragraph()
+        
+        para.add_run("Left")
+        para.add_run("\tRight")
+        
+        _collapse_runs_preserving_shapes(para)
+        
+        assert len(para.runs[1]._element.findall(qn('w:tab'))) == 1
 
 
 def test_translate_paragraph_preserves_inline_tabs(empty_doc, mock_translator):
