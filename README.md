@@ -258,8 +258,9 @@ The system supports translating Microsoft Word documents (.docx) while preservin
 **Usage Example:**
 
 ```python
-from translate.document import translate_word_document
-from translate.models import create_translator
+from scitrans.translate.word_document import translate_word_document
+from scitrans.translate.txt_document import translate_txt_document
+from scitrans.translate.models import create_translator
 
 # Create translation manager
 translation_manager = create_translator(use_finetuned=True)
@@ -269,7 +270,19 @@ translate_word_document(
     input_docx_file="path/to/input.docx",
     output_docx_file="path/to/output.docx",  # Optional: auto-generated if not specified
     source_lang="en",
-    translation_manager=translation_manager
+    use_find_replace=True,
+    translation_manager=translation_manager,
+    use_cache=True
+)
+
+# Translate a text file
+translate_txt_document(
+    input_text_file="path/to/input.txt",
+    output_text_file="path/to/output.txt",  # Optional: auto-generated if not specified
+    source_lang="en",
+    use_find_replace=True,
+    translation_manager=translation_manager,
+    use_cache=True
 )
 ```
 
