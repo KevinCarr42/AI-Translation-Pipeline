@@ -15,7 +15,7 @@ from scitrans.translate.utils import normalize_apostrophes
 from scitrans.translate.utils import split_into_chunks, reassemble_sentences, reassemble_paragraphs
 from scitrans.translate.word_formatting import FormattedRun
 from scitrans.translate.word_formatting import apply_formatting_rules, RuleRegistry
-from scitrans.translate.word_notes import add_formatting_notes, extract_hyperlink_notes, write_notes_json
+from scitrans.translate.word_notes import add_formatting_notes, extract_hyperlink_notes, write_notes_json, json_to_word_tables
 from scitrans.translate.word_formatting import is_numeric, convert_numeric, parse_formatted_string
 from scitrans.rules_based_replacements.token_utils import get_translation_value
 
@@ -472,7 +472,8 @@ def translate_word_document(
     document.save(output_docx_file)
     
     if formatting_records:
-        notes_path = os.path.splitext(output_docx_file)[0] + '_translation_notes.json'
-        write_notes_json(formatting_records, notes_path)
+        json_notes_path = os.path.splitext(output_docx_file)[0] + '_translation_notes.json'
+        write_notes_json(formatting_records, json_notes_path)
+        json_to_word_tables(json_notes_path, delete_json=False)
     
     return output_docx_file
