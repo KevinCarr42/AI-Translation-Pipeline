@@ -1,5 +1,12 @@
 import json
+import os
+from pathlib import Path
+
+from docx import Document
 from docx.oxml.ns import qn
+from docx.oxml.ns import qn as oxml_qn
+from docx.shared import Inches
+
 from scitrans.translate.word_formatting import FormattedRun, RuleRegistry
 
 
@@ -156,3 +163,88 @@ def add_formatting_notes(paragraph, formatting_records, detected_rules=None, loc
             if location:
                 record['location'] = location
             formatting_records.append(record)
+
+
+def json_to_word_tables(json_file, delete_json=False):
+    json_path = Path(json_file)
+    with open(json_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    
+    doc = Document()
+    
+    for section in doc.sections:
+        section.top_margin = Inches(0.5)
+        section.bottom_margin = Inches(0.5)
+        section.left_margin = Inches(0.5)
+        section.right_margin = Inches(0.5)
+    
+    COLOR_YELLOW = "FFFF00"
+    COLOR_CYAN = "00FFFF"
+    COLOR_GREEN = "00FF00"
+    
+    def _cell_color_for_notes(notes):
+        types = {n.get('type', 'formatting') for n in notes}
+        if 'url' in types and 'formatting' in types:
+            return COLOR_GREEN
+        if 'url' in types:
+            return COLOR_CYAN
+        return COLOR_YELLOW
+    
+    def _shade_cell(cell, hex_color):
+        shading = cell._element.get_or_add_tcPr()
+        shd = shading.makeelement(oxml_qn('w:shd'), {
+            oxml_qn('w:fill'): hex_color,
+            oxml_qn('w:val'): 'clear',
+        })
+        shading.append(shd)
+    
+    def _build_table(entries, heading_text):
+        doc.add_heading(heading_text, level=1)
+        if not entries:
+            doc.add_paragraph("No notes.")
+            return
+        
+        table = doc.add_table(rows=1, cols=2)
+        table.style = 'Table Grid'
+        header_row = table.rows[0]
+        for cell in header_row.cells:
+            for paragraph in cell.paragraphs:
+                for run in paragraph.runs:
+                    run.bold = True
+        header_row.cells[0].paragraphs[0].add_run("Full Paragraph (original language)").bold = True
+        header_row.cells[1].paragraphs[0].add_run("Details").bold = True
+        
+        row_elem = header_row._tr
+        tr_pr = row_elem.get_or_add_trPr()
+        tr_pr.append(tr_pr.makeelement(oxml_qn('w:tblHeader'), {}))
+        
+        for entry in entries:
+            row = table.add_row()
+            row.cells[0].text = entry.get('full_paragraph', '')
+            
+            notes = entry.get('notes', [])
+            details_cell = row.cells[1]
+            details_cell.text = ''
+            for i, note in enumerate(notes):
+                original = note.get('original_text', '')
+                detail = note.get('detail', '')
+                text = f'"{original}": {detail}'
+                p = details_cell.paragraphs[0] if i == 0 else details_cell.add_paragraph()
+                p.style = 'List Bullet'
+                p.text = text
+            
+            if notes:
+                _shade_cell(details_cell, _cell_color_for_notes(notes))
+        
+        for row in table.rows:
+            tr_pr = row._tr.get_or_add_trPr()
+            tr_pr.append(tr_pr.makeelement(oxml_qn('w:cantSplit'), {}))
+    
+    _build_table(data.get('paragraphs', []), 'Paragraphs')
+    _build_table(data.get('tables', []), 'Tables')
+    
+    output_path = json_path.with_suffix('.docx')
+    doc.save(str(output_path))
+    
+    if delete_json:
+        os.remove(json_path)
