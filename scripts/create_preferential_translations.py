@@ -21,26 +21,34 @@ def save_json(data, file_path):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
+def clean(value):
+    if pd.notna(value):
+        s = str(value).strip()
+        if s:
+            return s
+    return None
+
+
 def extract_technical_terms(file_path):
     df = pd.read_excel(file_path, sheet_name="Technical Terms")
     
-    translations = {}
+    translations = []
     for _, row in df.iterrows():
-        en_term = row.get('Term (E)')
-        fr_term = row.get('Term (F)')
-        alt_fr = row.get('Alternate (F)')
+        english = clean(row.get('Term (E)'))
+        french = clean(row.get('Term (F)'))
         
-        if pd.notna(en_term) and pd.notna(fr_term):
-            en_clean = str(en_term).strip()
-            fr_clean = str(fr_term).strip()
-            
-            if en_clean and fr_clean:
-                translations[fr_clean] = en_clean
-                
-                if pd.notna(alt_fr):
-                    alt_clean = str(alt_fr).strip()
-                    if alt_clean:
-                        translations[alt_clean] = en_clean
+        if not english or not french:
+            continue
+        
+        entry = {
+            'english': english,
+            'french': french,
+            'french_informal': clean(row.get('Alternate (F)')),
+            'french_to_avoid': clean(row.get('French to avoid')),
+            'context': clean(row.get('Context')),
+            'comments': clean(row.get('Comments')),
+        }
+        translations.append(entry)
     
     return translations
 
@@ -48,17 +56,21 @@ def extract_technical_terms(file_path):
 def extract_species_names(file_path):
     df = pd.read_excel(file_path, sheet_name="Species Names")
     
-    translations = {}
+    translations = []
     for _, row in df.iterrows():
-        en_species = row.get('Species Name (E)')
-        fr_species = row.get('Species Name (F)')
+        english = clean(row.get('Species Name (E)'))
+        french = clean(row.get('Species Name (F)'))
         
-        if pd.notna(en_species) and pd.notna(fr_species):
-            en_clean = str(en_species).strip()
-            fr_clean = str(fr_species).strip()
-            
-            if en_clean and fr_clean:
-                translations[fr_clean] = en_clean
+        if not english or not french:
+            continue
+        
+        entry = {
+            'english': english,
+            'french': french,
+            'scientific': clean(row.get('Scientific Name ')),
+            'terms_to_avoid': clean(row.get('Terms to Avoid (F) ')),
+        }
+        translations.append(entry)
     
     return translations
 
@@ -66,30 +78,30 @@ def extract_species_names(file_path):
 def extract_acronyms_abbreviations(file_path):
     df = pd.read_excel(file_path, sheet_name="Aconyms & Abbreviations")
     
-    translations = {}
+    translations = []
     for _, row in df.iterrows():
-        en_acronym = row.get('Acronym/\nAbbreviation (E) ')
-        fr_acronym = row.get('Acronym/\nAbbreviation (F) ')
-        en_full = row.get('Full Name/\nMeaning (E)')
-        fr_full = row.get('Full Name/\nMeaning (F)')
+        en_acronym = clean(row.get('Acronym/\nAbbreviation (E) '))
+        fr_acronym = clean(row.get('Acronym/\nAbbreviation (F) '))
+        en_full = clean(row.get('Full Name/\nMeaning (E)'))
+        fr_full = clean(row.get('Full Name/\nMeaning (F)'))
         
-        if pd.notna(en_acronym) and pd.notna(fr_acronym):
-            en_clean = str(en_acronym).strip()
-            fr_clean = str(fr_acronym).strip()
-            if en_clean and fr_clean:
-                translations[fr_clean] = en_clean
+        if not en_acronym and not en_full:
+            continue
         
-        if pd.notna(en_full) and pd.notna(fr_full):
-            en_full_clean = str(en_full).strip()
-            fr_full_clean = str(fr_full).strip()
-            if en_full_clean and fr_full_clean:
-                translations[fr_full_clean] = en_full_clean
+        entry = {
+            'english_acronym': en_acronym,
+            'french_acronym': fr_acronym,
+            'english_full': en_full,
+            'french_full': fr_full,
+            'comments': clean(row.get('Comments ')),
+        }
+        translations.append(entry)
     
     return translations
 
 
 def extract_place_names(csv_path):
-    place_translations = {}
+    place_translations = []
     
     if not os.path.exists(csv_path):
         print(f"Warning: {csv_path} not found")
@@ -97,15 +109,16 @@ def extract_place_names(csv_path):
     
     df = pd.read_csv(csv_path)
     for _, row in df.iterrows():
-        name_en = row.get('Name_e')
-        name_fr = row.get('Nom_f')
+        english = clean(row.get('Name_e'))
+        french = clean(row.get('Nom_f'))
         
-        if pd.notna(name_en) and pd.notna(name_fr):
-            name_en_clean = str(name_en).strip()
-            name_fr_clean = str(name_fr).strip()
-            
-            if name_en_clean != name_fr_clean and name_en_clean and name_fr_clean:
-                place_translations[name_fr_clean] = name_en_clean
+        if not english or not french or english == french:
+            continue
+        
+        place_translations.append({
+            'english': english,
+            'french': french,
+        })
     
     return place_translations
 
