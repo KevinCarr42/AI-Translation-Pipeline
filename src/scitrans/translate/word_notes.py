@@ -165,7 +165,7 @@ def add_formatting_notes(paragraph, formatting_records, detected_rules=None, loc
             formatting_records.append(record)
 
 
-def json_to_word_tables(json_file, delete_json=False):
+def json_to_word_tables(json_file, preserve_json_notes=False):
     json_path = Path(json_file)
     with open(json_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
@@ -246,5 +246,5 @@ def json_to_word_tables(json_file, delete_json=False):
     output_path = json_path.with_suffix('.docx')
     doc.save(str(output_path))
     
-    if delete_json:
+    if not preserve_json_notes:
         os.remove(json_path)

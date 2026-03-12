@@ -44,17 +44,22 @@ def run_word_translation(fixture_name, source_lang, mock=None):
         output_docx_file=output_path,
         source_lang=source_lang,
         use_find_replace=False,
-        translation_manager=mock
+        translation_manager=mock,
+        preserve_json_notes=True
     )
     
     doc = Document(output_path)
     
-    notes_path = os.path.splitext(output_path)[0] + '_translation_notes.json'
+    notes_base = os.path.splitext(output_path)[0] + '_translation_notes'
+    notes_json_path = notes_base + '.json'
+    notes_docx_path = notes_base + '.docx'
     notes_data = None
-    if os.path.exists(notes_path):
-        with open(notes_path, 'r', encoding='utf-8') as f:
+    if os.path.exists(notes_json_path):
+        with open(notes_json_path, 'r', encoding='utf-8') as f:
             notes_data = json.load(f)
-        os.remove(notes_path)
+        os.remove(notes_json_path)
+    if os.path.exists(notes_docx_path):
+        os.remove(notes_docx_path)
     
     os.remove(output_path)
     return doc, mock, notes_data

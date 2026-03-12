@@ -142,8 +142,11 @@ def test_output_path_generation(real_translator, fixture_path):
     os.remove(result)
     
     notes_path = os.path.splitext(result)[0] + '_translation_notes.json'
+    docx_notes_path = notes_path.replace(".json", ".docx")
     if os.path.exists(notes_path):
         os.remove(notes_path)
+    if os.path.exists(docx_notes_path):
+        os.remove(docx_notes_path)
 
 
 @pytest.mark.slow

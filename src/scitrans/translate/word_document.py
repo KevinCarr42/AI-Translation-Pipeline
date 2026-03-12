@@ -411,7 +411,8 @@ def _set_proofing_language(document, target_lang):
 def translate_word_document(
         input_docx_file, output_docx_file=None, source_lang="en", chunk_by="sentences",
         models_to_use=None, use_find_replace=True, use_finetuned=True,
-        translation_manager=None, include_timestamp=True, use_cache=True
+        translation_manager=None, include_timestamp=True, use_cache=True,
+        preserve_json_notes=False
 ):
     if not output_docx_file:
         base, ext = os.path.splitext(input_docx_file)
@@ -474,6 +475,6 @@ def translate_word_document(
     if formatting_records:
         json_notes_path = os.path.splitext(output_docx_file)[0] + '_translation_notes.json'
         write_notes_json(formatting_records, json_notes_path)
-        json_to_word_tables(json_notes_path, delete_json=False)
+        json_to_word_tables(json_notes_path, preserve_json_notes=preserve_json_notes)
     
     return output_docx_file
