@@ -16,10 +16,9 @@ if __name__ == '__main__':
     use_finetuned = True
     
     file_list = (
-        # ("test_figure_table_numbers.docx", "en"),
         ("test_formatting_errors_en.docx", "en"),
-        # ("1432_en.docx", "en"),
-        # ("1466_fr.docx", "fr"),
+        ("1432_en.docx", "en"),
+        ("1466_fr.docx", "fr"),
     )
     
     translation_manager = create_translator(
@@ -33,6 +32,8 @@ if __name__ == '__main__':
         loop_prev_time = init_done_time
     
     for filename, source_lang in file_list:
+        print(f"Translating {filename}...")
+        
         if clear_cache_between_docs:
             translation_manager.clear_errors()
         file_path = Path(config.TRANSLATED_TEXT_DIR) / filename
@@ -73,6 +74,8 @@ if __name__ == '__main__':
             loop_end_time = time.time()
             print(f"Finished {filename}: {loop_end_time - loop_prev_time:.2f}s")
             loop_prev_time = loop_end_time
+        
+        print(f"Translation complete for {filename}")
     
     if print_timing:
         end_time = time.time()

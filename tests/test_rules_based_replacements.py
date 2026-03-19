@@ -598,13 +598,13 @@ class TestRealJsonStructure:
 class TestRealJsonSearchPatterns:
     def test_french_patterns_no_errors(self, real_translations_inner):
         patterns = get_search_patterns(real_translations_inner, source_lang='fr')
-        assert set(patterns.keys()) == {'nomenclature', 'taxon', 'acronym', 'site'}
+        assert set(patterns.keys()) == {'nomenclature', 'taxon', 'acronym', 'site', 'table'}
         for category, terms in patterns.items():
             assert len(terms) > 0, f"no French patterns for {category}"
     
     def test_english_patterns_no_errors(self, real_translations_inner):
         patterns = get_search_patterns(real_translations_inner, source_lang='en')
-        assert set(patterns.keys()) == {'nomenclature', 'taxon', 'acronym', 'site'}
+        assert set(patterns.keys()) == {'nomenclature', 'taxon', 'acronym', 'site', 'table'}
         for category, terms in patterns.items():
             assert len(terms) > 0, f"no English patterns for {category}"
     

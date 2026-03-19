@@ -441,20 +441,17 @@ def translate_word_document(
             preferential_dict = json.load(f)
     
     table_translations_dict = None
-    if os.path.exists(config.TABLE_TRANSLATIONS_JSON_PATH):
-        with open(config.TABLE_TRANSLATIONS_JSON_PATH, 'r', encoding='utf-8') as f:
-            raw = json.load(f)
-        if isinstance(raw, list):
+    if preferential_dict:
+        table_entries = preferential_dict.get("translations", {}).get("table", [])
+        if table_entries:
+            source_key = "english" if source_lang == "en" else "french"
+            target_formatted_key = "fr_formatted" if target_lang == "fr" else "en_formatted"
             table_translations_dict = {}
-            for entry in raw:
-                if source_lang not in entry or target_lang not in entry:
-                    continue
-                plain_key = re.sub(r'/([^/]+)/', r'\1', entry[source_lang])
-                plain_key = re.sub(r'[_^]\{([^}]*)\}', r'\1', plain_key)
-                if plain_key not in table_translations_dict:
-                    table_translations_dict[plain_key] = entry[target_lang]
-        else:
-            table_translations_dict = raw
+            for entry in table_entries:
+                plain_key = entry.get(source_key, "")
+                formatted_value = entry.get(target_formatted_key, "")
+                if plain_key and formatted_value and plain_key not in table_translations_dict:
+                    table_translations_dict[plain_key] = formatted_value
     
     for element, location, elem_type in _iter_document_elements(document):
         if elem_type == "paragraph":
