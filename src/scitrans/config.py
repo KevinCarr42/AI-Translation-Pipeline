@@ -21,8 +21,7 @@ TESTING_DATA_OUTPUT = EXTERNAL_DATA_DIR / "pipeline_testing_data.jsonl"
 
 # translations folders
 PREFERENTIAL_JSON_PATH = INTERNAL_DATA_DIR / "preferential_translations.json"
-
-TABLE_TRANSLATIONS_JSON_PATH = EXTERNAL_DATA_DIR / "table_translations.json"
+TABLE_TRANSLATIONS_JSON_PATH = INTERNAL_DATA_DIR / "table_translations.json"
 PRETRAINED_MODELS_FOLDER = EXTERNAL_DATA_DIR / "pretrained_models"
 MODEL_OUTPUT_DIR = EXTERNAL_DATA_DIR / "finetuning_outputs"
 MERGED_MODEL_DIR = EXTERNAL_DATA_DIR / "finetuning_merged"

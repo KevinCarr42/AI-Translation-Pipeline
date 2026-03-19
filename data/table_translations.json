@@ -1,0 +1,2052 @@
+[
+  {
+    "en": "n/a",
+    "fr": "S.O.",
+    "count": 615
+  },
+  {
+    "en": "n/a",
+    "fr": "n.a.",
+    "count": 573
+  },
+  {
+    "en": "N/A",
+    "fr": "S.O.",
+    "count": 493
+  },
+  {
+    "en": "n.s.",
+    "fr": "n.é.",
+    "count": 490
+  },
+  {
+    "en": "SOG",
+    "fr": "DG",
+    "count": 200
+  },
+  {
+    "en": "NF",
+    "fr": "NP",
+    "count": 184
+  },
+  {
+    "en": "/pHOS/_{local}",
+    "fr": "/pGÉF/_{local}",
+    "count": 90
+  },
+  {
+    "en": "/pHOS/_{stray}",
+    "fr": "/pGÉF/_{égaré}",
+    "count": 89
+  },
+  {
+    "en": "/pNOS/",
+    "fr": "/pGON/",
+    "count": 88
+  },
+  {
+    "en": "PS-LS",
+    "fr": "DP-DL",
+    "count": 80
+  },
+  {
+    "en": "NMC",
+    "fr": "NCC",
+    "count": 71
+  },
+  {
+    "en": "AIC",
+    "fr": "CIA",
+    "count": 70
+  },
+  {
+    "en": "ES",
+    "fr": "DE",
+    "count": 64
+  },
+  {
+    "en": "NO",
+    "fr": "ON",
+    "count": 62
+  },
+  {
+    "en": "CIOPSW",
+    "fr": "SPCOG-O",
+    "count": 59
+  },
+  {
+    "en": "S",
+    "fr": "N",
+    "count": 58
+  },
+  {
+    "en": "TM",
+    "fr": "MT",
+    "count": 58
+  },
+  {
+    "en": "BIC",
+    "fr": "CIB",
+    "count": 57
+  },
+  {
+    "en": "ΔAIC",
+    "fr": "ΔCIA",
+    "count": 55
+  },
+  {
+    "en": "ΔBIC",
+    "fr": "ΔCIB",
+    "count": 55
+  },
+  {
+    "en": "CIOPSW",
+    "fr": "SPCOG-O",
+    "count": 53
+  },
+  {
+    "en": "FALSE",
+    "fr": "FAUX",
+    "count": 52
+  },
+  {
+    "en": "NB",
+    "fr": "BN",
+    "count": 52
+  },
+  {
+    "en": "AI",
+    "fr": "BA",
+    "count": 51
+  },
+  {
+    "en": "HO",
+    "fr": "OE",
+    "count": 50
+  },
+  {
+    "en": "ZINB",
+    "fr": "BNIN",
+    "count": 48
+  },
+  {
+    "en": "SDM",
+    "fr": "MRE",
+    "count": 48
+  },
+  {
+    "en": "WJS",
+    "fr": "ODJ",
+    "count": 47
+  },
+  {
+    "en": "SS",
+    "fr": "RP",
+    "count": 43
+  },
+  {
+    "en": "FS",
+    "fr": "RA",
+    "count": 43
+  },
+  {
+    "en": "CIOPSE",
+    "fr": "SPCOG-E",
+    "count": 41
+  },
+  {
+    "en": "CWT",
+    "fr": "MMC",
+    "count": 39
+  },
+  {
+    "en": "ECVI",
+    "fr": "CEIV",
+    "count": 38
+  },
+  {
+    "en": "QCS",
+    "fr": "DRC",
+    "count": 35
+  },
+  {
+    "en": "STLE500",
+    "fr": "ESTL500",
+    "count": 35
+  },
+  {
+    "en": "CMC",
+    "fr": "CCC",
+    "count": 34
+  },
+  {
+    "en": "SE",
+    "fr": "ET",
+    "count": 32
+  },
+  {
+    "en": "/S/_{TOT}",
+    "fr": "/E/_{TOT}",
+    "count": 32
+  },
+  {
+    "en": "/S/_{OCU}",
+    "fr": "/E/_{HUC}",
+    "count": 32
+  },
+  {
+    "en": "/SR/",
+    "fr": "/TE/",
+    "count": 32
+  },
+  {
+    "en": "/SR/_{OCU}",
+    "fr": "/TE/_{HUC}",
+    "count": 32
+  },
+  {
+    "en": "CIOPS-E",
+    "fr": "SGPOG-E",
+    "count": 31
+  },
+  {
+    "en": "C.V.",
+    "fr": "CV",
+    "count": 31
+  },
+  {
+    "en": "LDM,",
+    "fr": "MSRL,",
+    "count": 30
+  },
+  {
+    "en": "n/a",
+    "fr": "s.o.",
+    "count": 30
+  },
+  {
+    "en": "N/A",
+    "fr": "S/O",
+    "count": 30
+  },
+  {
+    "en": "Terrestrial*",
+    "fr": "Terrestre*",
+    "count": 29
+  },
+  {
+    "en": "DINOFLAGELLATES",
+    "fr": "DINOFLAGELLÉS",
+    "count": 28
+  },
+  {
+    "en": "GULFISL",
+    "fr": "IGULF",
+    "count": 28
+  },
+  {
+    "en": "UCI",
+    "fr": "ICS",
+    "count": 28
+  },
+  {
+    "en": "Neg/Mod",
+    "fr": "Nég./mod.",
+    "count": 28
+  },
+  {
+    "en": "NWGULF",
+    "fr": "NOGULF",
+    "count": 27
+  },
+  {
+    "en": "CRMP",
+    "fr": "PRSC",
+    "count": 26
+  },
+  {
+    "en": "FRASERR",
+    "fr": "FFRASER",
+    "count": 26
+  },
+  {
+    "en": "S.E.",
+    "fr": "ET",
+    "count": 26
+  },
+  {
+    "en": "HOWESD",
+    "fr": "BHOWE",
+    "count": 25
+  },
+  {
+    "en": "BBAY",
+    "fr": "BAIEB",
+    "count": 25
+  },
+  {
+    "en": "STLE200",
+    "fr": "ESTL200",
+    "count": 25
+  },
+  {
+    "en": "MOLLUSKS",
+    "fr": "MOLLUSQUES",
+    "count": 24
+  },
+  {
+    "en": "POLYCHAETES",
+    "fr": "POLYCHÈTES",
+    "count": 24
+  },
+  {
+    "en": "BRYOZOANS",
+    "fr": "BRYOZOAIRES",
+    "count": 24
+  },
+  {
+    "en": "HYDROZOANS",
+    "fr": "HYDROZOAIRES",
+    "count": 24
+  },
+  {
+    "en": "SD",
+    "fr": "E-T",
+    "count": 24
+  },
+  {
+    "en": "SC",
+    "fr": "P",
+    "count": 24
+  },
+  {
+    "en": "SD",
+    "fr": "ET",
+    "count": 23
+  },
+  {
+    "en": "CIOPS-W",
+    "fr": "SPCOG-Ouest",
+    "count": 22
+  },
+  {
+    "en": "FB",
+    "fr": "BF",
+    "count": 22
+  },
+  {
+    "en": "Sub-region",
+    "fr": "Sous-région",
+    "count": 21
+  },
+  {
+    "en": "n.s",
+    "fr": "n.é.",
+    "count": 21
+  },
+  {
+    "en": "CIOPS-W",
+    "fr": "SPCOG-Ouest",
+    "count": 20
+  },
+  {
+    "en": "ɣ^{2}",
+    "fr": "Ɣ^{2}",
+    "count": 20
+  },
+  {
+    "en": "Half-Cauchy",
+    "fr": "Demi-Cauchy",
+    "count": 20
+  },
+  {
+    "en": "PRYMNESIOPHYTES",
+    "fr": "PRYMNÉSIOPHYTES",
+    "count": 19
+  },
+  {
+    "en": "IH",
+    "fr": "IÉ",
+    "count": 19
+  },
+  {
+    "en": "SLOPE-W",
+    "fr": "TALUS-O",
+    "count": 18
+  },
+  {
+    "en": "PFMA_06",
+    "fr": "SGPP_06",
+    "count": 18
+  },
+  {
+    "en": "95Lower",
+    "fr": "95Inférieur",
+    "count": 17
+  },
+  {
+    "en": "95Upper",
+    "fr": "95Supérieur",
+    "count": 17
+  },
+  {
+    "en": "BoF",
+    "fr": "BF",
+    "count": 17
+  },
+  {
+    "en": "SLOPE-E",
+    "fr": "TALUS-E",
+    "count": 17
+  },
+  {
+    "en": "CIOPS-E",
+    "fr": "SPCOG-E",
+    "count": 17
+  },
+  {
+    "en": "SMBPB",
+    "fr": "BSM-BP",
+    "count": 17
+  },
+  {
+    "en": "DMP",
+    "fr": "PVQ",
+    "count": 16
+  },
+  {
+    "en": "CIOPS-E",
+    "fr": "SGPOG-E",
+    "count": 15
+  },
+  {
+    "en": "PB",
+    "fr": "BP",
+    "count": 15
+  },
+  {
+    "en": "TEL:CAB",
+    "fr": "TEL-CAB",
+    "count": 15
+  },
+  {
+    "en": "L",
+    "fr": "D",
+    "count": 15
+  },
+  {
+    "en": "SHELF-C",
+    "fr": "PLATEAU-C",
+    "count": 14
+  },
+  {
+    "en": "L",
+    "fr": "F",
+    "count": 14
+  },
+  {
+    "en": "SSE",
+    "fr": "SEC",
+    "count": 14
+  },
+  {
+    "en": "WAIC",
+    "fr": "CIWA",
+    "count": 14
+  },
+  {
+    "en": "SFA2",
+    "fr": "ZPC2",
+    "count": 14
+  },
+  {
+    "en": "PFMA_05",
+    "fr": "SGPP_05",
+    "count": 13
+  },
+  {
+    "en": "BBTB",
+    "fr": "BB-BT",
+    "count": 13
+  },
+  {
+    "en": "sd",
+    "fr": "ET",
+    "count": 12
+  },
+  {
+    "en": "H",
+    "fr": "E",
+    "count": 12
+  },
+  {
+    "en": "DPASS",
+    "fr": "PD",
+    "count": 12
+  },
+  {
+    "en": "DISCOVPASS",
+    "fr": "PASSDISCO",
+    "count": 12
+  },
+  {
+    "en": "Neg/Low",
+    "fr": "Nég./faible",
+    "count": 12
+  },
+  {
+    "en": "E",
+    "fr": "VD",
+    "count": 12
+  },
+  {
+    "en": "NS",
+    "fr": "TN",
+    "count": 12
+  },
+  {
+    "en": "SWCVI",
+    "fr": "SCOIV",
+    "count": 11
+  },
+  {
+    "en": "SMWCVI",
+    "fr": "CSCOIV",
+    "count": 11
+  },
+  {
+    "en": "TB",
+    "fr": "BT",
+    "count": 11
+  },
+  {
+    "en": "AN:CAB",
+    "fr": "AN-CAB",
+    "count": 11
+  },
+  {
+    "en": "NA^{±}",
+    "fr": "S.O.*^{±}",
+    "count": 11
+  },
+  {
+    "en": "/S/_{gen}",
+    "fr": "/G/_{gén}",
+    "count": 11
+  },
+  {
+    "en": "Jan.",
+    "fr": "Janv.",
+    "count": 11
+  },
+  {
+    "en": "Feb.",
+    "fr": "Févr.",
+    "count": 11
+  },
+  {
+    "en": "Apr.",
+    "fr": "Avr.",
+    "count": 11
+  },
+  {
+    "en": "Dec.",
+    "fr": "Déc.",
+    "count": 11
+  },
+  {
+    "en": "cv",
+    "fr": "VC",
+    "count": 10
+  },
+  {
+    "en": "SHELF-W",
+    "fr": "PLATEAU-O",
+    "count": 10
+  },
+  {
+    "en": "NMWCVI",
+    "fr": "CNCOIV",
+    "count": 10
+  },
+  {
+    "en": "LC",
+    "fr": "CV",
+    "count": 10
+  },
+  {
+    "en": "Half-normal",
+    "fr": "Demi-normal",
+    "count": 10
+  },
+  {
+    "en": "/F/_{MSY}",
+    "fr": "/F/_{RMD}",
+    "count": 10
+  },
+  {
+    "en": "/U/_{MSY}",
+    "fr": "/U/_{RMD}",
+    "count": 10
+  },
+  {
+    "en": "ns",
+    "fr": "np",
+    "count": 9
+  },
+  {
+    "en": "CILIATES",
+    "fr": "CILIÉS",
+    "count": 9
+  },
+  {
+    "en": "PFMA_09",
+    "fr": "SGPP_09",
+    "count": 9
+  },
+  {
+    "en": "NWCVI",
+    "fr": "NOCOIV",
+    "count": 9
+  },
+  {
+    "en": "NEQCS",
+    "fr": "NEDRC",
+    "count": 9
+  },
+  {
+    "en": "PFMA_03",
+    "fr": "SGPP_03",
+    "count": 9
+  },
+  {
+    "en": "SE",
+    "fr": "ES",
+    "count": 9
+  },
+  {
+    "en": "SFA3",
+    "fr": "ZPC3",
+    "count": 9
+  },
+  {
+    "en": "GBIF",
+    "fr": "SMIB",
+    "count": 9
+  },
+  {
+    "en": "T",
+    "fr": "M",
+    "count": 9
+  },
+  {
+    "en": "/B/_{/MSY/}",
+    "fr": "/B/_{/RMD/}",
+    "count": 9
+  },
+  {
+    "en": "IH",
+    "fr": "IE",
+    "count": 9
+  },
+  {
+    "en": "ΔAIC",
+    "fr": "ΔCIA",
+    "count": 9
+  },
+  {
+    "en": "Aug-Oct",
+    "fr": "août-oct.",
+    "count": 8
+  },
+  {
+    "en": "CS",
+    "fr": "DC",
+    "count": 8
+  },
+  {
+    "en": "PFMA_04",
+    "fr": "SGPP_04",
+    "count": 8
+  },
+  {
+    "en": "TEL:CAR",
+    "fr": "TEL-CAR",
+    "count": 8
+  },
+  {
+    "en": "PNCIMA",
+    "fr": "ZGICNP",
+    "count": 8
+  },
+  {
+    "en": "V",
+    "fr": "VU",
+    "count": 8
+  },
+  {
+    "en": "Jul-Sep",
+    "fr": "juil.-sept.",
+    "count": 7
+  },
+  {
+    "en": "SSB_{0}",
+    "fr": "BSR_{0}",
+    "count": 7
+  },
+  {
+    "en": "nwGSL",
+    "fr": "noGSL",
+    "count": 7
+  },
+  {
+    "en": "ME(s)",
+    "fr": "ME(p)",
+    "count": 7
+  },
+  {
+    "en": "PBR",
+    "fr": "PBP",
+    "count": 7
+  },
+  {
+    "en": "ZIP",
+    "fr": "PIN",
+    "count": 7
+  },
+  {
+    "en": "ME(s)",
+    "fr": "ME(p)",
+    "count": 7
+  },
+  {
+    "en": "Beta-binomial",
+    "fr": "Bêta-binomial",
+    "count": 7
+  },
+  {
+    "en": "D",
+    "fr": "P",
+    "count": 7
+  },
+  {
+    "en": "Half-normal",
+    "fr": "Demi-normale",
+    "count": 7
+  },
+  {
+    "en": "PFMA",
+    "fr": "SGPP",
+    "count": 7
+  },
+  {
+    "en": "NEP",
+    "fr": "PNE",
+    "count": 7
+  },
+  {
+    "en": "L*Region",
+    "fr": "L*Région",
+    "count": 6
+  },
+  {
+    "en": "Sept-Oct",
+    "fr": "Sept.-oct.",
+    "count": 6
+  },
+  {
+    "en": "n/a",
+    "fr": "s.o.",
+    "count": 6
+  },
+  {
+    "en": "NS",
+    "fr": "PEM",
+    "count": 6
+  },
+  {
+    "en": "PFMA_07",
+    "fr": "SGPP_07",
+    "count": 6
+  },
+  {
+    "en": "SWHG",
+    "fr": "SOHG",
+    "count": 6
+  },
+  {
+    "en": "CIOPS-W",
+    "fr": "SPCOG-Ouest",
+    "count": 6
+  },
+  {
+    "en": "Low/Mod",
+    "fr": "Faible/mod.",
+    "count": 6
+  },
+  {
+    "en": "/B/_{MSY}",
+    "fr": "/B/_{RMD}",
+    "count": 6
+  },
+  {
+    "en": "/E/_{MSY}",
+    "fr": "/E/_{RMD}",
+    "count": 6
+  },
+  {
+    "en": "EBI",
+    "fr": "EIB",
+    "count": 6
+  },
+  {
+    "en": "4S-West",
+    "fr": "4S-ouest",
+    "count": 6
+  },
+  {
+    "en": "4S-East",
+    "fr": "4S-est",
+    "count": 6
+  },
+  {
+    "en": "Jan-Feb",
+    "fr": "janv.-févr.",
+    "count": 5
+  },
+  {
+    "en": "nNFLD",
+    "fr": "nTN",
+    "count": 5
+  },
+  {
+    "en": "ρSSB",
+    "fr": "rBSR",
+    "count": 5
+  },
+  {
+    "en": "ρ/F/",
+    "fr": "r/F/",
+    "count": 5
+  },
+  {
+    "en": "ρRec",
+    "fr": "rRec",
+    "count": 5
+  },
+  {
+    "en": "SbP",
+    "fr": "PPT",
+    "count": 5
+  },
+  {
+    "en": "PMFA_08",
+    "fr": "SGPP_08",
+    "count": 5
+  },
+  {
+    "en": "SWQCS",
+    "fr": "SODRC",
+    "count": 5
+  },
+  {
+    "en": "DP",
+    "fr": "PD",
+    "count": 5
+  },
+  {
+    "en": "CIOPS-E",
+    "fr": "SPCOG-E",
+    "count": 5
+  },
+  {
+    "en": "CIOPS-E",
+    "fr": "SGPOG-E",
+    "count": 5
+  },
+  {
+    "en": "NDB",
+    "fr": "BND",
+    "count": 5
+  },
+  {
+    "en": "N_{AP}",
+    "fr": "N_{PC}",
+    "count": 5
+  },
+  {
+    "en": "ASD",
+    "fr": "REM",
+    "count": 5
+  },
+  {
+    "en": "Sub-category",
+    "fr": "Sous-catégorie",
+    "count": 5
+  },
+  {
+    "en": "/F/_{/MSY/}",
+    "fr": "/F/_{/RMD/}",
+    "count": 5
+  },
+  {
+    "en": "PBT",
+    "fr": "EP",
+    "count": 5
+  },
+  {
+    "en": "NWA",
+    "fr": "ANO",
+    "count": 5
+  },
+  {
+    "en": "Average/Total",
+    "fr": "Moyenne/Total",
+    "count": 5
+  },
+  {
+    "en": "U.S.",
+    "fr": "États-Unis",
+    "count": 5
+  },
+  {
+    "en": "L*sex",
+    "fr": "L*sexe",
+    "count": 4
+  },
+  {
+    "en": "Apr-Oct",
+    "fr": "avr.-oct.",
+    "count": 4
+  },
+  {
+    "en": "Nov-Apr",
+    "fr": "nov.-avr.",
+    "count": 4
+  },
+  {
+    "en": "GB-CAN",
+    "fr": "BG-CAN",
+    "count": 4
+  },
+  {
+    "en": "GoM-CAN",
+    "fr": "GM-CAN",
+    "count": 4
+  },
+  {
+    "en": "GoM-Can",
+    "fr": "GM-Can",
+    "count": 4
+  },
+  {
+    "en": "May-June",
+    "fr": "Mai-juin",
+    "count": 4
+  },
+  {
+    "en": "No.",
+    "fr": "N^{o}",
+    "count": 4
+  },
+  {
+    "en": "GoM",
+    "fr": "GM",
+    "count": 4
+  },
+  {
+    "en": "WDCA",
+    "fr": "IDEB",
+    "count": 4
+  },
+  {
+    "en": "Catch(mt)",
+    "fr": "Prises(tm)",
+    "count": 4
+  },
+  {
+    "en": "Biomass(mt)",
+    "fr": "Biomasse(tm)",
+    "count": 4
+  },
+  {
+    "en": "B_{MSY(30)}",
+    "fr": "B_{RMD(30)}",
+    "count": 4
+  },
+  {
+    "en": "B_{MSY(40)}",
+    "fr": "B_{RMD(40)}",
+    "count": 4
+  },
+  {
+    "en": "SSW-SW",
+    "fr": "SSO-SO",
+    "count": 4
+  },
+  {
+    "en": "LbP",
+    "fr": "PGT",
+    "count": 4
+  },
+  {
+    "en": "NWCHG",
+    "fr": "NOCHG",
+    "count": 4
+  },
+  {
+    "en": "PFMA_10",
+    "fr": "SGPP_10",
+    "count": 4
+  },
+  {
+    "en": "NWHG",
+    "fr": "NOHG",
+    "count": 4
+  },
+  {
+    "en": "se",
+    "fr": "ET",
+    "count": 4
+  },
+  {
+    "en": "Cons.",
+    "fr": "Comp.",
+    "count": 4
+  },
+  {
+    "en": "CIOPSW",
+    "fr": "SPCOG-O",
+    "count": 4
+  },
+  {
+    "en": "CIOPSE",
+    "fr": "SPCOG-E",
+    "count": 4
+  },
+  {
+    "en": "STLE500",
+    "fr": "ESTL500",
+    "count": 4
+  },
+  {
+    "en": "CIOPS-E",
+    "fr": "SPOGC-E",
+    "count": 4
+  },
+  {
+    "en": "γ^{2}",
+    "fr": "ɣ^{2}",
+    "count": 4
+  },
+  {
+    "en": "Neg/Neg",
+    "fr": "Nég./nég.",
+    "count": 4
+  },
+  {
+    "en": "CMC",
+    "fr": "CCC",
+    "count": 4
+  },
+  {
+    "en": "NMC",
+    "fr": "NCC",
+    "count": 4
+  },
+  {
+    "en": "PD",
+    "fr": "PJ",
+    "count": 4
+  },
+  {
+    "en": "s(Depth)",
+    "fr": "s(profondeur)",
+    "count": 4
+  },
+  {
+    "en": "s(Time)",
+    "fr": "s(durée)",
+    "count": 4
+  },
+  {
+    "en": "TEL:CAX",
+    "fr": "TEL/CAX",
+    "count": 4
+  },
+  {
+    "en": "CI_Low",
+    "fr": "IC_Inférieur",
+    "count": 4
+  },
+  {
+    "en": "CI_Upper",
+    "fr": "IC_Supérieur",
+    "count": 4
+  },
+  {
+    "en": "WBNDB",
+    "fr": "BW-BND",
+    "count": 4
+  },
+  {
+    "en": "Dec.",
+    "fr": "Déc.",
+    "count": 4
+  },
+  {
+    "en": "Apr.",
+    "fr": "Avr.",
+    "count": 4
+  },
+  {
+    "en": "SFA1",
+    "fr": "ZPC1",
+    "count": 4
+  },
+  {
+    "en": "NA*^{±}",
+    "fr": "S.O.*^{±}",
+    "count": 4
+  },
+  {
+    "en": "Pred.",
+    "fr": "Prév.",
+    "count": 4
+  },
+  {
+    "en": "E",
+    "fr": "EN",
+    "count": 4
+  },
+  {
+    "en": "FSC/Treaty",
+    "fr": "ASR/Traité",
+    "count": 4
+  },
+  {
+    "en": "N/A",
+    "fr": "s.o.",
+    "count": 4
+  },
+  {
+    "en": "Sept-Iles",
+    "fr": "Sept-Îles",
+    "count": 4
+  },
+  {
+    "en": "/B/_{/2022/}//B/_{/MSY/}",
+    "fr": "/B/_{/2022/}//B/_{/RMD/}",
+    "count": 4
+  },
+  {
+    "en": "/F/_{/2022/}//F/_{/MSY/}",
+    "fr": "/F/_{/2022/}//F/_{/RMD/}",
+    "count": 4
+  },
+  {
+    "en": "NEA",
+    "fr": "ANE",
+    "count": 4
+  },
+  {
+    "en": "NS",
+    "fr": "NÉ",
+    "count": 4
+  },
+  {
+    "en": "LF",
+    "fr": "FL",
+    "count": 4
+  },
+  {
+    "en": "Aug_Sept",
+    "fr": "Août-sept.",
+    "count": 4
+  },
+  {
+    "en": "AUC",
+    "fr": "SSC",
+    "count": 4
+  },
+  {
+    "en": "TP",
+    "fr": "VP",
+    "count": 4
+  },
+  {
+    "en": "TN",
+    "fr": "VN",
+    "count": 4
+  },
+  {
+    "en": "Std.",
+    "fr": "Standard.",
+    "count": 3
+  },
+  {
+    "en": "Pre-recruits",
+    "fr": "Pré-recrues",
+    "count": 3
+  },
+  {
+    "en": "Jan/Feb",
+    "fr": "Jan/Fév",
+    "count": 3
+  },
+  {
+    "en": "All^{1}",
+    "fr": "Toutes^{1}",
+    "count": 3
+  },
+  {
+    "en": "P(SSB>LRP)",
+    "fr": "P(BSR>PRL)",
+    "count": 3
+  },
+  {
+    "en": "P(SSB>USR)",
+    "fr": "P(BSR>PRS)",
+    "count": 3
+  },
+  {
+    "en": "SSF",
+    "fr": "FDS",
+    "count": 3
+  },
+  {
+    "en": "NS",
+    "fr": "N.-É.",
+    "count": 3
+  },
+  {
+    "en": "PE",
+    "fr": "ÎPÉ",
+    "count": 3
+  },
+  {
+    "en": "NB",
+    "fr": "N.-B.",
+    "count": 3
+  },
+  {
+    "en": "MG(s)",
+    "fr": "MG(p)",
+    "count": 3
+  },
+  {
+    "en": "CV(s)",
+    "fr": "CV(p)",
+    "count": 3
+  },
+  {
+    "en": "CG(s)",
+    "fr": "CG(p)",
+    "count": 3
+  },
+  {
+    "en": "ME(l)",
+    "fr": "ME(g)",
+    "count": 3
+  },
+  {
+    "en": "Time-point(h)",
+    "fr": "Temps(h)",
+    "count": 3
+  },
+  {
+    "en": "HS",
+    "fr": "DH",
+    "count": 3
+  },
+  {
+    "en": "omega",
+    "fr": "oméga",
+    "count": 3
+  },
+  {
+    "en": "log_{e}(Flow)",
+    "fr": "log_{e}(débit)",
+    "count": 3
+  },
+  {
+    "en": "Temperature^{2}",
+    "fr": "Température^{2}",
+    "count": 3
+  },
+  {
+    "en": "N/A",
+    "fr": "s.o.",
+    "count": 3
+  },
+  {
+    "en": "Non-Tidal",
+    "fr": "Non-tidal",
+    "count": 3
+  },
+  {
+    "en": "Indep.",
+    "fr": "Indép.",
+    "count": 3
+  },
+  {
+    "en": "MG(s)",
+    "fr": "MG(p)",
+    "count": 3
+  },
+  {
+    "en": "CV(s)",
+    "fr": "CV(p)",
+    "count": 3
+  },
+  {
+    "en": "CG(s)",
+    "fr": "CG(p)",
+    "count": 3
+  },
+  {
+    "en": "ME(l)",
+    "fr": "ME(g)",
+    "count": 3
+  },
+  {
+    "en": "Neg/Mod",
+    "fr": "Nég./mod.",
+    "count": 3
+  },
+  {
+    "en": "NAFO^{1}",
+    "fr": "OPANO^{1}",
+    "count": 3
+  },
+  {
+    "en": "NAFO^{2}",
+    "fr": "OPANO^{2}",
+    "count": 3
+  },
+  {
+    "en": "CILow",
+    "fr": "ICInférieur",
+    "count": 3
+  },
+  {
+    "en": "CIUpper",
+    "fr": "ICSupérieur",
+    "count": 3
+  },
+  {
+    "en": "Apr.–May",
+    "fr": "Avr.-mai",
+    "count": 3
+  },
+  {
+    "en": "WBNDB^{1}",
+    "fr": "BW-BND^{1}",
+    "count": 3
+  },
+  {
+    "en": "RD",
+    "fr": "DD",
+    "count": 3
+  },
+  {
+    "en": "RPAS",
+    "fr": "SATP",
+    "count": 3
+  },
+  {
+    "en": "ER",
+    "fr": "TR",
+    "count": 3
+  },
+  {
+    "en": "/DCAC/",
+    "fr": "/PMCE/",
+    "count": 3
+  },
+  {
+    "en": "/F/",
+    "fr": "/P/",
+    "count": 3
+  },
+  {
+    "en": "/N/_{MSY}",
+    "fr": "/N/_{RMD}",
+    "count": 3
+  },
+  {
+    "en": "SPM",
+    "fr": "PE",
+    "count": 3
+  },
+  {
+    "en": "WAZ",
+    "fr": "ZEO",
+    "count": 3
+  },
+  {
+    "en": "/PNI/",
+    "fr": "/INP/",
+    "count": 3
+  },
+  {
+    "en": "WG",
+    "fr": "GT",
+    "count": 3
+  },
+  {
+    "en": "CC(t/y)",
+    "fr": "CC(t/a)",
+    "count": 3
+  },
+  {
+    "en": "AD/CWT",
+    "fr": "AD/MMC",
+    "count": 3
+  },
+  {
+    "en": "/U/_{/MSY/}",
+    "fr": "/U/_{/RMD/}",
+    "count": 3
+  },
+  {
+    "en": "Unk.",
+    "fr": "Inc.",
+    "count": 3
+  },
+  {
+    "en": "SSB/LRP",
+    "fr": "BSR/PRL",
+    "count": 3
+  },
+  {
+    "en": "BEL-EHB",
+    "fr": "BEL-EBH",
+    "count": 3
+  },
+  {
+    "en": "SST_15d",
+    "fr": "TSM_15d",
+    "count": 3
+  },
+  {
+    "en": "GHRSST",
+    "fr": "GHRTSM",
+    "count": 3
+  },
+  {
+    "en": "SST_lag3d",
+    "fr": "TSM_lag3d",
+    "count": 3
+  },
+  {
+    "en": "SST_lag15d",
+    "fr": "TSM_lag15d",
+    "count": 3
+  },
+  {
+    "en": "MSLA",
+    "fr": "ANMM",
+    "count": 3
+  },
+  {
+    "en": "Log-normal",
+    "fr": "Log-normale",
+    "count": 3
+  },
+  {
+    "en": "Lndgs.",
+    "fr": "Déb.",
+    "count": 3
+  },
+  {
+    "en": "Region*sex",
+    "fr": "Région*sexe",
+    "count": 2
+  },
+  {
+    "en": "L*Region*sex",
+    "fr": "L*Région*sexe",
+    "count": 2
+  },
+  {
+    "en": "AUC",
+    "fr": "ASC",
+    "count": 2
+  },
+  {
+    "en": "Apr-Nov",
+    "fr": "avr.-nov.",
+    "count": 2
+  },
+  {
+    "en": "May-Oct",
+    "fr": "mai-oct.",
+    "count": 2
+  },
+  {
+    "en": "Jan/Feb",
+    "fr": "Jan/Fev",
+    "count": 2
+  },
+  {
+    "en": "Meta-analysis",
+    "fr": "Méta-analyse",
+    "count": 2
+  },
+  {
+    "en": "Function(s)",
+    "fr": "Fonction(s)",
+    "count": 2
+  },
+  {
+    "en": "NRTH",
+    "fr": "NORTH",
+    "count": 2
+  },
+  {
+    "en": "SAG",
+    "fr": "GAS",
+    "count": 2
+  },
+  {
+    "en": "Jan/Feb",
+    "fr": "Jan/Fév",
+    "count": 2
+  },
+  {
+    "en": "TRP",
+    "fr": "PEC",
+    "count": 2
+  },
+  {
+    "en": "May-Jun",
+    "fr": "Mai-juin",
+    "count": 2
+  },
+  {
+    "en": "Fry/Parr",
+    "fr": "Alevins/Tacons",
+    "count": 2
+  },
+  {
+    "en": "TOTALS",
+    "fr": "TOTAL",
+    "count": 2
+  },
+  {
+    "en": "SHELF-E",
+    "fr": "PLATEAU-E",
+    "count": 2
+  },
+  {
+    "en": "Stratum13",
+    "fr": "Strate13",
+    "count": 2
+  },
+  {
+    "en": "Stratum14",
+    "fr": "Strate14",
+    "count": 2
+  },
+  {
+    "en": "Stratum15",
+    "fr": "Strate15",
+    "count": 2
+  },
+  {
+    "en": "Stratum17",
+    "fr": "Strate17",
+    "count": 2
+  },
+  {
+    "en": "P(SSB>LRP)",
+    "fr": "P(BSR>PRL)",
+    "count": 2
+  },
+  {
+    "en": "P(SSB>USR)",
+    "fr": "P(BSR>PRS)",
+    "count": 2
+  },
+  {
+    "en": "B_{MSY(80)}",
+    "fr": "B_{RMD(80)}",
+    "count": 2
+  },
+  {
+    "en": "RR_{tar}",
+    "fr": "NER_{cib}",
+    "count": 2
+  },
+  {
+    "en": "WS",
+    "fr": "MN",
+    "count": 2
+  },
+  {
+    "en": "WP",
+    "fr": "BA",
+    "count": 2
+  },
+  {
+    "en": "YP",
+    "fr": "PJ",
+    "count": 2
+  },
+  {
+    "en": "GS",
+    "fr": "MJ",
+    "count": 2
+  },
+  {
+    "en": "LCF",
+    "fr": "NCI",
+    "count": 2
+  },
+  {
+    "en": "(time)",
+    "fr": "(temps)",
+    "count": 2
+  },
+  {
+    "en": "ME(l)^{5}",
+    "fr": "ME(g)^{5}",
+    "count": 2
+  },
+  {
+    "en": "MG(l)",
+    "fr": "MG(g)",
+    "count": 2
+  },
+  {
+    "en": "CV(l)",
+    "fr": "CV(g)",
+    "count": 2
+  },
+  {
+    "en": "CV(l)^{5}",
+    "fr": "CV(g)^{5}",
+    "count": 2
+  },
+  {
+    "en": "MG(s/l)",
+    "fr": "MG(p/g)",
+    "count": 2
+  },
+  {
+    "en": "PM(s)",
+    "fr": "PM(p)",
+    "count": 2
+  },
+  {
+    "en": "High-Low",
+    "fr": "Élevé-Faible",
+    "count": 2
+  },
+  {
+    "en": "HS_{SP}",
+    "fr": "DH_{PR}",
+    "count": 2
+  },
+  {
+    "en": "HS_{FA}",
+    "fr": "DH_{AU}",
+    "count": 2
+  },
+  {
+    "en": "HS_{EF}",
+    "fr": "DH_{DA}",
+    "count": 2
+  },
+  {
+    "en": "HS_{LF}",
+    "fr": "DH_{FA}",
+    "count": 2
+  },
+  {
+    "en": "BURRINDARM",
+    "fr": "BRASBURRIND",
+    "count": 2
+  },
+  {
+    "en": "eta",
+    "fr": "êta",
+    "count": 2
+  },
+  {
+    "en": "ASMS",
+    "fr": "SGPA",
+    "count": 2
+  },
+  {
+    "en": "R-ASMS",
+    "fr": "SGPA-R",
+    "count": 2
+  },
+  {
+    "en": "B_{MSY}",
+    "fr": "B_{RMD}",
+    "count": 2
+  },
+  {
+    "en": "Const.",
+    "fr": "Comp.",
+    "count": 2
+  },
+  {
+    "en": "STLE200",
+    "fr": "ESTL200",
+    "count": 2
+  },
+  {
+    "en": "CIOPS-E",
+    "fr": "SPCO-E",
+    "count": 2
+  },
+  {
+    "en": "NMRWB",
+    "fr": "CGRFRMN",
+    "count": 2
+  },
+  {
+    "en": "ME(l)^{5}",
+    "fr": "ME(g)^{5}",
+    "count": 2
+  },
+  {
+    "en": "MG(l)",
+    "fr": "MG(g)",
+    "count": 2
+  },
+  {
+    "en": "CV(l)",
+    "fr": "CV(g)",
+    "count": 2
+  },
+  {
+    "en": "CV(l)^{5}",
+    "fr": "CV(g)^{5}",
+    "count": 2
+  },
+  {
+    "en": "MG(s/l)",
+    "fr": "MG(p/g)",
+    "count": 2
+  },
+  {
+    "en": "PM(s)",
+    "fr": "PM(p)",
+    "count": 2
+  },
+  {
+    "en": "logistic",
+    "fr": "logistique",
+    "count": 2
+  },
+  {
+    "en": "exponential",
+    "fr": "exponentiel",
+    "count": 2
+  },
+  {
+    "en": "FC",
+    "fr": "BF",
+    "count": 2
+  },
+  {
+    "en": "SWNS",
+    "fr": "SONÉ",
+    "count": 2
+  },
+  {
+    "en": "None.",
+    "fr": "Aucun.",
+    "count": 2
+  },
+  {
+    "en": "DIC",
+    "fr": "CID",
+    "count": 2
+  },
+  {
+    "en": "recaptured",
+    "fr": "recapturés",
+    "count": 2
+  },
+  {
+    "en": "t_{0}",
+    "fr": "T₀",
+    "count": 2
+  },
+  {
+    "en": "TEL:CAX",
+    "fr": "TEL/CAX",
+    "count": 2
+  },
+  {
+    "en": "Mar.–Apr.",
+    "fr": "Mars-avr.",
+    "count": 2
+  },
+  {
+    "en": "CBSS^{2}",
+    "fr": "BC-CS^{2}",
+    "count": 2
+  },
+  {
+    "en": "Jan.",
+    "fr": "Janv.",
+    "count": 2
+  },
+  {
+    "en": "FB^{3}",
+    "fr": "BF^{3}",
+    "count": 2
+  },
+  {
+    "en": "SFA0",
+    "fr": "ZPC0",
+    "count": 2
+  },
+  {
+    "en": "/N/_{MSY}",
+    "fr": "/N/_{RMS}",
+    "count": 2
+  },
+  {
+    "en": "WIV",
+    "fr": "VIP",
+    "count": 2
+  },
+  {
+    "en": "NSAR**",
+    "fr": "RESN**",
+    "count": 2
+  },
+  {
+    "en": "SSAR**",
+    "fr": "RESS**",
+    "count": 2
+  },
+  {
+    "en": "/AIC/",
+    "fr": "/CIA/",
+    "count": 2
+  },
+  {
+    "en": "/pHOS/",
+    "fr": "/pGÉF/",
+    "count": 2
+  },
+  {
+    "en": "/PNI/_{local}",
+    "fr": "/INP/_{local}",
+    "count": 2
+  },
+  {
+    "en": "LowMod",
+    "fr": "Faible-Modéré",
+    "count": 2
+  },
+  {
+    "en": "PBT",
+    "fr": "MFF",
+    "count": 2
+  },
+  {
+    "en": "U_{MSY}",
+    "fr": "U_{RMD}",
+    "count": 2
+  },
+  {
+    "en": "YES",
+    "fr": "OUI",
+    "count": 2
+  },
+  {
+    "en": "U",
+    "fr": "I",
+    "count": 2
+  },
+  {
+    "en": "PCB+",
+    "fr": "BPC+",
+    "count": 2
+  },
+  {
+    "en": "/u/_{MSY}",
+    "fr": "/u/_{RMD}",
+    "count": 2
+  },
+  {
+    "en": "/V/_{MSY}",
+    "fr": "/V/_{RMD}",
+    "count": 2
+  },
+  {
+    "en": "Amber/green",
+    "fr": "Ambre/vert",
+    "count": 2
+  },
+  {
+    "en": "/q/_{/blend/}",
+    "fr": "/q/_{/combiné/}",
+    "count": 2
+  },
+  {
+    "en": "/U/_{/USR/}",
+    "fr": "/U/_{/PRS/}",
+    "count": 2
+  },
+  {
+    "en": "/Y/_{/USR/}",
+    "fr": "/Y/_{/PRS/}",
+    "count": 2
+  },
+  {
+    "en": "/U/_{/Crash/}",
+    "fr": "/U/_{/effondrement/}",
+    "count": 2
+  },
+  {
+    "en": "NARW(d)",
+    "fr": "BNAN(j)",
+    "count": 2
+  },
+  {
+    "en": "NARW%",
+    "fr": "BNAN%",
+    "count": 2
+  },
+  {
+    "en": "Sub-area",
+    "fr": "Sous-zone",
+    "count": 2
+  },
+  {
+    "en": "Périod^{1}",
+    "fr": "Période^{1}",
+    "count": 2
+  },
+  {
+    "en": "Year(s)",
+    "fr": "Année(s)",
+    "count": 2
+  },
+  {
+    "en": "IDQ",
+    "fr": "CJI",
+    "count": 2
+  },
+  {
+    "en": "MDQB",
+    "fr": "CJMB",
+    "count": 2
+  },
+  {
+    "en": "Country/entity^{a}",
+    "fr": "Pays/entité^{a}",
+    "count": 2
+  },
+  {
+    "en": "AMEP",
+    "fr": "PLIEC",
+    "count": 2
+  },
+  {
+    "en": "WITCH",
+    "fr": "PLIEG",
+    "count": 2
+  },
+  {
+    "en": "SHR",
+    "fr": "CREV",
+    "count": 2
+  },
+  {
+    "en": "UNK",
+    "fr": "INC",
+    "count": 2
+  },
+  {
+    "en": "LNSFA",
+    "fr": "APBCN",
+    "count": 2
+  },
+  {
+    "en": "CRP",
+    "fr": "PCSH",
+    "count": 2
+  },
+  {
+    "en": "FSCP",
+    "fr": "PRM",
+    "count": 2
+  },
+  {
+    "en": "Aug.-Sept.",
+    "fr": "Août-sept.",
+    "count": 2
+  },
+  {
+    "en": "TPI",
+    "fr": "IPT",
+    "count": 2
+  },
+  {
+    "en": "Apr_May",
+    "fr": "Avr.-mai",
+    "count": 2
+  },
+  {
+    "en": "June_July",
+    "fr": "Juin-juill.",
+    "count": 2
+  },
+  {
+    "en": "Apr_July",
+    "fr": "Avr.-juill.",
+    "count": 2
+  },
+  {
+    "en": "Aug_Nov",
+    "fr": "Août-nov.",
+    "count": 2
+  },
+  {
+    "en": "Apr_May",
+    "fr": "Avr.-mai",
+    "count": 2
+  },
+  {
+    "en": "June_July",
+    "fr": "Juin-juill.",
+    "count": 2
+  },
+  {
+    "en": "Oct_Nov",
+    "fr": "Oct.-nov.",
+    "count": 2
+  },
+  {
+    "en": "Apr_July",
+    "fr": "Avr.-juill.",
+    "count": 2
+  },
+  {
+    "en": "Aug_Nov",
+    "fr": "Août-nov.",
+    "count": 2
+  },
+  {
+    "en": "SSB/LRP",
+    "fr": "BSR/PRL",
+    "count": 2
+  },
+  {
+    "en": "U.S.",
+    "fr": "É.-U.",
+    "count": 2
+  }
+]
