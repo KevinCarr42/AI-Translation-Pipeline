@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2026-03-12T14:19:03.989881",
+    "generated_at": "2026-03-20T10:06:56.800639",
     "source_spreadsheet": "translations_spreadsheet.xlsx",
     "total_categories": 5
   },
@@ -11709,2870 +11709,2124 @@
         "french": "S.O.",
         "en_formatted": "n/a",
         "fr_formatted": "S.O.",
-        "number_of_occurances": 615
-      },
-      {
-        "english": "n/a",
-        "french": "n.a.",
-        "en_formatted": "n/a",
-        "fr_formatted": "n.a.",
-        "number_of_occurances": 573
-      },
-      {
-        "english": "N/A",
-        "french": "S.O.",
-        "en_formatted": "N/A",
-        "fr_formatted": "S.O.",
-        "number_of_occurances": 493
+        "case_variants": [
+          "N/A"
+        ],
+        "fr_variants": [
+          "S/O",
+          "n.a.",
+          "s.o."
+        ]
       },
       {
         "english": "n.s.",
         "french": "n.é.",
         "en_formatted": "n.s.",
-        "fr_formatted": "n.é.",
-        "number_of_occurances": 490
+        "fr_formatted": "n.é."
       },
       {
         "english": "SOG",
         "french": "DG",
         "en_formatted": "SOG",
-        "fr_formatted": "DG",
-        "number_of_occurances": 200
+        "fr_formatted": "DG"
       },
       {
         "english": "NF",
         "french": "NP",
         "en_formatted": "NF",
-        "fr_formatted": "NP",
-        "number_of_occurances": 184
+        "fr_formatted": "NP"
       },
       {
         "english": "pHOSlocal",
         "french": "pGÉFlocal",
         "en_formatted": "/pHOS/_{local}",
-        "fr_formatted": "/pGÉF/_{local}",
-        "number_of_occurances": 90
+        "fr_formatted": "/pGÉF/_{local}"
       },
       {
         "english": "pHOSstray",
         "french": "pGÉFégaré",
         "en_formatted": "/pHOS/_{stray}",
-        "fr_formatted": "/pGÉF/_{égaré}",
-        "number_of_occurances": 89
+        "fr_formatted": "/pGÉF/_{égaré}"
       },
       {
         "english": "pNOS",
         "french": "pGON",
         "en_formatted": "/pNOS/",
-        "fr_formatted": "/pGON/",
-        "number_of_occurances": 88
+        "fr_formatted": "/pGON/"
       },
       {
         "english": "PS-LS",
         "french": "DP-DL",
         "en_formatted": "PS-LS",
-        "fr_formatted": "DP-DL",
-        "number_of_occurances": 80
+        "fr_formatted": "DP-DL"
       },
       {
         "english": "NMC",
         "french": "NCC",
         "en_formatted": "NMC",
-        "fr_formatted": "NCC",
-        "number_of_occurances": 71
+        "fr_formatted": "NCC"
       },
       {
         "english": "AIC",
         "french": "CIA",
         "en_formatted": "AIC",
-        "fr_formatted": "CIA",
-        "number_of_occurances": 70
+        "fr_formatted": "CIA"
       },
       {
         "english": "ES",
         "french": "DE",
         "en_formatted": "ES",
-        "fr_formatted": "DE",
-        "number_of_occurances": 64
+        "fr_formatted": "DE"
       },
       {
         "english": "NO",
         "french": "ON",
         "en_formatted": "NO",
-        "fr_formatted": "ON",
-        "number_of_occurances": 62
+        "fr_formatted": "ON"
       },
       {
         "english": "CIOPSW",
         "french": "SPCOG-O",
         "en_formatted": "CIOPSW",
-        "fr_formatted": "SPCOG-O",
-        "number_of_occurances": 59
-      },
-      {
-        "english": "S",
-        "french": "N",
-        "en_formatted": "S",
-        "fr_formatted": "N",
-        "number_of_occurances": 58
+        "fr_formatted": "SPCOG-O"
       },
       {
         "english": "TM",
         "french": "MT",
         "en_formatted": "TM",
-        "fr_formatted": "MT",
-        "number_of_occurances": 58
+        "fr_formatted": "MT"
       },
       {
         "english": "BIC",
         "french": "CIB",
         "en_formatted": "BIC",
-        "fr_formatted": "CIB",
-        "number_of_occurances": 57
+        "fr_formatted": "CIB"
       },
       {
         "english": "ΔAIC",
         "french": "ΔCIA",
         "en_formatted": "ΔAIC",
-        "fr_formatted": "ΔCIA",
-        "number_of_occurances": 55
+        "fr_formatted": "ΔCIA"
       },
       {
         "english": "ΔBIC",
         "french": "ΔCIB",
         "en_formatted": "ΔBIC",
-        "fr_formatted": "ΔCIB",
-        "number_of_occurances": 55
-      },
-      {
-        "english": "CIOPSW",
-        "french": "SPCOG-O",
-        "en_formatted": "CIOPSW",
-        "fr_formatted": "SPCOG-O",
-        "number_of_occurances": 53
+        "fr_formatted": "ΔCIB"
       },
       {
         "english": "FALSE",
         "french": "FAUX",
         "en_formatted": "FALSE",
-        "fr_formatted": "FAUX",
-        "number_of_occurances": 52
+        "fr_formatted": "FAUX"
       },
       {
         "english": "NB",
         "french": "BN",
         "en_formatted": "NB",
         "fr_formatted": "BN",
-        "number_of_occurances": 52
+        "fr_variants": [
+          "N.-B."
+        ]
       },
       {
         "english": "AI",
         "french": "BA",
         "en_formatted": "AI",
-        "fr_formatted": "BA",
-        "number_of_occurances": 51
+        "fr_formatted": "BA"
       },
       {
         "english": "HO",
         "french": "OE",
         "en_formatted": "HO",
-        "fr_formatted": "OE",
-        "number_of_occurances": 50
+        "fr_formatted": "OE"
       },
       {
         "english": "ZINB",
         "french": "BNIN",
         "en_formatted": "ZINB",
-        "fr_formatted": "BNIN",
-        "number_of_occurances": 48
+        "fr_formatted": "BNIN"
       },
       {
         "english": "SDM",
         "french": "MRE",
         "en_formatted": "SDM",
-        "fr_formatted": "MRE",
-        "number_of_occurances": 48
+        "fr_formatted": "MRE"
       },
       {
         "english": "WJS",
         "french": "ODJ",
         "en_formatted": "WJS",
-        "fr_formatted": "ODJ",
-        "number_of_occurances": 47
+        "fr_formatted": "ODJ"
       },
       {
         "english": "SS",
         "french": "RP",
         "en_formatted": "SS",
-        "fr_formatted": "RP",
-        "number_of_occurances": 43
+        "fr_formatted": "RP"
       },
       {
         "english": "FS",
         "french": "RA",
         "en_formatted": "FS",
-        "fr_formatted": "RA",
-        "number_of_occurances": 43
+        "fr_formatted": "RA"
       },
       {
         "english": "CIOPSE",
         "french": "SPCOG-E",
         "en_formatted": "CIOPSE",
-        "fr_formatted": "SPCOG-E",
-        "number_of_occurances": 41
+        "fr_formatted": "SPCOG-E"
       },
       {
         "english": "CWT",
         "french": "MMC",
         "en_formatted": "CWT",
-        "fr_formatted": "MMC",
-        "number_of_occurances": 39
+        "fr_formatted": "MMC"
       },
       {
         "english": "ECVI",
         "french": "CEIV",
         "en_formatted": "ECVI",
-        "fr_formatted": "CEIV",
-        "number_of_occurances": 38
+        "fr_formatted": "CEIV"
       },
       {
         "english": "QCS",
         "french": "DRC",
         "en_formatted": "QCS",
-        "fr_formatted": "DRC",
-        "number_of_occurances": 35
+        "fr_formatted": "DRC"
       },
       {
         "english": "STLE500",
         "french": "ESTL500",
         "en_formatted": "STLE500",
-        "fr_formatted": "ESTL500",
-        "number_of_occurances": 35
+        "fr_formatted": "ESTL500"
       },
       {
         "english": "CMC",
         "french": "CCC",
         "en_formatted": "CMC",
-        "fr_formatted": "CCC",
-        "number_of_occurances": 34
+        "fr_formatted": "CCC"
       },
       {
         "english": "SE",
         "french": "ET",
         "en_formatted": "SE",
         "fr_formatted": "ET",
-        "number_of_occurances": 32
+        "case_variants": [
+          "se"
+        ],
+        "fr_variants": [
+          "ES"
+        ]
       },
       {
         "english": "STOT",
         "french": "ETOT",
         "en_formatted": "/S/_{TOT}",
-        "fr_formatted": "/E/_{TOT}",
-        "number_of_occurances": 32
+        "fr_formatted": "/E/_{TOT}"
       },
       {
         "english": "SOCU",
         "french": "EHUC",
         "en_formatted": "/S/_{OCU}",
-        "fr_formatted": "/E/_{HUC}",
-        "number_of_occurances": 32
+        "fr_formatted": "/E/_{HUC}"
       },
       {
         "english": "SR",
         "french": "TE",
         "en_formatted": "/SR/",
-        "fr_formatted": "/TE/",
-        "number_of_occurances": 32
+        "fr_formatted": "/TE/"
       },
       {
         "english": "SROCU",
         "french": "TEHUC",
         "en_formatted": "/SR/_{OCU}",
-        "fr_formatted": "/TE/_{HUC}",
-        "number_of_occurances": 32
+        "fr_formatted": "/TE/_{HUC}"
       },
       {
         "english": "CIOPS-E",
-        "french": "SGPOG-E",
+        "french": "SPCOG-E",
         "en_formatted": "CIOPS-E",
-        "fr_formatted": "SGPOG-E",
-        "number_of_occurances": 31
+        "fr_formatted": "SPCOG-E",
+        "fr_variants": [
+          "SPCOG-E",
+          "SPOGC-E",
+          "SPCO-E"
+        ]
       },
       {
         "english": "C.V.",
         "french": "CV",
         "en_formatted": "C.V.",
-        "fr_formatted": "CV",
-        "number_of_occurances": 31
+        "fr_formatted": "CV"
       },
       {
-        "english": "LDM,",
-        "french": "MSRL,",
-        "en_formatted": "LDM,",
-        "fr_formatted": "MSRL,",
-        "number_of_occurances": 30
-      },
-      {
-        "english": "n/a",
-        "french": "s.o.",
-        "en_formatted": "n/a",
-        "fr_formatted": "s.o.",
-        "number_of_occurances": 30
-      },
-      {
-        "english": "N/A",
-        "french": "S/O",
-        "en_formatted": "N/A",
-        "fr_formatted": "S/O",
-        "number_of_occurances": 30
+        "english": "LDM",
+        "french": "MSRL",
+        "en_formatted": "LDM",
+        "fr_formatted": "MSRL"
       },
       {
         "english": "Terrestrial*",
         "french": "Terrestre*",
         "en_formatted": "Terrestrial*",
-        "fr_formatted": "Terrestre*",
-        "number_of_occurances": 29
+        "fr_formatted": "Terrestre*"
       },
       {
         "english": "DINOFLAGELLATES",
         "french": "DINOFLAGELLÉS",
         "en_formatted": "DINOFLAGELLATES",
-        "fr_formatted": "DINOFLAGELLÉS",
-        "number_of_occurances": 28
+        "fr_formatted": "DINOFLAGELLÉS"
       },
       {
         "english": "GULFISL",
         "french": "IGULF",
         "en_formatted": "GULFISL",
-        "fr_formatted": "IGULF",
-        "number_of_occurances": 28
+        "fr_formatted": "IGULF"
       },
       {
         "english": "UCI",
         "french": "ICS",
         "en_formatted": "UCI",
-        "fr_formatted": "ICS",
-        "number_of_occurances": 28
+        "fr_formatted": "ICS"
       },
       {
         "english": "Neg/Mod",
         "french": "Nég./mod.",
         "en_formatted": "Neg/Mod",
-        "fr_formatted": "Nég./mod.",
-        "number_of_occurances": 28
+        "fr_formatted": "Nég./mod."
       },
       {
         "english": "NWGULF",
         "french": "NOGULF",
         "en_formatted": "NWGULF",
-        "fr_formatted": "NOGULF",
-        "number_of_occurances": 27
+        "fr_formatted": "NOGULF"
       },
       {
         "english": "CRMP",
         "french": "PRSC",
         "en_formatted": "CRMP",
-        "fr_formatted": "PRSC",
-        "number_of_occurances": 26
+        "fr_formatted": "PRSC"
       },
       {
         "english": "FRASERR",
         "french": "FFRASER",
         "en_formatted": "FRASERR",
-        "fr_formatted": "FFRASER",
-        "number_of_occurances": 26
+        "fr_formatted": "FFRASER"
       },
       {
         "english": "S.E.",
         "french": "ET",
         "en_formatted": "S.E.",
-        "fr_formatted": "ET",
-        "number_of_occurances": 26
+        "fr_formatted": "ET"
       },
       {
         "english": "HOWESD",
         "french": "BHOWE",
         "en_formatted": "HOWESD",
-        "fr_formatted": "BHOWE",
-        "number_of_occurances": 25
+        "fr_formatted": "BHOWE"
       },
       {
         "english": "BBAY",
         "french": "BAIEB",
         "en_formatted": "BBAY",
-        "fr_formatted": "BAIEB",
-        "number_of_occurances": 25
+        "fr_formatted": "BAIEB"
       },
       {
         "english": "STLE200",
         "french": "ESTL200",
         "en_formatted": "STLE200",
-        "fr_formatted": "ESTL200",
-        "number_of_occurances": 25
+        "fr_formatted": "ESTL200"
       },
       {
         "english": "MOLLUSKS",
         "french": "MOLLUSQUES",
         "en_formatted": "MOLLUSKS",
-        "fr_formatted": "MOLLUSQUES",
-        "number_of_occurances": 24
+        "fr_formatted": "MOLLUSQUES"
       },
       {
         "english": "POLYCHAETES",
         "french": "POLYCHÈTES",
         "en_formatted": "POLYCHAETES",
-        "fr_formatted": "POLYCHÈTES",
-        "number_of_occurances": 24
+        "fr_formatted": "POLYCHÈTES"
       },
       {
         "english": "BRYOZOANS",
         "french": "BRYOZOAIRES",
         "en_formatted": "BRYOZOANS",
-        "fr_formatted": "BRYOZOAIRES",
-        "number_of_occurances": 24
+        "fr_formatted": "BRYOZOAIRES"
       },
       {
         "english": "HYDROZOANS",
         "french": "HYDROZOAIRES",
         "en_formatted": "HYDROZOANS",
-        "fr_formatted": "HYDROZOAIRES",
-        "number_of_occurances": 24
+        "fr_formatted": "HYDROZOAIRES"
       },
       {
         "english": "SD",
         "french": "E-T",
         "en_formatted": "SD",
         "fr_formatted": "E-T",
-        "number_of_occurances": 24
+        "fr_variants": [
+          "ET"
+        ]
+      },
+      {
+        "english": "sd",
+        "french": "ET",
+        "en_formatted": "sd",
+        "fr_formatted": "ET"
       },
       {
         "english": "SC",
         "french": "P",
         "en_formatted": "SC",
-        "fr_formatted": "P",
-        "number_of_occurances": 24
-      },
-      {
-        "english": "SD",
-        "french": "ET",
-        "en_formatted": "SD",
-        "fr_formatted": "ET",
-        "number_of_occurances": 23
+        "fr_formatted": "P"
       },
       {
         "english": "CIOPS-W",
-        "french": "SPCOG-Ouest",
+        "french": "SPCOG-O",
         "en_formatted": "CIOPS-W",
-        "fr_formatted": "SPCOG-Ouest",
-        "number_of_occurances": 22
+        "fr_formatted": "SPCOG-O"
       },
       {
         "english": "FB",
         "french": "BF",
         "en_formatted": "FB",
-        "fr_formatted": "BF",
-        "number_of_occurances": 22
+        "fr_formatted": "BF"
       },
       {
         "english": "Sub-region",
         "french": "Sous-région",
         "en_formatted": "Sub-region",
-        "fr_formatted": "Sous-région",
-        "number_of_occurances": 21
+        "fr_formatted": "Sous-région"
       },
       {
         "english": "n.s",
         "french": "n.é.",
         "en_formatted": "n.s",
-        "fr_formatted": "n.é.",
-        "number_of_occurances": 21
-      },
-      {
-        "english": "CIOPS-W",
-        "french": "SPCOG-Ouest",
-        "en_formatted": "CIOPS-W",
-        "fr_formatted": "SPCOG-Ouest",
-        "number_of_occurances": 20
-      },
-      {
-        "english": "ɣ2",
-        "french": "Ɣ2",
-        "en_formatted": "ɣ^{2}",
-        "fr_formatted": "Ɣ^{2}",
-        "number_of_occurances": 20
+        "fr_formatted": "n.é."
       },
       {
         "english": "Half-Cauchy",
         "french": "Demi-Cauchy",
         "en_formatted": "Half-Cauchy",
-        "fr_formatted": "Demi-Cauchy",
-        "number_of_occurances": 20
+        "fr_formatted": "Demi-Cauchy"
       },
       {
         "english": "PRYMNESIOPHYTES",
         "french": "PRYMNÉSIOPHYTES",
         "en_formatted": "PRYMNESIOPHYTES",
-        "fr_formatted": "PRYMNÉSIOPHYTES",
-        "number_of_occurances": 19
+        "fr_formatted": "PRYMNÉSIOPHYTES"
       },
       {
         "english": "IH",
         "french": "IÉ",
         "en_formatted": "IH",
         "fr_formatted": "IÉ",
-        "number_of_occurances": 19
+        "fr_variants": [
+          "IE"
+        ]
       },
       {
         "english": "SLOPE-W",
         "french": "TALUS-O",
         "en_formatted": "SLOPE-W",
-        "fr_formatted": "TALUS-O",
-        "number_of_occurances": 18
+        "fr_formatted": "TALUS-O"
       },
       {
         "english": "PFMA_06",
         "french": "SGPP_06",
         "en_formatted": "PFMA_06",
-        "fr_formatted": "SGPP_06",
-        "number_of_occurances": 18
+        "fr_formatted": "SGPP_06"
       },
       {
         "english": "95Lower",
         "french": "95Inférieur",
         "en_formatted": "95Lower",
-        "fr_formatted": "95Inférieur",
-        "number_of_occurances": 17
+        "fr_formatted": "95Inférieur"
       },
       {
         "english": "95Upper",
         "french": "95Supérieur",
         "en_formatted": "95Upper",
-        "fr_formatted": "95Supérieur",
-        "number_of_occurances": 17
+        "fr_formatted": "95Supérieur"
       },
       {
         "english": "BoF",
         "french": "BF",
         "en_formatted": "BoF",
-        "fr_formatted": "BF",
-        "number_of_occurances": 17
+        "fr_formatted": "BF"
       },
       {
         "english": "SLOPE-E",
         "french": "TALUS-E",
         "en_formatted": "SLOPE-E",
-        "fr_formatted": "TALUS-E",
-        "number_of_occurances": 17
-      },
-      {
-        "english": "CIOPS-E",
-        "french": "SPCOG-E",
-        "en_formatted": "CIOPS-E",
-        "fr_formatted": "SPCOG-E",
-        "number_of_occurances": 17
+        "fr_formatted": "TALUS-E"
       },
       {
         "english": "SMBPB",
         "french": "BSM-BP",
         "en_formatted": "SMBPB",
-        "fr_formatted": "BSM-BP",
-        "number_of_occurances": 17
+        "fr_formatted": "BSM-BP"
       },
       {
         "english": "DMP",
         "french": "PVQ",
         "en_formatted": "DMP",
-        "fr_formatted": "PVQ",
-        "number_of_occurances": 16
-      },
-      {
-        "english": "CIOPS-E",
-        "french": "SGPOG-E",
-        "en_formatted": "CIOPS-E",
-        "fr_formatted": "SGPOG-E",
-        "number_of_occurances": 15
+        "fr_formatted": "PVQ"
       },
       {
         "english": "PB",
         "french": "BP",
         "en_formatted": "PB",
-        "fr_formatted": "BP",
-        "number_of_occurances": 15
+        "fr_formatted": "BP"
       },
       {
         "english": "TEL:CAB",
         "french": "TEL-CAB",
         "en_formatted": "TEL:CAB",
-        "fr_formatted": "TEL-CAB",
-        "number_of_occurances": 15
-      },
-      {
-        "english": "L",
-        "french": "D",
-        "en_formatted": "L",
-        "fr_formatted": "D",
-        "number_of_occurances": 15
+        "fr_formatted": "TEL-CAB"
       },
       {
         "english": "SHELF-C",
         "french": "PLATEAU-C",
         "en_formatted": "SHELF-C",
-        "fr_formatted": "PLATEAU-C",
-        "number_of_occurances": 14
-      },
-      {
-        "english": "L",
-        "french": "F",
-        "en_formatted": "L",
-        "fr_formatted": "F",
-        "number_of_occurances": 14
+        "fr_formatted": "PLATEAU-C"
       },
       {
         "english": "SSE",
         "french": "SEC",
         "en_formatted": "SSE",
-        "fr_formatted": "SEC",
-        "number_of_occurances": 14
+        "fr_formatted": "SEC"
       },
       {
         "english": "WAIC",
         "french": "CIWA",
         "en_formatted": "WAIC",
-        "fr_formatted": "CIWA",
-        "number_of_occurances": 14
+        "fr_formatted": "CIWA"
       },
       {
         "english": "SFA2",
         "french": "ZPC2",
         "en_formatted": "SFA2",
-        "fr_formatted": "ZPC2",
-        "number_of_occurances": 14
+        "fr_formatted": "ZPC2"
       },
       {
         "english": "PFMA_05",
         "french": "SGPP_05",
         "en_formatted": "PFMA_05",
-        "fr_formatted": "SGPP_05",
-        "number_of_occurances": 13
+        "fr_formatted": "SGPP_05"
       },
       {
         "english": "BBTB",
         "french": "BB-BT",
         "en_formatted": "BBTB",
-        "fr_formatted": "BB-BT",
-        "number_of_occurances": 13
-      },
-      {
-        "english": "sd",
-        "french": "ET",
-        "en_formatted": "sd",
-        "fr_formatted": "ET",
-        "number_of_occurances": 12
-      },
-      {
-        "english": "H",
-        "french": "E",
-        "en_formatted": "H",
-        "fr_formatted": "E",
-        "number_of_occurances": 12
+        "fr_formatted": "BB-BT"
       },
       {
         "english": "DPASS",
         "french": "PD",
         "en_formatted": "DPASS",
-        "fr_formatted": "PD",
-        "number_of_occurances": 12
+        "fr_formatted": "PD"
       },
       {
         "english": "DISCOVPASS",
         "french": "PASSDISCO",
         "en_formatted": "DISCOVPASS",
-        "fr_formatted": "PASSDISCO",
-        "number_of_occurances": 12
+        "fr_formatted": "PASSDISCO"
       },
       {
         "english": "Neg/Low",
         "french": "Nég./faible",
         "en_formatted": "Neg/Low",
-        "fr_formatted": "Nég./faible",
-        "number_of_occurances": 12
+        "fr_formatted": "Nég./faible"
       },
       {
         "english": "E",
         "french": "VD",
         "en_formatted": "E",
         "fr_formatted": "VD",
-        "number_of_occurances": 12
+        "fr_variants": [
+          "EN"
+        ]
       },
       {
         "english": "NS",
         "french": "TN",
         "en_formatted": "NS",
         "fr_formatted": "TN",
-        "number_of_occurances": 12
+        "fr_variants": [
+          "PEM",
+          "NÉ",
+          "N.-É."
+        ]
+      },
+      {
+        "english": "ns",
+        "french": "np",
+        "en_formatted": "ns",
+        "fr_formatted": "np"
       },
       {
         "english": "SWCVI",
         "french": "SCOIV",
         "en_formatted": "SWCVI",
-        "fr_formatted": "SCOIV",
-        "number_of_occurances": 11
+        "fr_formatted": "SCOIV"
       },
       {
         "english": "SMWCVI",
         "french": "CSCOIV",
         "en_formatted": "SMWCVI",
-        "fr_formatted": "CSCOIV",
-        "number_of_occurances": 11
+        "fr_formatted": "CSCOIV"
       },
       {
         "english": "TB",
         "french": "BT",
         "en_formatted": "TB",
-        "fr_formatted": "BT",
-        "number_of_occurances": 11
+        "fr_formatted": "BT"
       },
       {
         "english": "AN:CAB",
         "french": "AN-CAB",
         "en_formatted": "AN:CAB",
-        "fr_formatted": "AN-CAB",
-        "number_of_occurances": 11
+        "fr_formatted": "AN-CAB"
       },
       {
         "english": "NA±",
         "french": "S.O.*±",
         "en_formatted": "NA^{±}",
-        "fr_formatted": "S.O.*^{±}",
-        "number_of_occurances": 11
+        "fr_formatted": "S.O.*^{±}"
       },
       {
         "english": "Sgen",
         "french": "Ggén",
         "en_formatted": "/S/_{gen}",
-        "fr_formatted": "/G/_{gén}",
-        "number_of_occurances": 11
+        "fr_formatted": "/G/_{gén}"
       },
       {
         "english": "Jan.",
         "french": "Janv.",
         "en_formatted": "Jan.",
-        "fr_formatted": "Janv.",
-        "number_of_occurances": 11
+        "fr_formatted": "Janv."
       },
       {
         "english": "Feb.",
         "french": "Févr.",
         "en_formatted": "Feb.",
-        "fr_formatted": "Févr.",
-        "number_of_occurances": 11
+        "fr_formatted": "Févr."
       },
       {
         "english": "Apr.",
         "french": "Avr.",
         "en_formatted": "Apr.",
-        "fr_formatted": "Avr.",
-        "number_of_occurances": 11
+        "fr_formatted": "Avr."
       },
       {
         "english": "Dec.",
         "french": "Déc.",
         "en_formatted": "Dec.",
-        "fr_formatted": "Déc.",
-        "number_of_occurances": 11
+        "fr_formatted": "Déc."
       },
       {
         "english": "cv",
         "french": "VC",
         "en_formatted": "cv",
-        "fr_formatted": "VC",
-        "number_of_occurances": 10
+        "fr_formatted": "VC"
       },
       {
         "english": "SHELF-W",
         "french": "PLATEAU-O",
         "en_formatted": "SHELF-W",
-        "fr_formatted": "PLATEAU-O",
-        "number_of_occurances": 10
+        "fr_formatted": "PLATEAU-O"
       },
       {
         "english": "NMWCVI",
         "french": "CNCOIV",
         "en_formatted": "NMWCVI",
-        "fr_formatted": "CNCOIV",
-        "number_of_occurances": 10
+        "fr_formatted": "CNCOIV"
       },
       {
         "english": "LC",
         "french": "CV",
         "en_formatted": "LC",
-        "fr_formatted": "CV",
-        "number_of_occurances": 10
+        "fr_formatted": "CV"
       },
       {
         "english": "Half-normal",
         "french": "Demi-normal",
         "en_formatted": "Half-normal",
         "fr_formatted": "Demi-normal",
-        "number_of_occurances": 10
+        "fr_variants": [
+          "Demi-normale"
+        ]
       },
       {
         "english": "FMSY",
         "french": "FRMD",
         "en_formatted": "/F/_{MSY}",
-        "fr_formatted": "/F/_{RMD}",
-        "number_of_occurances": 10
+        "fr_formatted": "/F/_{RMD}"
       },
       {
         "english": "UMSY",
         "french": "URMD",
         "en_formatted": "/U/_{MSY}",
         "fr_formatted": "/U/_{RMD}",
-        "number_of_occurances": 10
-      },
-      {
-        "english": "ns",
-        "french": "np",
-        "en_formatted": "ns",
-        "fr_formatted": "np",
-        "number_of_occurances": 9
+        "case_variants": [
+          "/u/_{MSY}"
+        ]
       },
       {
         "english": "CILIATES",
         "french": "CILIÉS",
         "en_formatted": "CILIATES",
-        "fr_formatted": "CILIÉS",
-        "number_of_occurances": 9
+        "fr_formatted": "CILIÉS"
       },
       {
         "english": "PFMA_09",
         "french": "SGPP_09",
         "en_formatted": "PFMA_09",
-        "fr_formatted": "SGPP_09",
-        "number_of_occurances": 9
+        "fr_formatted": "SGPP_09"
       },
       {
         "english": "NWCVI",
         "french": "NOCOIV",
         "en_formatted": "NWCVI",
-        "fr_formatted": "NOCOIV",
-        "number_of_occurances": 9
+        "fr_formatted": "NOCOIV"
       },
       {
         "english": "NEQCS",
         "french": "NEDRC",
         "en_formatted": "NEQCS",
-        "fr_formatted": "NEDRC",
-        "number_of_occurances": 9
+        "fr_formatted": "NEDRC"
       },
       {
         "english": "PFMA_03",
         "french": "SGPP_03",
         "en_formatted": "PFMA_03",
-        "fr_formatted": "SGPP_03",
-        "number_of_occurances": 9
-      },
-      {
-        "english": "SE",
-        "french": "ES",
-        "en_formatted": "SE",
-        "fr_formatted": "ES",
-        "number_of_occurances": 9
+        "fr_formatted": "SGPP_03"
       },
       {
         "english": "SFA3",
         "french": "ZPC3",
         "en_formatted": "SFA3",
-        "fr_formatted": "ZPC3",
-        "number_of_occurances": 9
+        "fr_formatted": "ZPC3"
       },
       {
         "english": "GBIF",
         "french": "SMIB",
         "en_formatted": "GBIF",
-        "fr_formatted": "SMIB",
-        "number_of_occurances": 9
-      },
-      {
-        "english": "T",
-        "french": "M",
-        "en_formatted": "T",
-        "fr_formatted": "M",
-        "number_of_occurances": 9
+        "fr_formatted": "SMIB"
       },
       {
         "english": "BMSY",
         "french": "BRMD",
         "en_formatted": "/B/_{/MSY/}",
-        "fr_formatted": "/B/_{/RMD/}",
-        "number_of_occurances": 9
-      },
-      {
-        "english": "IH",
-        "french": "IE",
-        "en_formatted": "IH",
-        "fr_formatted": "IE",
-        "number_of_occurances": 9
-      },
-      {
-        "english": "ΔAIC",
-        "french": "ΔCIA",
-        "en_formatted": "ΔAIC",
-        "fr_formatted": "ΔCIA",
-        "number_of_occurances": 9
+        "fr_formatted": "/B/_{/RMD/}"
       },
       {
         "english": "Aug-Oct",
         "french": "août-oct.",
         "en_formatted": "Aug-Oct",
-        "fr_formatted": "août-oct.",
-        "number_of_occurances": 8
+        "fr_formatted": "août-oct."
       },
       {
         "english": "CS",
         "french": "DC",
         "en_formatted": "CS",
-        "fr_formatted": "DC",
-        "number_of_occurances": 8
+        "fr_formatted": "DC"
       },
       {
         "english": "PFMA_04",
         "french": "SGPP_04",
         "en_formatted": "PFMA_04",
-        "fr_formatted": "SGPP_04",
-        "number_of_occurances": 8
+        "fr_formatted": "SGPP_04"
       },
       {
         "english": "TEL:CAR",
         "french": "TEL-CAR",
         "en_formatted": "TEL:CAR",
-        "fr_formatted": "TEL-CAR",
-        "number_of_occurances": 8
+        "fr_formatted": "TEL-CAR"
       },
       {
         "english": "PNCIMA",
         "french": "ZGICNP",
         "en_formatted": "PNCIMA",
-        "fr_formatted": "ZGICNP",
-        "number_of_occurances": 8
+        "fr_formatted": "ZGICNP"
       },
       {
         "english": "V",
         "french": "VU",
         "en_formatted": "V",
-        "fr_formatted": "VU",
-        "number_of_occurances": 8
+        "fr_formatted": "VU"
       },
       {
         "english": "Jul-Sep",
         "french": "juil.-sept.",
         "en_formatted": "Jul-Sep",
-        "fr_formatted": "juil.-sept.",
-        "number_of_occurances": 7
+        "fr_formatted": "juil.-sept."
       },
       {
         "english": "SSB0",
         "french": "BSR0",
         "en_formatted": "SSB_{0}",
-        "fr_formatted": "BSR_{0}",
-        "number_of_occurances": 7
+        "fr_formatted": "BSR_{0}"
       },
       {
         "english": "nwGSL",
         "french": "noGSL",
         "en_formatted": "nwGSL",
-        "fr_formatted": "noGSL",
-        "number_of_occurances": 7
+        "fr_formatted": "noGSL"
       },
       {
         "english": "ME(s)",
         "french": "ME(p)",
         "en_formatted": "ME(s)",
-        "fr_formatted": "ME(p)",
-        "number_of_occurances": 7
+        "fr_formatted": "ME(p)"
       },
       {
         "english": "PBR",
         "french": "PBP",
         "en_formatted": "PBR",
-        "fr_formatted": "PBP",
-        "number_of_occurances": 7
+        "fr_formatted": "PBP"
       },
       {
         "english": "ZIP",
         "french": "PIN",
         "en_formatted": "ZIP",
-        "fr_formatted": "PIN",
-        "number_of_occurances": 7
-      },
-      {
-        "english": "ME(s)",
-        "french": "ME(p)",
-        "en_formatted": "ME(s)",
-        "fr_formatted": "ME(p)",
-        "number_of_occurances": 7
+        "fr_formatted": "PIN"
       },
       {
         "english": "Beta-binomial",
         "french": "Bêta-binomial",
         "en_formatted": "Beta-binomial",
-        "fr_formatted": "Bêta-binomial",
-        "number_of_occurances": 7
-      },
-      {
-        "english": "D",
-        "french": "P",
-        "en_formatted": "D",
-        "fr_formatted": "P",
-        "number_of_occurances": 7
-      },
-      {
-        "english": "Half-normal",
-        "french": "Demi-normale",
-        "en_formatted": "Half-normal",
-        "fr_formatted": "Demi-normale",
-        "number_of_occurances": 7
+        "fr_formatted": "Bêta-binomial"
       },
       {
         "english": "PFMA",
         "french": "SGPP",
         "en_formatted": "PFMA",
-        "fr_formatted": "SGPP",
-        "number_of_occurances": 7
+        "fr_formatted": "SGPP"
       },
       {
         "english": "NEP",
         "french": "PNE",
         "en_formatted": "NEP",
-        "fr_formatted": "PNE",
-        "number_of_occurances": 7
+        "fr_formatted": "PNE"
       },
       {
         "english": "L*Region",
         "french": "L*Région",
         "en_formatted": "L*Region",
-        "fr_formatted": "L*Région",
-        "number_of_occurances": 6
+        "fr_formatted": "L*Région"
       },
       {
         "english": "Sept-Oct",
         "french": "Sept.-oct.",
         "en_formatted": "Sept-Oct",
-        "fr_formatted": "Sept.-oct.",
-        "number_of_occurances": 6
-      },
-      {
-        "english": "n/a",
-        "french": "s.o.",
-        "en_formatted": "n/a",
-        "fr_formatted": "s.o.",
-        "number_of_occurances": 6
-      },
-      {
-        "english": "NS",
-        "french": "PEM",
-        "en_formatted": "NS",
-        "fr_formatted": "PEM",
-        "number_of_occurances": 6
+        "fr_formatted": "Sept.-oct."
       },
       {
         "english": "PFMA_07",
         "french": "SGPP_07",
         "en_formatted": "PFMA_07",
-        "fr_formatted": "SGPP_07",
-        "number_of_occurances": 6
+        "fr_formatted": "SGPP_07"
       },
       {
         "english": "SWHG",
         "french": "SOHG",
         "en_formatted": "SWHG",
-        "fr_formatted": "SOHG",
-        "number_of_occurances": 6
-      },
-      {
-        "english": "CIOPS-W",
-        "french": "SPCOG-Ouest",
-        "en_formatted": "CIOPS-W",
-        "fr_formatted": "SPCOG-Ouest",
-        "number_of_occurances": 6
+        "fr_formatted": "SOHG"
       },
       {
         "english": "Low/Mod",
         "french": "Faible/mod.",
         "en_formatted": "Low/Mod",
-        "fr_formatted": "Faible/mod.",
-        "number_of_occurances": 6
+        "fr_formatted": "Faible/mod."
       },
       {
         "english": "BMSY",
         "french": "BRMD",
         "en_formatted": "/B/_{MSY}",
-        "fr_formatted": "/B/_{RMD}",
-        "number_of_occurances": 6
+        "fr_formatted": "/B/_{RMD}"
       },
       {
         "english": "EMSY",
         "french": "ERMD",
         "en_formatted": "/E/_{MSY}",
-        "fr_formatted": "/E/_{RMD}",
-        "number_of_occurances": 6
+        "fr_formatted": "/E/_{RMD}"
       },
       {
         "english": "EBI",
         "french": "EIB",
         "en_formatted": "EBI",
-        "fr_formatted": "EIB",
-        "number_of_occurances": 6
+        "fr_formatted": "EIB"
       },
       {
         "english": "4S-West",
         "french": "4S-ouest",
         "en_formatted": "4S-West",
-        "fr_formatted": "4S-ouest",
-        "number_of_occurances": 6
+        "fr_formatted": "4S-ouest"
       },
       {
         "english": "4S-East",
         "french": "4S-est",
         "en_formatted": "4S-East",
-        "fr_formatted": "4S-est",
-        "number_of_occurances": 6
+        "fr_formatted": "4S-est"
       },
       {
         "english": "Jan-Feb",
         "french": "janv.-févr.",
         "en_formatted": "Jan-Feb",
-        "fr_formatted": "janv.-févr.",
-        "number_of_occurances": 5
+        "fr_formatted": "janv.-févr."
       },
       {
         "english": "nNFLD",
         "french": "nTN",
         "en_formatted": "nNFLD",
-        "fr_formatted": "nTN",
-        "number_of_occurances": 5
+        "fr_formatted": "nTN"
       },
       {
         "english": "ρSSB",
         "french": "rBSR",
         "en_formatted": "ρSSB",
-        "fr_formatted": "rBSR",
-        "number_of_occurances": 5
+        "fr_formatted": "rBSR"
       },
       {
         "english": "ρF",
         "french": "rF",
         "en_formatted": "ρ/F/",
-        "fr_formatted": "r/F/",
-        "number_of_occurances": 5
+        "fr_formatted": "r/F/"
       },
       {
         "english": "ρRec",
         "french": "rRec",
         "en_formatted": "ρRec",
-        "fr_formatted": "rRec",
-        "number_of_occurances": 5
+        "fr_formatted": "rRec"
       },
       {
         "english": "SbP",
         "french": "PPT",
         "en_formatted": "SbP",
-        "fr_formatted": "PPT",
-        "number_of_occurances": 5
+        "fr_formatted": "PPT"
       },
       {
         "english": "PMFA_08",
         "french": "SGPP_08",
         "en_formatted": "PMFA_08",
-        "fr_formatted": "SGPP_08",
-        "number_of_occurances": 5
+        "fr_formatted": "SGPP_08"
       },
       {
         "english": "SWQCS",
         "french": "SODRC",
         "en_formatted": "SWQCS",
-        "fr_formatted": "SODRC",
-        "number_of_occurances": 5
+        "fr_formatted": "SODRC"
       },
       {
         "english": "DP",
         "french": "PD",
         "en_formatted": "DP",
-        "fr_formatted": "PD",
-        "number_of_occurances": 5
-      },
-      {
-        "english": "CIOPS-E",
-        "french": "SPCOG-E",
-        "en_formatted": "CIOPS-E",
-        "fr_formatted": "SPCOG-E",
-        "number_of_occurances": 5
-      },
-      {
-        "english": "CIOPS-E",
-        "french": "SGPOG-E",
-        "en_formatted": "CIOPS-E",
-        "fr_formatted": "SGPOG-E",
-        "number_of_occurances": 5
+        "fr_formatted": "PD"
       },
       {
         "english": "NDB",
         "french": "BND",
         "en_formatted": "NDB",
-        "fr_formatted": "BND",
-        "number_of_occurances": 5
+        "fr_formatted": "BND"
       },
       {
         "english": "NAP",
         "french": "NPC",
         "en_formatted": "N_{AP}",
-        "fr_formatted": "N_{PC}",
-        "number_of_occurances": 5
+        "fr_formatted": "N_{PC}"
       },
       {
         "english": "ASD",
         "french": "REM",
         "en_formatted": "ASD",
-        "fr_formatted": "REM",
-        "number_of_occurances": 5
+        "fr_formatted": "REM"
       },
       {
         "english": "Sub-category",
         "french": "Sous-catégorie",
         "en_formatted": "Sub-category",
-        "fr_formatted": "Sous-catégorie",
-        "number_of_occurances": 5
+        "fr_formatted": "Sous-catégorie"
       },
       {
         "english": "FMSY",
         "french": "FRMD",
         "en_formatted": "/F/_{/MSY/}",
-        "fr_formatted": "/F/_{/RMD/}",
-        "number_of_occurances": 5
+        "fr_formatted": "/F/_{/RMD/}"
       },
       {
         "english": "PBT",
         "french": "EP",
         "en_formatted": "PBT",
         "fr_formatted": "EP",
-        "number_of_occurances": 5
+        "fr_variants": [
+          "MFF"
+        ]
       },
       {
         "english": "NWA",
         "french": "ANO",
         "en_formatted": "NWA",
-        "fr_formatted": "ANO",
-        "number_of_occurances": 5
+        "fr_formatted": "ANO"
       },
       {
         "english": "Average/Total",
         "french": "Moyenne/Total",
         "en_formatted": "Average/Total",
-        "fr_formatted": "Moyenne/Total",
-        "number_of_occurances": 5
+        "fr_formatted": "Moyenne/Total"
       },
       {
         "english": "U.S.",
         "french": "États-Unis",
         "en_formatted": "U.S.",
         "fr_formatted": "États-Unis",
-        "number_of_occurances": 5
+        "fr_variants": [
+          "É.-U."
+        ]
       },
       {
         "english": "L*sex",
         "french": "L*sexe",
         "en_formatted": "L*sex",
-        "fr_formatted": "L*sexe",
-        "number_of_occurances": 4
+        "fr_formatted": "L*sexe"
       },
       {
         "english": "Apr-Oct",
         "french": "avr.-oct.",
         "en_formatted": "Apr-Oct",
-        "fr_formatted": "avr.-oct.",
-        "number_of_occurances": 4
+        "fr_formatted": "avr.-oct."
       },
       {
         "english": "Nov-Apr",
         "french": "nov.-avr.",
         "en_formatted": "Nov-Apr",
-        "fr_formatted": "nov.-avr.",
-        "number_of_occurances": 4
+        "fr_formatted": "nov.-avr."
       },
       {
         "english": "GB-CAN",
         "french": "BG-CAN",
         "en_formatted": "GB-CAN",
-        "fr_formatted": "BG-CAN",
-        "number_of_occurances": 4
+        "fr_formatted": "BG-CAN"
       },
       {
         "english": "GoM-CAN",
         "french": "GM-CAN",
         "en_formatted": "GoM-CAN",
         "fr_formatted": "GM-CAN",
-        "number_of_occurances": 4
-      },
-      {
-        "english": "GoM-Can",
-        "french": "GM-Can",
-        "en_formatted": "GoM-Can",
-        "fr_formatted": "GM-Can",
-        "number_of_occurances": 4
+        "case_variants": [
+          "GoM-Can"
+        ]
       },
       {
         "english": "May-June",
         "french": "Mai-juin",
         "en_formatted": "May-June",
-        "fr_formatted": "Mai-juin",
-        "number_of_occurances": 4
+        "fr_formatted": "Mai-juin"
       },
       {
         "english": "No.",
         "french": "No",
         "en_formatted": "No.",
-        "fr_formatted": "N^{o}",
-        "number_of_occurances": 4
+        "fr_formatted": "N^{o}"
       },
       {
         "english": "GoM",
         "french": "GM",
         "en_formatted": "GoM",
-        "fr_formatted": "GM",
-        "number_of_occurances": 4
+        "fr_formatted": "GM"
       },
       {
         "english": "WDCA",
         "french": "IDEB",
         "en_formatted": "WDCA",
-        "fr_formatted": "IDEB",
-        "number_of_occurances": 4
+        "fr_formatted": "IDEB"
       },
       {
         "english": "Catch(mt)",
         "french": "Prises(tm)",
         "en_formatted": "Catch(mt)",
-        "fr_formatted": "Prises(tm)",
-        "number_of_occurances": 4
+        "fr_formatted": "Prises(tm)"
       },
       {
         "english": "Biomass(mt)",
         "french": "Biomasse(tm)",
         "en_formatted": "Biomass(mt)",
-        "fr_formatted": "Biomasse(tm)",
-        "number_of_occurances": 4
+        "fr_formatted": "Biomasse(tm)"
       },
       {
         "english": "BMSY(30)",
         "french": "BRMD(30)",
         "en_formatted": "B_{MSY(30)}",
-        "fr_formatted": "B_{RMD(30)}",
-        "number_of_occurances": 4
+        "fr_formatted": "B_{RMD(30)}"
       },
       {
         "english": "BMSY(40)",
         "french": "BRMD(40)",
         "en_formatted": "B_{MSY(40)}",
-        "fr_formatted": "B_{RMD(40)}",
-        "number_of_occurances": 4
+        "fr_formatted": "B_{RMD(40)}"
       },
       {
         "english": "SSW-SW",
         "french": "SSO-SO",
         "en_formatted": "SSW-SW",
-        "fr_formatted": "SSO-SO",
-        "number_of_occurances": 4
+        "fr_formatted": "SSO-SO"
       },
       {
         "english": "LbP",
         "french": "PGT",
         "en_formatted": "LbP",
-        "fr_formatted": "PGT",
-        "number_of_occurances": 4
+        "fr_formatted": "PGT"
       },
       {
         "english": "NWCHG",
         "french": "NOCHG",
         "en_formatted": "NWCHG",
-        "fr_formatted": "NOCHG",
-        "number_of_occurances": 4
+        "fr_formatted": "NOCHG"
       },
       {
         "english": "PFMA_10",
         "french": "SGPP_10",
         "en_formatted": "PFMA_10",
-        "fr_formatted": "SGPP_10",
-        "number_of_occurances": 4
+        "fr_formatted": "SGPP_10"
       },
       {
         "english": "NWHG",
         "french": "NOHG",
         "en_formatted": "NWHG",
-        "fr_formatted": "NOHG",
-        "number_of_occurances": 4
-      },
-      {
-        "english": "se",
-        "french": "ET",
-        "en_formatted": "se",
-        "fr_formatted": "ET",
-        "number_of_occurances": 4
+        "fr_formatted": "NOHG"
       },
       {
         "english": "Cons.",
         "french": "Comp.",
         "en_formatted": "Cons.",
-        "fr_formatted": "Comp.",
-        "number_of_occurances": 4
-      },
-      {
-        "english": "CIOPSW",
-        "french": "SPCOG-O",
-        "en_formatted": "CIOPSW",
-        "fr_formatted": "SPCOG-O",
-        "number_of_occurances": 4
-      },
-      {
-        "english": "CIOPSE",
-        "french": "SPCOG-E",
-        "en_formatted": "CIOPSE",
-        "fr_formatted": "SPCOG-E",
-        "number_of_occurances": 4
-      },
-      {
-        "english": "STLE500",
-        "french": "ESTL500",
-        "en_formatted": "STLE500",
-        "fr_formatted": "ESTL500",
-        "number_of_occurances": 4
-      },
-      {
-        "english": "CIOPS-E",
-        "french": "SPOGC-E",
-        "en_formatted": "CIOPS-E",
-        "fr_formatted": "SPOGC-E",
-        "number_of_occurances": 4
+        "fr_formatted": "Comp."
       },
       {
         "english": "γ2",
         "french": "ɣ2",
         "en_formatted": "γ^{2}",
-        "fr_formatted": "ɣ^{2}",
-        "number_of_occurances": 4
+        "fr_formatted": "ɣ^{2}"
       },
       {
         "english": "Neg/Neg",
         "french": "Nég./nég.",
         "en_formatted": "Neg/Neg",
-        "fr_formatted": "Nég./nég.",
-        "number_of_occurances": 4
-      },
-      {
-        "english": "CMC",
-        "french": "CCC",
-        "en_formatted": "CMC",
-        "fr_formatted": "CCC",
-        "number_of_occurances": 4
-      },
-      {
-        "english": "NMC",
-        "french": "NCC",
-        "en_formatted": "NMC",
-        "fr_formatted": "NCC",
-        "number_of_occurances": 4
+        "fr_formatted": "Nég./nég."
       },
       {
         "english": "PD",
         "french": "PJ",
         "en_formatted": "PD",
-        "fr_formatted": "PJ",
-        "number_of_occurances": 4
+        "fr_formatted": "PJ"
       },
       {
         "english": "s(Depth)",
         "french": "s(profondeur)",
         "en_formatted": "s(Depth)",
-        "fr_formatted": "s(profondeur)",
-        "number_of_occurances": 4
+        "fr_formatted": "s(profondeur)"
       },
       {
         "english": "s(Time)",
         "french": "s(durée)",
         "en_formatted": "s(Time)",
-        "fr_formatted": "s(durée)",
-        "number_of_occurances": 4
+        "fr_formatted": "s(durée)"
       },
       {
         "english": "TEL:CAX",
         "french": "TEL/CAX",
         "en_formatted": "TEL:CAX",
-        "fr_formatted": "TEL/CAX",
-        "number_of_occurances": 4
+        "fr_formatted": "TEL/CAX"
       },
       {
         "english": "CI_Low",
         "french": "IC_Inférieur",
         "en_formatted": "CI_Low",
-        "fr_formatted": "IC_Inférieur",
-        "number_of_occurances": 4
+        "fr_formatted": "IC_Inférieur"
       },
       {
         "english": "CI_Upper",
         "french": "IC_Supérieur",
         "en_formatted": "CI_Upper",
-        "fr_formatted": "IC_Supérieur",
-        "number_of_occurances": 4
+        "fr_formatted": "IC_Supérieur"
       },
       {
         "english": "WBNDB",
         "french": "BW-BND",
         "en_formatted": "WBNDB",
-        "fr_formatted": "BW-BND",
-        "number_of_occurances": 4
-      },
-      {
-        "english": "Dec.",
-        "french": "Déc.",
-        "en_formatted": "Dec.",
-        "fr_formatted": "Déc.",
-        "number_of_occurances": 4
-      },
-      {
-        "english": "Apr.",
-        "french": "Avr.",
-        "en_formatted": "Apr.",
-        "fr_formatted": "Avr.",
-        "number_of_occurances": 4
+        "fr_formatted": "BW-BND"
       },
       {
         "english": "SFA1",
         "french": "ZPC1",
         "en_formatted": "SFA1",
-        "fr_formatted": "ZPC1",
-        "number_of_occurances": 4
+        "fr_formatted": "ZPC1"
       },
       {
         "english": "NA*±",
         "french": "S.O.*±",
         "en_formatted": "NA*^{±}",
-        "fr_formatted": "S.O.*^{±}",
-        "number_of_occurances": 4
+        "fr_formatted": "S.O.*^{±}"
       },
       {
         "english": "Pred.",
         "french": "Prév.",
         "en_formatted": "Pred.",
-        "fr_formatted": "Prév.",
-        "number_of_occurances": 4
-      },
-      {
-        "english": "E",
-        "french": "EN",
-        "en_formatted": "E",
-        "fr_formatted": "EN",
-        "number_of_occurances": 4
+        "fr_formatted": "Prév."
       },
       {
         "english": "FSC/Treaty",
         "french": "ASR/Traité",
         "en_formatted": "FSC/Treaty",
-        "fr_formatted": "ASR/Traité",
-        "number_of_occurances": 4
-      },
-      {
-        "english": "N/A",
-        "french": "s.o.",
-        "en_formatted": "N/A",
-        "fr_formatted": "s.o.",
-        "number_of_occurances": 4
+        "fr_formatted": "ASR/Traité"
       },
       {
         "english": "Sept-Iles",
         "french": "Sept-Îles",
         "en_formatted": "Sept-Iles",
-        "fr_formatted": "Sept-Îles",
-        "number_of_occurances": 4
+        "fr_formatted": "Sept-Îles"
       },
       {
         "english": "B2022/BMSY",
         "french": "B2022/BRMD",
         "en_formatted": "/B/_{/2022/}//B/_{/MSY/}",
-        "fr_formatted": "/B/_{/2022/}//B/_{/RMD/}",
-        "number_of_occurances": 4
+        "fr_formatted": "/B/_{/2022/}//B/_{/RMD/}"
       },
       {
         "english": "F2022/FMSY",
         "french": "F2022/FRMD",
         "en_formatted": "/F/_{/2022/}//F/_{/MSY/}",
-        "fr_formatted": "/F/_{/2022/}//F/_{/RMD/}",
-        "number_of_occurances": 4
+        "fr_formatted": "/F/_{/2022/}//F/_{/RMD/}"
       },
       {
         "english": "NEA",
         "french": "ANE",
         "en_formatted": "NEA",
-        "fr_formatted": "ANE",
-        "number_of_occurances": 4
-      },
-      {
-        "english": "NS",
-        "french": "NÉ",
-        "en_formatted": "NS",
-        "fr_formatted": "NÉ",
-        "number_of_occurances": 4
+        "fr_formatted": "ANE"
       },
       {
         "english": "LF",
         "french": "FL",
         "en_formatted": "LF",
-        "fr_formatted": "FL",
-        "number_of_occurances": 4
+        "fr_formatted": "FL"
       },
       {
         "english": "Aug_Sept",
         "french": "Août-sept.",
         "en_formatted": "Aug_Sept",
-        "fr_formatted": "Août-sept.",
-        "number_of_occurances": 4
+        "fr_formatted": "Août-sept."
       },
       {
         "english": "AUC",
         "french": "SSC",
         "en_formatted": "AUC",
         "fr_formatted": "SSC",
-        "number_of_occurances": 4
+        "fr_variants": [
+          "ASC"
+        ]
       },
       {
         "english": "TP",
         "french": "VP",
         "en_formatted": "TP",
-        "fr_formatted": "VP",
-        "number_of_occurances": 4
+        "fr_formatted": "VP"
       },
       {
         "english": "TN",
         "french": "VN",
         "en_formatted": "TN",
-        "fr_formatted": "VN",
-        "number_of_occurances": 4
+        "fr_formatted": "VN"
       },
       {
         "english": "Std.",
         "french": "Standard.",
         "en_formatted": "Std.",
-        "fr_formatted": "Standard.",
-        "number_of_occurances": 3
+        "fr_formatted": "Standard."
       },
       {
         "english": "Pre-recruits",
         "french": "Pré-recrues",
         "en_formatted": "Pre-recruits",
-        "fr_formatted": "Pré-recrues",
-        "number_of_occurances": 3
+        "fr_formatted": "Pré-recrues"
       },
       {
         "english": "Jan/Feb",
         "french": "Jan/Fév",
         "en_formatted": "Jan/Feb",
         "fr_formatted": "Jan/Fév",
-        "number_of_occurances": 3
+        "fr_variants": [
+          "Jan/Fev"
+        ]
       },
       {
         "english": "All1",
         "french": "Toutes1",
         "en_formatted": "All^{1}",
-        "fr_formatted": "Toutes^{1}",
-        "number_of_occurances": 3
+        "fr_formatted": "Toutes^{1}"
       },
       {
         "english": "P(SSB>LRP)",
         "french": "P(BSR>PRL)",
         "en_formatted": "P(SSB>LRP)",
-        "fr_formatted": "P(BSR>PRL)",
-        "number_of_occurances": 3
+        "fr_formatted": "P(BSR>PRL)"
       },
       {
         "english": "P(SSB>USR)",
         "french": "P(BSR>PRS)",
         "en_formatted": "P(SSB>USR)",
-        "fr_formatted": "P(BSR>PRS)",
-        "number_of_occurances": 3
+        "fr_formatted": "P(BSR>PRS)"
       },
       {
         "english": "SSF",
         "french": "FDS",
         "en_formatted": "SSF",
-        "fr_formatted": "FDS",
-        "number_of_occurances": 3
-      },
-      {
-        "english": "NS",
-        "french": "N.-É.",
-        "en_formatted": "NS",
-        "fr_formatted": "N.-É.",
-        "number_of_occurances": 3
-      },
-      {
-        "english": "PE",
-        "french": "ÎPÉ",
-        "en_formatted": "PE",
-        "fr_formatted": "ÎPÉ",
-        "number_of_occurances": 3
-      },
-      {
-        "english": "NB",
-        "french": "N.-B.",
-        "en_formatted": "NB",
-        "fr_formatted": "N.-B.",
-        "number_of_occurances": 3
+        "fr_formatted": "FDS"
       },
       {
         "english": "MG(s)",
         "french": "MG(p)",
         "en_formatted": "MG(s)",
-        "fr_formatted": "MG(p)",
-        "number_of_occurances": 3
+        "fr_formatted": "MG(p)"
       },
       {
         "english": "CV(s)",
         "french": "CV(p)",
         "en_formatted": "CV(s)",
-        "fr_formatted": "CV(p)",
-        "number_of_occurances": 3
+        "fr_formatted": "CV(p)"
       },
       {
         "english": "CG(s)",
         "french": "CG(p)",
         "en_formatted": "CG(s)",
-        "fr_formatted": "CG(p)",
-        "number_of_occurances": 3
+        "fr_formatted": "CG(p)"
       },
       {
         "english": "ME(l)",
         "french": "ME(g)",
         "en_formatted": "ME(l)",
-        "fr_formatted": "ME(g)",
-        "number_of_occurances": 3
+        "fr_formatted": "ME(g)"
       },
       {
         "english": "Time-point(h)",
         "french": "Temps(h)",
         "en_formatted": "Time-point(h)",
-        "fr_formatted": "Temps(h)",
-        "number_of_occurances": 3
+        "fr_formatted": "Temps(h)"
       },
       {
         "english": "HS",
         "french": "DH",
         "en_formatted": "HS",
-        "fr_formatted": "DH",
-        "number_of_occurances": 3
+        "fr_formatted": "DH"
       },
       {
         "english": "omega",
         "french": "oméga",
         "en_formatted": "omega",
-        "fr_formatted": "oméga",
-        "number_of_occurances": 3
+        "fr_formatted": "oméga"
       },
       {
         "english": "loge(Flow)",
         "french": "loge(débit)",
         "en_formatted": "log_{e}(Flow)",
-        "fr_formatted": "log_{e}(débit)",
-        "number_of_occurances": 3
+        "fr_formatted": "log_{e}(débit)"
       },
       {
         "english": "Temperature2",
         "french": "Température2",
         "en_formatted": "Temperature^{2}",
-        "fr_formatted": "Température^{2}",
-        "number_of_occurances": 3
-      },
-      {
-        "english": "N/A",
-        "french": "s.o.",
-        "en_formatted": "N/A",
-        "fr_formatted": "s.o.",
-        "number_of_occurances": 3
-      },
-      {
-        "english": "Non-Tidal",
-        "french": "Non-tidal",
-        "en_formatted": "Non-Tidal",
-        "fr_formatted": "Non-tidal",
-        "number_of_occurances": 3
+        "fr_formatted": "Température^{2}"
       },
       {
         "english": "Indep.",
         "french": "Indép.",
         "en_formatted": "Indep.",
-        "fr_formatted": "Indép.",
-        "number_of_occurances": 3
-      },
-      {
-        "english": "MG(s)",
-        "french": "MG(p)",
-        "en_formatted": "MG(s)",
-        "fr_formatted": "MG(p)",
-        "number_of_occurances": 3
-      },
-      {
-        "english": "CV(s)",
-        "french": "CV(p)",
-        "en_formatted": "CV(s)",
-        "fr_formatted": "CV(p)",
-        "number_of_occurances": 3
-      },
-      {
-        "english": "CG(s)",
-        "french": "CG(p)",
-        "en_formatted": "CG(s)",
-        "fr_formatted": "CG(p)",
-        "number_of_occurances": 3
-      },
-      {
-        "english": "ME(l)",
-        "french": "ME(g)",
-        "en_formatted": "ME(l)",
-        "fr_formatted": "ME(g)",
-        "number_of_occurances": 3
-      },
-      {
-        "english": "Neg/Mod",
-        "french": "Nég./mod.",
-        "en_formatted": "Neg/Mod",
-        "fr_formatted": "Nég./mod.",
-        "number_of_occurances": 3
+        "fr_formatted": "Indép."
       },
       {
         "english": "NAFO1",
         "french": "OPANO1",
         "en_formatted": "NAFO^{1}",
-        "fr_formatted": "OPANO^{1}",
-        "number_of_occurances": 3
+        "fr_formatted": "OPANO^{1}"
       },
       {
         "english": "NAFO2",
         "french": "OPANO2",
         "en_formatted": "NAFO^{2}",
-        "fr_formatted": "OPANO^{2}",
-        "number_of_occurances": 3
+        "fr_formatted": "OPANO^{2}"
       },
       {
         "english": "CILow",
         "french": "ICInférieur",
         "en_formatted": "CILow",
-        "fr_formatted": "ICInférieur",
-        "number_of_occurances": 3
+        "fr_formatted": "ICInférieur"
       },
       {
         "english": "CIUpper",
         "french": "ICSupérieur",
         "en_formatted": "CIUpper",
-        "fr_formatted": "ICSupérieur",
-        "number_of_occurances": 3
+        "fr_formatted": "ICSupérieur"
       },
       {
         "english": "Apr.–May",
         "french": "Avr.-mai",
         "en_formatted": "Apr.–May",
-        "fr_formatted": "Avr.-mai",
-        "number_of_occurances": 3
+        "fr_formatted": "Avr.-mai"
       },
       {
         "english": "WBNDB1",
         "french": "BW-BND1",
         "en_formatted": "WBNDB^{1}",
-        "fr_formatted": "BW-BND^{1}",
-        "number_of_occurances": 3
+        "fr_formatted": "BW-BND^{1}"
       },
       {
         "english": "RD",
         "french": "DD",
         "en_formatted": "RD",
-        "fr_formatted": "DD",
-        "number_of_occurances": 3
+        "fr_formatted": "DD"
       },
       {
         "english": "RPAS",
         "french": "SATP",
         "en_formatted": "RPAS",
-        "fr_formatted": "SATP",
-        "number_of_occurances": 3
+        "fr_formatted": "SATP"
       },
       {
         "english": "ER",
         "french": "TR",
         "en_formatted": "ER",
-        "fr_formatted": "TR",
-        "number_of_occurances": 3
+        "fr_formatted": "TR"
       },
       {
         "english": "DCAC",
         "french": "PMCE",
         "en_formatted": "/DCAC/",
-        "fr_formatted": "/PMCE/",
-        "number_of_occurances": 3
-      },
-      {
-        "english": "F",
-        "french": "P",
-        "en_formatted": "/F/",
-        "fr_formatted": "/P/",
-        "number_of_occurances": 3
+        "fr_formatted": "/PMCE/"
       },
       {
         "english": "NMSY",
         "french": "NRMD",
         "en_formatted": "/N/_{MSY}",
         "fr_formatted": "/N/_{RMD}",
-        "number_of_occurances": 3
+        "fr_variants": [
+          "/N/_{RMS}"
+        ]
       },
       {
         "english": "SPM",
         "french": "PE",
         "en_formatted": "SPM",
-        "fr_formatted": "PE",
-        "number_of_occurances": 3
+        "fr_formatted": "PE"
       },
       {
         "english": "WAZ",
         "french": "ZEO",
         "en_formatted": "WAZ",
-        "fr_formatted": "ZEO",
-        "number_of_occurances": 3
+        "fr_formatted": "ZEO"
       },
       {
         "english": "PNI",
         "french": "INP",
         "en_formatted": "/PNI/",
-        "fr_formatted": "/INP/",
-        "number_of_occurances": 3
+        "fr_formatted": "/INP/"
       },
       {
         "english": "WG",
         "french": "GT",
         "en_formatted": "WG",
-        "fr_formatted": "GT",
-        "number_of_occurances": 3
+        "fr_formatted": "GT"
       },
       {
         "english": "CC(t/y)",
         "french": "CC(t/a)",
         "en_formatted": "CC(t/y)",
-        "fr_formatted": "CC(t/a)",
-        "number_of_occurances": 3
+        "fr_formatted": "CC(t/a)"
       },
       {
         "english": "AD/CWT",
         "french": "AD/MMC",
         "en_formatted": "AD/CWT",
-        "fr_formatted": "AD/MMC",
-        "number_of_occurances": 3
+        "fr_formatted": "AD/MMC"
       },
       {
         "english": "UMSY",
         "french": "URMD",
         "en_formatted": "/U/_{/MSY/}",
-        "fr_formatted": "/U/_{/RMD/}",
-        "number_of_occurances": 3
+        "fr_formatted": "/U/_{/RMD/}"
       },
       {
         "english": "Unk.",
         "french": "Inc.",
         "en_formatted": "Unk.",
-        "fr_formatted": "Inc.",
-        "number_of_occurances": 3
+        "fr_formatted": "Inc."
       },
       {
         "english": "SSB/LRP",
         "french": "BSR/PRL",
         "en_formatted": "SSB/LRP",
-        "fr_formatted": "BSR/PRL",
-        "number_of_occurances": 3
+        "fr_formatted": "BSR/PRL"
       },
       {
         "english": "BEL-EHB",
         "french": "BEL-EBH",
         "en_formatted": "BEL-EHB",
-        "fr_formatted": "BEL-EBH",
-        "number_of_occurances": 3
+        "fr_formatted": "BEL-EBH"
       },
       {
         "english": "SST_15d",
         "french": "TSM_15d",
         "en_formatted": "SST_15d",
-        "fr_formatted": "TSM_15d",
-        "number_of_occurances": 3
+        "fr_formatted": "TSM_15d"
       },
       {
         "english": "GHRSST",
         "french": "GHRTSM",
         "en_formatted": "GHRSST",
-        "fr_formatted": "GHRTSM",
-        "number_of_occurances": 3
+        "fr_formatted": "GHRTSM"
       },
       {
         "english": "SST_lag3d",
         "french": "TSM_lag3d",
         "en_formatted": "SST_lag3d",
-        "fr_formatted": "TSM_lag3d",
-        "number_of_occurances": 3
+        "fr_formatted": "TSM_lag3d"
       },
       {
         "english": "SST_lag15d",
         "french": "TSM_lag15d",
         "en_formatted": "SST_lag15d",
-        "fr_formatted": "TSM_lag15d",
-        "number_of_occurances": 3
+        "fr_formatted": "TSM_lag15d"
       },
       {
         "english": "MSLA",
         "french": "ANMM",
         "en_formatted": "MSLA",
-        "fr_formatted": "ANMM",
-        "number_of_occurances": 3
+        "fr_formatted": "ANMM"
       },
       {
         "english": "Log-normal",
         "french": "Log-normale",
         "en_formatted": "Log-normal",
-        "fr_formatted": "Log-normale",
-        "number_of_occurances": 3
+        "fr_formatted": "Log-normale"
       },
       {
         "english": "Lndgs.",
         "french": "Déb.",
         "en_formatted": "Lndgs.",
-        "fr_formatted": "Déb.",
-        "number_of_occurances": 3
+        "fr_formatted": "Déb."
       },
       {
         "english": "Region*sex",
         "french": "Région*sexe",
         "en_formatted": "Region*sex",
-        "fr_formatted": "Région*sexe",
-        "number_of_occurances": 2
+        "fr_formatted": "Région*sexe"
       },
       {
         "english": "L*Region*sex",
         "french": "L*Région*sexe",
         "en_formatted": "L*Region*sex",
-        "fr_formatted": "L*Région*sexe",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "AUC",
-        "french": "ASC",
-        "en_formatted": "AUC",
-        "fr_formatted": "ASC",
-        "number_of_occurances": 2
+        "fr_formatted": "L*Région*sexe"
       },
       {
         "english": "Apr-Nov",
         "french": "avr.-nov.",
         "en_formatted": "Apr-Nov",
-        "fr_formatted": "avr.-nov.",
-        "number_of_occurances": 2
+        "fr_formatted": "avr.-nov."
       },
       {
         "english": "May-Oct",
         "french": "mai-oct.",
         "en_formatted": "May-Oct",
-        "fr_formatted": "mai-oct.",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "Jan/Feb",
-        "french": "Jan/Fev",
-        "en_formatted": "Jan/Feb",
-        "fr_formatted": "Jan/Fev",
-        "number_of_occurances": 2
+        "fr_formatted": "mai-oct."
       },
       {
         "english": "Meta-analysis",
         "french": "Méta-analyse",
         "en_formatted": "Meta-analysis",
-        "fr_formatted": "Méta-analyse",
-        "number_of_occurances": 2
+        "fr_formatted": "Méta-analyse"
       },
       {
         "english": "Function(s)",
         "french": "Fonction(s)",
         "en_formatted": "Function(s)",
-        "fr_formatted": "Fonction(s)",
-        "number_of_occurances": 2
+        "fr_formatted": "Fonction(s)"
       },
       {
         "english": "NRTH",
         "french": "NORTH",
         "en_formatted": "NRTH",
-        "fr_formatted": "NORTH",
-        "number_of_occurances": 2
+        "fr_formatted": "NORTH"
       },
       {
         "english": "SAG",
         "french": "GAS",
         "en_formatted": "SAG",
-        "fr_formatted": "GAS",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "Jan/Feb",
-        "french": "Jan/Fév",
-        "en_formatted": "Jan/Feb",
-        "fr_formatted": "Jan/Fév",
-        "number_of_occurances": 2
+        "fr_formatted": "GAS"
       },
       {
         "english": "TRP",
         "french": "PEC",
         "en_formatted": "TRP",
-        "fr_formatted": "PEC",
-        "number_of_occurances": 2
+        "fr_formatted": "PEC"
       },
       {
         "english": "May-Jun",
         "french": "Mai-juin",
         "en_formatted": "May-Jun",
-        "fr_formatted": "Mai-juin",
-        "number_of_occurances": 2
+        "fr_formatted": "Mai-juin"
       },
       {
         "english": "Fry/Parr",
         "french": "Alevins/Tacons",
         "en_formatted": "Fry/Parr",
-        "fr_formatted": "Alevins/Tacons",
-        "number_of_occurances": 2
+        "fr_formatted": "Alevins/Tacons"
       },
       {
         "english": "TOTALS",
         "french": "TOTAL",
         "en_formatted": "TOTALS",
-        "fr_formatted": "TOTAL",
-        "number_of_occurances": 2
+        "fr_formatted": "TOTAL"
       },
       {
         "english": "SHELF-E",
         "french": "PLATEAU-E",
         "en_formatted": "SHELF-E",
-        "fr_formatted": "PLATEAU-E",
-        "number_of_occurances": 2
+        "fr_formatted": "PLATEAU-E"
       },
       {
         "english": "Stratum13",
         "french": "Strate13",
         "en_formatted": "Stratum13",
-        "fr_formatted": "Strate13",
-        "number_of_occurances": 2
+        "fr_formatted": "Strate13"
       },
       {
         "english": "Stratum14",
         "french": "Strate14",
         "en_formatted": "Stratum14",
-        "fr_formatted": "Strate14",
-        "number_of_occurances": 2
+        "fr_formatted": "Strate14"
       },
       {
         "english": "Stratum15",
         "french": "Strate15",
         "en_formatted": "Stratum15",
-        "fr_formatted": "Strate15",
-        "number_of_occurances": 2
+        "fr_formatted": "Strate15"
       },
       {
         "english": "Stratum17",
         "french": "Strate17",
         "en_formatted": "Stratum17",
-        "fr_formatted": "Strate17",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "P(SSB>LRP)",
-        "french": "P(BSR>PRL)",
-        "en_formatted": "P(SSB>LRP)",
-        "fr_formatted": "P(BSR>PRL)",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "P(SSB>USR)",
-        "french": "P(BSR>PRS)",
-        "en_formatted": "P(SSB>USR)",
-        "fr_formatted": "P(BSR>PRS)",
-        "number_of_occurances": 2
+        "fr_formatted": "Strate17"
       },
       {
         "english": "BMSY(80)",
         "french": "BRMD(80)",
         "en_formatted": "B_{MSY(80)}",
-        "fr_formatted": "B_{RMD(80)}",
-        "number_of_occurances": 2
+        "fr_formatted": "B_{RMD(80)}"
       },
       {
         "english": "RRtar",
         "french": "NERcib",
         "en_formatted": "RR_{tar}",
-        "fr_formatted": "NER_{cib}",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "WS",
-        "french": "MN",
-        "en_formatted": "WS",
-        "fr_formatted": "MN",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "WP",
-        "french": "BA",
-        "en_formatted": "WP",
-        "fr_formatted": "BA",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "YP",
-        "french": "PJ",
-        "en_formatted": "YP",
-        "fr_formatted": "PJ",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "GS",
-        "french": "MJ",
-        "en_formatted": "GS",
-        "fr_formatted": "MJ",
-        "number_of_occurances": 2
+        "fr_formatted": "NER_{cib}"
       },
       {
         "english": "LCF",
         "french": "NCI",
         "en_formatted": "LCF",
-        "fr_formatted": "NCI",
-        "number_of_occurances": 2
+        "fr_formatted": "NCI"
       },
       {
         "english": "(time)",
         "french": "(temps)",
         "en_formatted": "(time)",
-        "fr_formatted": "(temps)",
-        "number_of_occurances": 2
+        "fr_formatted": "(temps)"
       },
       {
         "english": "ME(l)5",
         "french": "ME(g)5",
         "en_formatted": "ME(l)^{5}",
-        "fr_formatted": "ME(g)^{5}",
-        "number_of_occurances": 2
+        "fr_formatted": "ME(g)^{5}"
       },
       {
         "english": "MG(l)",
         "french": "MG(g)",
         "en_formatted": "MG(l)",
-        "fr_formatted": "MG(g)",
-        "number_of_occurances": 2
+        "fr_formatted": "MG(g)"
       },
       {
         "english": "CV(l)",
         "french": "CV(g)",
         "en_formatted": "CV(l)",
-        "fr_formatted": "CV(g)",
-        "number_of_occurances": 2
+        "fr_formatted": "CV(g)"
       },
       {
         "english": "CV(l)5",
         "french": "CV(g)5",
         "en_formatted": "CV(l)^{5}",
-        "fr_formatted": "CV(g)^{5}",
-        "number_of_occurances": 2
+        "fr_formatted": "CV(g)^{5}"
       },
       {
         "english": "MG(s/l)",
         "french": "MG(p/g)",
         "en_formatted": "MG(s/l)",
-        "fr_formatted": "MG(p/g)",
-        "number_of_occurances": 2
+        "fr_formatted": "MG(p/g)"
       },
       {
         "english": "PM(s)",
         "french": "PM(p)",
         "en_formatted": "PM(s)",
-        "fr_formatted": "PM(p)",
-        "number_of_occurances": 2
+        "fr_formatted": "PM(p)"
       },
       {
         "english": "High-Low",
         "french": "Élevé-Faible",
         "en_formatted": "High-Low",
-        "fr_formatted": "Élevé-Faible",
-        "number_of_occurances": 2
+        "fr_formatted": "Élevé-Faible"
       },
       {
         "english": "HSSP",
         "french": "DHPR",
         "en_formatted": "HS_{SP}",
-        "fr_formatted": "DH_{PR}",
-        "number_of_occurances": 2
+        "fr_formatted": "DH_{PR}"
       },
       {
         "english": "HSFA",
         "french": "DHAU",
         "en_formatted": "HS_{FA}",
-        "fr_formatted": "DH_{AU}",
-        "number_of_occurances": 2
+        "fr_formatted": "DH_{AU}"
       },
       {
         "english": "HSEF",
         "french": "DHDA",
         "en_formatted": "HS_{EF}",
-        "fr_formatted": "DH_{DA}",
-        "number_of_occurances": 2
+        "fr_formatted": "DH_{DA}"
       },
       {
         "english": "HSLF",
         "french": "DHFA",
         "en_formatted": "HS_{LF}",
-        "fr_formatted": "DH_{FA}",
-        "number_of_occurances": 2
+        "fr_formatted": "DH_{FA}"
       },
       {
         "english": "BURRINDARM",
         "french": "BRASBURRIND",
         "en_formatted": "BURRINDARM",
-        "fr_formatted": "BRASBURRIND",
-        "number_of_occurances": 2
+        "fr_formatted": "BRASBURRIND"
       },
       {
         "english": "eta",
         "french": "êta",
         "en_formatted": "eta",
-        "fr_formatted": "êta",
-        "number_of_occurances": 2
+        "fr_formatted": "êta"
       },
       {
         "english": "ASMS",
         "french": "SGPA",
         "en_formatted": "ASMS",
-        "fr_formatted": "SGPA",
-        "number_of_occurances": 2
+        "fr_formatted": "SGPA"
       },
       {
         "english": "R-ASMS",
         "french": "SGPA-R",
         "en_formatted": "R-ASMS",
-        "fr_formatted": "SGPA-R",
-        "number_of_occurances": 2
+        "fr_formatted": "SGPA-R"
       },
       {
         "english": "BMSY",
         "french": "BRMD",
         "en_formatted": "B_{MSY}",
-        "fr_formatted": "B_{RMD}",
-        "number_of_occurances": 2
+        "fr_formatted": "B_{RMD}"
       },
       {
         "english": "Const.",
         "french": "Comp.",
         "en_formatted": "Const.",
-        "fr_formatted": "Comp.",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "STLE200",
-        "french": "ESTL200",
-        "en_formatted": "STLE200",
-        "fr_formatted": "ESTL200",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "CIOPS-E",
-        "french": "SPCO-E",
-        "en_formatted": "CIOPS-E",
-        "fr_formatted": "SPCO-E",
-        "number_of_occurances": 2
+        "fr_formatted": "Comp."
       },
       {
         "english": "NMRWB",
         "french": "CGRFRMN",
         "en_formatted": "NMRWB",
-        "fr_formatted": "CGRFRMN",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "ME(l)5",
-        "french": "ME(g)5",
-        "en_formatted": "ME(l)^{5}",
-        "fr_formatted": "ME(g)^{5}",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "MG(l)",
-        "french": "MG(g)",
-        "en_formatted": "MG(l)",
-        "fr_formatted": "MG(g)",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "CV(l)",
-        "french": "CV(g)",
-        "en_formatted": "CV(l)",
-        "fr_formatted": "CV(g)",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "CV(l)5",
-        "french": "CV(g)5",
-        "en_formatted": "CV(l)^{5}",
-        "fr_formatted": "CV(g)^{5}",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "MG(s/l)",
-        "french": "MG(p/g)",
-        "en_formatted": "MG(s/l)",
-        "fr_formatted": "MG(p/g)",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "PM(s)",
-        "french": "PM(p)",
-        "en_formatted": "PM(s)",
-        "fr_formatted": "PM(p)",
-        "number_of_occurances": 2
+        "fr_formatted": "CGRFRMN"
       },
       {
         "english": "logistic",
         "french": "logistique",
         "en_formatted": "logistic",
-        "fr_formatted": "logistique",
-        "number_of_occurances": 2
+        "fr_formatted": "logistique"
       },
       {
         "english": "exponential",
         "french": "exponentiel",
         "en_formatted": "exponential",
-        "fr_formatted": "exponentiel",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "FC",
-        "french": "BF",
-        "en_formatted": "FC",
-        "fr_formatted": "BF",
-        "number_of_occurances": 2
+        "fr_formatted": "exponentiel"
       },
       {
         "english": "SWNS",
         "french": "SONÉ",
         "en_formatted": "SWNS",
-        "fr_formatted": "SONÉ",
-        "number_of_occurances": 2
+        "fr_formatted": "SONÉ"
       },
       {
         "english": "None.",
         "french": "Aucun.",
         "en_formatted": "None.",
-        "fr_formatted": "Aucun.",
-        "number_of_occurances": 2
+        "fr_formatted": "Aucun."
       },
       {
         "english": "DIC",
         "french": "CID",
         "en_formatted": "DIC",
-        "fr_formatted": "CID",
-        "number_of_occurances": 2
+        "fr_formatted": "CID"
       },
       {
         "english": "recaptured",
         "french": "recapturés",
         "en_formatted": "recaptured",
-        "fr_formatted": "recapturés",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "t0",
-        "french": "T₀",
-        "en_formatted": "t_{0}",
-        "fr_formatted": "T₀",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "TEL:CAX",
-        "french": "TEL/CAX",
-        "en_formatted": "TEL:CAX",
-        "fr_formatted": "TEL/CAX",
-        "number_of_occurances": 2
+        "fr_formatted": "recapturés"
       },
       {
         "english": "Mar.–Apr.",
         "french": "Mars-avr.",
         "en_formatted": "Mar.–Apr.",
-        "fr_formatted": "Mars-avr.",
-        "number_of_occurances": 2
+        "fr_formatted": "Mars-avr."
       },
       {
         "english": "CBSS2",
         "french": "BC-CS2",
         "en_formatted": "CBSS^{2}",
-        "fr_formatted": "BC-CS^{2}",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "Jan.",
-        "french": "Janv.",
-        "en_formatted": "Jan.",
-        "fr_formatted": "Janv.",
-        "number_of_occurances": 2
+        "fr_formatted": "BC-CS^{2}"
       },
       {
         "english": "FB3",
         "french": "BF3",
         "en_formatted": "FB^{3}",
-        "fr_formatted": "BF^{3}",
-        "number_of_occurances": 2
+        "fr_formatted": "BF^{3}"
       },
       {
         "english": "SFA0",
         "french": "ZPC0",
         "en_formatted": "SFA0",
-        "fr_formatted": "ZPC0",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "NMSY",
-        "french": "NRMS",
-        "en_formatted": "/N/_{MSY}",
-        "fr_formatted": "/N/_{RMS}",
-        "number_of_occurances": 2
+        "fr_formatted": "ZPC0"
       },
       {
         "english": "WIV",
         "french": "VIP",
         "en_formatted": "WIV",
-        "fr_formatted": "VIP",
-        "number_of_occurances": 2
+        "fr_formatted": "VIP"
       },
       {
         "english": "NSAR**",
         "french": "RESN**",
         "en_formatted": "NSAR**",
-        "fr_formatted": "RESN**",
-        "number_of_occurances": 2
+        "fr_formatted": "RESN**"
       },
       {
         "english": "SSAR**",
         "french": "RESS**",
         "en_formatted": "SSAR**",
-        "fr_formatted": "RESS**",
-        "number_of_occurances": 2
+        "fr_formatted": "RESS**"
       },
       {
         "english": "AIC",
         "french": "CIA",
         "en_formatted": "/AIC/",
-        "fr_formatted": "/CIA/",
-        "number_of_occurances": 2
+        "fr_formatted": "/CIA/"
       },
       {
         "english": "pHOS",
         "french": "pGÉF",
         "en_formatted": "/pHOS/",
-        "fr_formatted": "/pGÉF/",
-        "number_of_occurances": 2
+        "fr_formatted": "/pGÉF/"
       },
       {
         "english": "PNIlocal",
         "french": "INPlocal",
         "en_formatted": "/PNI/_{local}",
-        "fr_formatted": "/INP/_{local}",
-        "number_of_occurances": 2
+        "fr_formatted": "/INP/_{local}"
       },
       {
         "english": "LowMod",
         "french": "Faible-Modéré",
         "en_formatted": "LowMod",
-        "fr_formatted": "Faible-Modéré",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "PBT",
-        "french": "MFF",
-        "en_formatted": "PBT",
-        "fr_formatted": "MFF",
-        "number_of_occurances": 2
+        "fr_formatted": "Faible-Modéré"
       },
       {
         "english": "UMSY",
         "french": "URMD",
         "en_formatted": "U_{MSY}",
-        "fr_formatted": "U_{RMD}",
-        "number_of_occurances": 2
+        "fr_formatted": "U_{RMD}"
       },
       {
         "english": "YES",
         "french": "OUI",
         "en_formatted": "YES",
-        "fr_formatted": "OUI",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "U",
-        "french": "I",
-        "en_formatted": "U",
-        "fr_formatted": "I",
-        "number_of_occurances": 2
+        "fr_formatted": "OUI"
       },
       {
         "english": "PCB+",
         "french": "BPC+",
         "en_formatted": "PCB+",
-        "fr_formatted": "BPC+",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "uMSY",
-        "french": "uRMD",
-        "en_formatted": "/u/_{MSY}",
-        "fr_formatted": "/u/_{RMD}",
-        "number_of_occurances": 2
+        "fr_formatted": "BPC+"
       },
       {
         "english": "VMSY",
         "french": "VRMD",
         "en_formatted": "/V/_{MSY}",
-        "fr_formatted": "/V/_{RMD}",
-        "number_of_occurances": 2
+        "fr_formatted": "/V/_{RMD}"
       },
       {
         "english": "Amber/green",
         "french": "Ambre/vert",
         "en_formatted": "Amber/green",
-        "fr_formatted": "Ambre/vert",
-        "number_of_occurances": 2
+        "fr_formatted": "Ambre/vert"
       },
       {
         "english": "qblend",
         "french": "qcombiné",
         "en_formatted": "/q/_{/blend/}",
-        "fr_formatted": "/q/_{/combiné/}",
-        "number_of_occurances": 2
+        "fr_formatted": "/q/_{/combiné/}"
       },
       {
         "english": "UUSR",
         "french": "UPRS",
         "en_formatted": "/U/_{/USR/}",
-        "fr_formatted": "/U/_{/PRS/}",
-        "number_of_occurances": 2
+        "fr_formatted": "/U/_{/PRS/}"
       },
       {
         "english": "YUSR",
         "french": "YPRS",
         "en_formatted": "/Y/_{/USR/}",
-        "fr_formatted": "/Y/_{/PRS/}",
-        "number_of_occurances": 2
+        "fr_formatted": "/Y/_{/PRS/}"
       },
       {
         "english": "UCrash",
         "french": "Ueffondrement",
         "en_formatted": "/U/_{/Crash/}",
-        "fr_formatted": "/U/_{/effondrement/}",
-        "number_of_occurances": 2
+        "fr_formatted": "/U/_{/effondrement/}"
       },
       {
         "english": "NARW(d)",
         "french": "BNAN(j)",
         "en_formatted": "NARW(d)",
-        "fr_formatted": "BNAN(j)",
-        "number_of_occurances": 2
+        "fr_formatted": "BNAN(j)"
       },
       {
         "english": "NARW%",
         "french": "BNAN%",
         "en_formatted": "NARW%",
-        "fr_formatted": "BNAN%",
-        "number_of_occurances": 2
+        "fr_formatted": "BNAN%"
       },
       {
         "english": "Sub-area",
         "french": "Sous-zone",
         "en_formatted": "Sub-area",
-        "fr_formatted": "Sous-zone",
-        "number_of_occurances": 2
+        "fr_formatted": "Sous-zone"
       },
       {
         "english": "Périod1",
         "french": "Période1",
         "en_formatted": "Périod^{1}",
-        "fr_formatted": "Période^{1}",
-        "number_of_occurances": 2
+        "fr_formatted": "Période^{1}"
       },
       {
         "english": "Year(s)",
         "french": "Année(s)",
         "en_formatted": "Year(s)",
-        "fr_formatted": "Année(s)",
-        "number_of_occurances": 2
+        "fr_formatted": "Année(s)"
       },
       {
         "english": "IDQ",
         "french": "CJI",
         "en_formatted": "IDQ",
-        "fr_formatted": "CJI",
-        "number_of_occurances": 2
+        "fr_formatted": "CJI"
       },
       {
         "english": "MDQB",
         "french": "CJMB",
         "en_formatted": "MDQB",
-        "fr_formatted": "CJMB",
-        "number_of_occurances": 2
+        "fr_formatted": "CJMB"
       },
       {
         "english": "Country/entitya",
         "french": "Pays/entitéa",
         "en_formatted": "Country/entity^{a}",
-        "fr_formatted": "Pays/entité^{a}",
-        "number_of_occurances": 2
+        "fr_formatted": "Pays/entité^{a}"
       },
       {
         "english": "AMEP",
         "french": "PLIEC",
         "en_formatted": "AMEP",
-        "fr_formatted": "PLIEC",
-        "number_of_occurances": 2
+        "fr_formatted": "PLIEC"
       },
       {
         "english": "WITCH",
         "french": "PLIEG",
         "en_formatted": "WITCH",
-        "fr_formatted": "PLIEG",
-        "number_of_occurances": 2
+        "fr_formatted": "PLIEG"
       },
       {
         "english": "SHR",
         "french": "CREV",
         "en_formatted": "SHR",
-        "fr_formatted": "CREV",
-        "number_of_occurances": 2
+        "fr_formatted": "CREV"
       },
       {
         "english": "UNK",
         "french": "INC",
         "en_formatted": "UNK",
-        "fr_formatted": "INC",
-        "number_of_occurances": 2
+        "fr_formatted": "INC"
       },
       {
         "english": "LNSFA",
         "french": "APBCN",
         "en_formatted": "LNSFA",
-        "fr_formatted": "APBCN",
-        "number_of_occurances": 2
+        "fr_formatted": "APBCN"
       },
       {
         "english": "CRP",
         "french": "PCSH",
         "en_formatted": "CRP",
-        "fr_formatted": "PCSH",
-        "number_of_occurances": 2
+        "fr_formatted": "PCSH"
       },
       {
         "english": "FSCP",
         "french": "PRM",
         "en_formatted": "FSCP",
-        "fr_formatted": "PRM",
-        "number_of_occurances": 2
+        "fr_formatted": "PRM"
       },
       {
         "english": "Aug.-Sept.",
         "french": "Août-sept.",
         "en_formatted": "Aug.-Sept.",
-        "fr_formatted": "Août-sept.",
-        "number_of_occurances": 2
+        "fr_formatted": "Août-sept."
       },
       {
         "english": "TPI",
         "french": "IPT",
         "en_formatted": "TPI",
-        "fr_formatted": "IPT",
-        "number_of_occurances": 2
+        "fr_formatted": "IPT"
       },
       {
         "english": "Apr_May",
         "french": "Avr.-mai",
         "en_formatted": "Apr_May",
-        "fr_formatted": "Avr.-mai",
-        "number_of_occurances": 2
+        "fr_formatted": "Avr.-mai"
       },
       {
         "english": "June_July",
         "french": "Juin-juill.",
         "en_formatted": "June_July",
-        "fr_formatted": "Juin-juill.",
-        "number_of_occurances": 2
+        "fr_formatted": "Juin-juill."
       },
       {
         "english": "Apr_July",
         "french": "Avr.-juill.",
         "en_formatted": "Apr_July",
-        "fr_formatted": "Avr.-juill.",
-        "number_of_occurances": 2
+        "fr_formatted": "Avr.-juill."
       },
       {
         "english": "Aug_Nov",
         "french": "Août-nov.",
         "en_formatted": "Aug_Nov",
-        "fr_formatted": "Août-nov.",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "Apr_May",
-        "french": "Avr.-mai",
-        "en_formatted": "Apr_May",
-        "fr_formatted": "Avr.-mai",
-        "number_of_occurances": 2
-      },
-      {
-        "english": "June_July",
-        "french": "Juin-juill.",
-        "en_formatted": "June_July",
-        "fr_formatted": "Juin-juill.",
-        "number_of_occurances": 2
+        "fr_formatted": "Août-nov."
       },
       {
         "english": "Oct_Nov",
         "french": "Oct.-nov.",
         "en_formatted": "Oct_Nov",
-        "fr_formatted": "Oct.-nov.",
-        "number_of_occurances": 2
+        "fr_formatted": "Oct.-nov."
       },
       {
-        "english": "Apr_July",
-        "french": "Avr.-juill.",
-        "en_formatted": "Apr_July",
-        "fr_formatted": "Avr.-juill.",
-        "number_of_occurances": 2
+        "english": "stray",
+        "french": "égaré",
+        "source": "sub-part",
+        "count": 89
       },
       {
-        "english": "Aug_Nov",
-        "french": "Août-nov.",
-        "en_formatted": "Aug_Nov",
-        "fr_formatted": "Août-nov.",
-        "number_of_occurances": 2
+        "english": "OCU",
+        "french": "HUC",
+        "source": "sub-part",
+        "count": 32
       },
       {
-        "english": "SSB/LRP",
-        "french": "BSR/PRL",
-        "en_formatted": "SSB/LRP",
-        "fr_formatted": "BSR/PRL",
-        "number_of_occurances": 2
+        "english": "gen",
+        "french": "gén",
+        "source": "sub-part",
+        "count": 11
       },
       {
-        "english": "U.S.",
-        "french": "É.-U.",
-        "en_formatted": "U.S.",
-        "fr_formatted": "É.-U.",
-        "number_of_occurances": 2
+        "english": "MSY",
+        "french": "RMD",
+        "source": "sub-part",
+        "count": 12
+      },
+      {
+        "english": "AP",
+        "french": "PC",
+        "source": "sub-part",
+        "count": 5
+      },
+      {
+        "english": "MSY(30)",
+        "french": "RMD(30)",
+        "source": "sub-part",
+        "count": 4
+      },
+      {
+        "english": "MSY(40)",
+        "french": "RMD(40)",
+        "source": "sub-part",
+        "count": 4
+      },
+      {
+        "english": "MSY(80)",
+        "french": "RMD(80)",
+        "source": "sub-part",
+        "count": 2
+      },
+      {
+        "english": "tar",
+        "french": "cib",
+        "source": "sub-part",
+        "count": 2
+      },
+      {
+        "english": "SP",
+        "french": "PR",
+        "source": "sub-part",
+        "count": 2
+      },
+      {
+        "english": "FA",
+        "french": "AU",
+        "source": "sub-part",
+        "count": 2
+      },
+      {
+        "english": "EF",
+        "french": "DA",
+        "source": "sub-part",
+        "count": 2
+      },
+      {
+        "english": "blend",
+        "french": "combiné",
+        "source": "sub-part",
+        "count": 2
+      },
+      {
+        "english": "USR",
+        "french": "PRS",
+        "source": "sub-part",
+        "count": 2
+      },
+      {
+        "english": "Crash",
+        "french": "effondrement",
+        "source": "sub-part",
+        "count": 2
       }
     ]
   },
@@ -14593,6 +13847,7 @@
     "species_names_count": 43,
     "acronyms_abbreviations_count": 44,
     "place_names_count": 2421,
-    "total_translations": 2688
+    "table_translations_count": 344,
+    "total_translations": 3032
   }
 }
