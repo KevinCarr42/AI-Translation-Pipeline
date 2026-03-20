@@ -154,16 +154,22 @@ class TestTranslateParagraphNewlineOrdinals:
 # ---------------------------------------------------------------------------
 
 def _make_paragraph_with_smarttag(doc):
-    """Create a paragraph: <w:r>ISSN </w:r><w:smartTag><w:r>1919-5087</w:r></w:smartTag><w:r> rest</w:r>"""
+    """Create a paragraph: <w:r>ISSN </w:r><w:smartTag><w:smartTagPr/><w:r>1919-5087</w:r></w:smartTag><w:r> rest</w:r>"""
     para = doc.add_paragraph()
 
     # "ISSN " run
     run1 = para.add_run("ISSN ")
 
-    # smartTag wrapping "1919-5087"
+    # smartTag wrapping "1919-5087" (with smartTagPr, as in real documents)
     smart_tag = OxmlElement("w:smartTag")
     smart_tag.set(qn("w:uri"), "urn:schemas-microsoft-com:office:smarttags")
     smart_tag.set(qn("w:element"), "phone")
+    smart_tag_pr = OxmlElement("w:smartTagPr")
+    attr = OxmlElement("w:attr")
+    attr.set(qn("w:name"), "phonenumber")
+    attr.set(qn("w:val"), "19195087")
+    smart_tag_pr.append(attr)
+    smart_tag.append(smart_tag_pr)
     inner_r = OxmlElement("w:r")
     inner_t = OxmlElement("w:t")
     inner_t.text = "1919-5087"
@@ -196,6 +202,19 @@ class TestSmartTagHandling:
             f"smartTag text '1919-5087' should be visible in paragraph.text "
             f"after extraction, got: {text_after_extract!r}"
         )
+
+    def test_smarttag_unwrap_no_orphaned_elements(self):
+        # smartTagPr must not leak into the paragraph as a direct child
+        doc = Document()
+        para = _make_paragraph_with_smarttag(doc)
+
+        _extract_non_run_elements(para)
+
+        for child in para._element:
+            assert "smartTagPr" not in child.tag, (
+                f"Orphaned {child.tag} found as direct child of paragraph — "
+                f"this causes Word to report unreadable content"
+            )
 
     def test_smarttag_text_position_preserved(self):
         # The smartTag text should remain between "ISSN " and "\nISBN..."

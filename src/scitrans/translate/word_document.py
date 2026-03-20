@@ -143,7 +143,8 @@ def _unwrap_smart_tags(paragraph):
     for smart_tag in list(paragraph._element.findall(qn('w:smartTag'))):
         parent = smart_tag.getparent()
         for child in list(smart_tag):
-            smart_tag.addprevious(child)
+            if child.tag == qn('w:r'):
+                smart_tag.addprevious(child)
         parent.remove(smart_tag)
 
 
