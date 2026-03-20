@@ -16,7 +16,6 @@ if __name__ == '__main__':
     use_finetuned = True
     
     file_list = (
-        ("test_formatting_errors_en.docx", "en"),
         ("1432_en.docx", "en"),
         ("1466_fr.docx", "fr"),
     )
