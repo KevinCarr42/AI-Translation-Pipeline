@@ -139,7 +139,16 @@ def _has_only_field_runs(paragraph):
     return has_any_run
 
 
+def _unwrap_smart_tags(paragraph):
+    for smart_tag in list(paragraph._element.findall(qn('w:smartTag'))):
+        parent = smart_tag.getparent()
+        for child in list(smart_tag):
+            smart_tag.addprevious(child)
+        parent.remove(smart_tag)
+
+
 def _extract_non_run_elements(paragraph):
+    _unwrap_smart_tags(paragraph)
     saved = []
     for child in list(paragraph._element):
         if child.tag == qn('w:pPr'):

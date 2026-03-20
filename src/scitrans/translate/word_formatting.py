@@ -115,21 +115,30 @@ class FormattingRule:
         formatting_records.append(record)
 
 
+def _set_single_run_text(run_elem, text):
+    for child in list(run_elem):
+        if child.tag in (qn('w:t'), qn('w:br')):
+            run_elem.remove(child)
+    t = etree.SubElement(run_elem, qn('w:t'))
+    t.text = text
+    if text and (text[0] == ' ' or text[-1] == ' '):
+        t.set(qn('xml:space'), 'preserve')
+
+
 def _split_run_for_vertical_align(paragraph, run, text_fragment, align_type, offset=None):
     run_elem = run._element
     text = run.text
     idx = offset if offset is not None else text.find(text_fragment)
     if idx == -1:
         return False
-    
+
     before = text[:idx]
     after = text[idx + len(text_fragment):]
-    
+
     if before:
-        run.text = before
         new_r = deepcopy(run_elem)
-        t_elem = new_r.find(qn('w:t'))
-        t_elem.text = text_fragment
+        _set_single_run_text(run_elem, before)
+        _set_single_run_text(new_r, text_fragment)
         rPr = new_r.find(qn('w:rPr'))
         if rPr is None:
             rPr = etree.SubElement(new_r, qn('w:rPr'))
@@ -139,16 +148,14 @@ def _split_run_for_vertical_align(paragraph, run, text_fragment, align_type, off
             vert = etree.SubElement(rPr, qn('w:vertAlign'))
         vert.set(qn('w:val'), align_type)
         run_elem.addnext(new_r)
-        
+
         if after:
             after_r = deepcopy(run_elem)
-            t_elem = after_r.find(qn('w:t'))
-            t_elem.text = after
-            if after[0] == ' ':
-                t_elem.set(qn('xml:space'), 'preserve')
+            _set_single_run_text(after_r, after)
             new_r.addnext(after_r)
     else:
-        run.text = text_fragment
+        new_r = deepcopy(run_elem)
+        _set_single_run_text(run_elem, text_fragment)
         rPr_elem = run_elem.find(qn('w:rPr'))
         if rPr_elem is None:
             rPr_elem = etree.SubElement(run_elem, qn('w:rPr'))
@@ -157,20 +164,17 @@ def _split_run_for_vertical_align(paragraph, run, text_fragment, align_type, off
         if vert is None:
             vert = etree.SubElement(rPr_elem, qn('w:vertAlign'))
         vert.set(qn('w:val'), align_type)
-        
+
         if after:
             after_r = deepcopy(run_elem)
-            t_elem = after_r.find(qn('w:t'))
-            t_elem.text = after
-            if after[0] == ' ':
-                t_elem.set(qn('xml:space'), 'preserve')
+            _set_single_run_text(after_r, after)
             after_rPr = after_r.find(qn('w:rPr'))
             if after_rPr is not None:
                 after_vert = after_rPr.find(qn('w:vertAlign'))
                 if after_vert is not None:
                     after_rPr.remove(after_vert)
             run_elem.addnext(after_r)
-    
+
     return True
 
 

@@ -37,8 +37,8 @@ class TestSplitRunMultipleWt:
         original_text = para.text
         run = para.runs[0]
 
-        # Split at the "e" after "25"
-        _split_run_for_vertical_align(para, run, "e", "superscript", offset=25)
+        # Split at the "e" after "25" (position 21 in the virtual text)
+        _split_run_for_vertical_align(para, run, "e", "superscript", offset=21)
 
         # The full paragraph text must be identical — no duplication
         assert para.text == original_text, (
