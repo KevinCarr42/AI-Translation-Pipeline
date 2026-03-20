@@ -19,3 +19,5 @@
 /.venv_backup_stable/
 console_output*.txt
 *rough_calcs/
+EXAMPLES/
+TODO.md

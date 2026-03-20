@@ -43,8 +43,12 @@ def replace_images(doc1_path, doc2_path, output_path):
 
 
 if __name__ == '__main__':
-    root = Path("image_replacing_script_tests")
-    file_to_replace = root / "1432_en_translated_KC.docx"
-    file_to_replace_from = root / "1432_en_translated_TB.docx"
-    updated_file = root / "1432_en_translated_img_replaced.docx"
+    file_folder = "1432_en_260320"
+    file_name = "1432_en_translated.docx"
+    
+    review_prep_folder = Path("../data/_REVIEW_PREP")
+    root = review_prep_folder / file_folder
+    file_to_replace = root / file_name
+    file_to_replace_from = root / file_name.replace(".docx", "_TB.docx")
+    updated_file = root / file_name.replace(".docx", "_AI.docx")
     replace_images(file_to_replace, file_to_replace_from, updated_file)
