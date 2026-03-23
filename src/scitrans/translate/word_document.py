@@ -307,7 +307,14 @@ def _translate_paragraph(
                 use_find_replace, idx, use_cache, preferential_dict=preferential_dict,
                 chunk_by=chunk_by
             )
-            paragraph.text = normalize_apostrophes(translated_text)
+            normalized = normalize_apostrophes(translated_text)
+            runs = paragraph.runs
+            if runs:
+                runs[0].text = normalized
+                for run in runs[1:]:
+                    run.text = ''
+            else:
+                paragraph.text = normalized
     
     _reinsert_non_run_elements(paragraph, saved_elements)
     

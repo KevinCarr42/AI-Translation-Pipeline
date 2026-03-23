@@ -2,6 +2,7 @@ import pytest
 from docx import Document
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from docx.shared import Pt
 from lxml import etree
 
 from scitrans.translate.word_formatting import (
@@ -358,3 +359,77 @@ class TestOrphanedFieldEndColorContamination:
                     f"Run with text {run.text!r} inherited blue color 2B579A "
                     f"from the orphaned field-end run"
                 )
+
+
+# ---------------------------------------------------------------------------
+# Bug 4: paragraph.text = ... destroys run-level formatting (font size, bold)
+# ---------------------------------------------------------------------------
+
+class TestParagraphTextAssignmentStripsFormatting:
+    """When a paragraph has no tabs, _translate_paragraph uses
+    paragraph.text = translated_text, which creates a new run with default
+    formatting and destroys the original runs' font size, bold, etc.
+    This causes table cells with 8.5pt bold text to revert to default size."""
+
+    def test_run_font_size_preserved_after_translation(self):
+        doc = Document()
+        para = doc.add_paragraph()
+        run = para.add_run('Exploitation Rate Index')
+        run.font.size = Pt(8.5)
+        run.bold = True
+
+        mock = MockTranslator()
+
+        _translate_paragraph(
+            paragraph=para,
+            translation_manager=mock,
+            source_lang='en',
+            target_lang='fr',
+            use_find_replace=False,
+            idx=1,
+            use_cache=False,
+            formatting_records=[],
+            preferential_dict=None,
+            chunk_by='sentences',
+            location=None,
+        )
+
+        runs_with_text = [r for r in para.runs if r.text and r.text.strip()]
+        assert runs_with_text, "Paragraph should have at least one run with text"
+        for run in runs_with_text:
+            assert run.font.size == Pt(8.5), (
+                f"Run with text {run.text!r} lost font size: "
+                f"expected {Pt(8.5)}, got {run.font.size}"
+            )
+
+    def test_multi_run_same_format_preserves_size(self):
+        doc = Document()
+        para = doc.add_paragraph()
+        for text in ['2024 NSAR', ' FB spatiotemporal index (kt):']:
+            run = para.add_run(text)
+            run.font.size = Pt(8.5)
+            run.bold = True
+
+        mock = MockTranslator()
+
+        _translate_paragraph(
+            paragraph=para,
+            translation_manager=mock,
+            source_lang='en',
+            target_lang='fr',
+            use_find_replace=False,
+            idx=1,
+            use_cache=False,
+            formatting_records=[],
+            preferential_dict=None,
+            chunk_by='sentences',
+            location=None,
+        )
+
+        runs_with_text = [r for r in para.runs if r.text and r.text.strip()]
+        assert runs_with_text, "Paragraph should have at least one run with text"
+        for run in runs_with_text:
+            assert run.font.size == Pt(8.5), (
+                f"Run with text {run.text!r} lost font size: "
+                f"expected {Pt(8.5)}, got {run.font.size}"
+            )
