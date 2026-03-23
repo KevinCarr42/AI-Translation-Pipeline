@@ -274,3 +274,87 @@ class TestSmartTagHandling:
                 f"1919-5087={num_pos}, ISBN={isbn_pos}\n"
                 f"  Full text: {translated_text!r}"
             )
+
+
+# ---------------------------------------------------------------------------
+# Bug 3: orphaned field-end run with blue color contaminates translated text
+# ---------------------------------------------------------------------------
+
+def _make_paragraph_with_orphaned_field_end(doc):
+    """Create a paragraph that starts with a zero-text blue field-end run,
+    followed by normal text runs with a tab — matching the structure found
+    in 1432_en.docx paragraph 142."""
+    para = doc.add_paragraph()
+    p_elem = para._element
+    # Remove the default empty run that add_paragraph creates
+    for child in list(p_elem):
+        if child.tag == qn('w:r'):
+            p_elem.remove(child)
+
+    # Run 0: orphaned field end — blue color, no w:t, just w:fldChar end
+    r0 = OxmlElement('w:r')
+    rpr0 = OxmlElement('w:rPr')
+    color0 = OxmlElement('w:color')
+    color0.set(qn('w:val'), '2B579A')
+    rpr0.append(color0)
+    r0.append(rpr0)
+    fld_char = OxmlElement('w:fldChar')
+    fld_char.set(qn('w:fldCharType'), 'end')
+    r0.append(fld_char)
+    p_elem.append(r0)
+
+    # Run 1: "ISSN 1919-5087" — normal (no color)
+    r1 = OxmlElement('w:r')
+    t1 = OxmlElement('w:t')
+    t1.text = 'ISSN 1919-5087'
+    t1.set(qn('xml:space'), 'preserve')
+    r1.append(t1)
+    p_elem.append(r1)
+
+    # Run 2: tab + "Cat. No. XYZ" — normal
+    r2 = OxmlElement('w:r')
+    r2.append(OxmlElement('w:tab'))
+    t2 = OxmlElement('w:t')
+    t2.text = 'Cat. No. XYZ'
+    r2.append(t2)
+    p_elem.append(r2)
+
+    return para
+
+
+class TestOrphanedFieldEndColorContamination:
+    """A zero-text run containing w:fldChar end with blue color (2B579A)
+    sits at the start of a paragraph. During translation, this run becomes
+    group[0] and the translated text is inserted into it, inheriting the
+    blue color. The field-end run should be removed before translation so
+    its formatting does not contaminate the translated text."""
+
+    def test_translated_text_not_blue(self):
+        doc = Document()
+        para = _make_paragraph_with_orphaned_field_end(doc)
+        mock = MockTranslator()
+
+        _translate_paragraph(
+            paragraph=para,
+            translation_manager=mock,
+            source_lang='en',
+            target_lang='fr',
+            use_find_replace=False,
+            idx=1,
+            use_cache=False,
+            formatting_records=[],
+            preferential_dict=None,
+            chunk_by='sentences',
+            location=None,
+        )
+
+        # No run with visible text should have the blue color
+        for run in para.runs:
+            if run.text and run.text.strip():
+                color_rgb = None
+                if run.font.color and run.font.color.rgb:
+                    color_rgb = str(run.font.color.rgb)
+                assert color_rgb != '2B579A', (
+                    f"Run with text {run.text!r} inherited blue color 2B579A "
+                    f"from the orphaned field-end run"
+                )

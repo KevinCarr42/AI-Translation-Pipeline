@@ -115,6 +115,35 @@ def _collapse_runs_preserving_shapes(paragraph):
             current_run = next_run
 
 
+def _remove_orphaned_field_runs(paragraph):
+    p_elem = paragraph._element
+    paired = set()
+    runs_with_fld = []
+    depth = 0
+    for child in p_elem:
+        if child.tag != qn('w:r'):
+            continue
+        fld_char = child.find(qn('w:fldChar'))
+        if fld_char is None:
+            continue
+        fld_type = fld_char.get(qn('w:fldCharType'))
+        runs_with_fld.append((child, fld_type))
+        if fld_type == 'begin':
+            depth += 1
+            paired.add(id(child))
+        elif fld_type == 'end' and depth > 0:
+            depth -= 1
+            paired.add(id(child))
+
+    for run_elem, fld_type in runs_with_fld:
+        if id(run_elem) in paired:
+            continue
+        t = run_elem.find(qn('w:t'))
+        if t is not None and (t.text or '').strip():
+            continue
+        p_elem.remove(run_elem)
+
+
 def _has_only_field_runs(paragraph):
     p_elem = paragraph._element
     in_field = 0
@@ -243,7 +272,8 @@ def _translate_paragraph(
         return idx
     
     saved_elements = _extract_non_run_elements(paragraph)
-    
+    _remove_orphaned_field_runs(paragraph)
+
     _isolate_run_tabs(paragraph)
     _collapse_runs_preserving_shapes(paragraph)
     
