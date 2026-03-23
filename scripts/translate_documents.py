@@ -73,8 +73,8 @@ if __name__ == '__main__':
             loop_end_time = time.time()
             print(f"Finished {filename}: {loop_end_time - loop_prev_time:.2f}s")
             loop_prev_time = loop_end_time
-        
-        print(f"Translation complete for {filename}")
+        else:
+            print(f"Translation complete for {filename}")
     
     if print_timing:
         end_time = time.time()

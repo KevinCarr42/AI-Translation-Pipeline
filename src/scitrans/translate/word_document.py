@@ -134,7 +134,7 @@ def _remove_orphaned_field_runs(paragraph):
         elif fld_type == 'end' and depth > 0:
             depth -= 1
             paired.add(id(child))
-
+    
     for run_elem, fld_type in runs_with_fld:
         if id(run_elem) in paired:
             continue
@@ -273,7 +273,7 @@ def _translate_paragraph(
     
     saved_elements = _extract_non_run_elements(paragraph)
     _remove_orphaned_field_runs(paragraph)
-
+    
     _isolate_run_tabs(paragraph)
     _collapse_runs_preserving_shapes(paragraph)
     
