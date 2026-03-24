@@ -24,7 +24,7 @@ class TestTranslationCache:
     def test_cache_hit_skips_translate_with_all_models(self):
         manager = _make_manager()
         manager.translate_with_all_models = MagicMock(
-            side_effect=lambda *a, **kw: _fake_all_models_result(kw["text"])
+            side_effect=lambda text, **kw: _fake_all_models_result(text)
         )
         
         result1 = manager.translate_with_best_model(text="Hello world", source_lang="en", target_lang="fr")
@@ -36,7 +36,7 @@ class TestTranslationCache:
     def test_different_text_not_cached(self):
         manager = _make_manager()
         manager.translate_with_all_models = MagicMock(
-            side_effect=lambda *a, **kw: _fake_all_models_result(kw["text"])
+            side_effect=lambda text, **kw: _fake_all_models_result(text)
         )
         
         result1 = manager.translate_with_best_model(text="Hello", source_lang="en", target_lang="fr")
@@ -49,7 +49,7 @@ class TestTranslationCache:
     def test_clear_errors_empties_cache(self):
         manager = _make_manager()
         manager.translate_with_all_models = MagicMock(
-            side_effect=lambda *a, **kw: _fake_all_models_result(kw["text"])
+            side_effect=lambda text, **kw: _fake_all_models_result(text)
         )
         
         manager.translate_with_best_model(text="Hello", source_lang="en", target_lang="fr")
@@ -61,7 +61,7 @@ class TestTranslationCache:
     def test_use_cache_false_bypasses_cache(self):
         manager = _make_manager()
         manager.translate_with_all_models = MagicMock(
-            side_effect=lambda *a, **kw: _fake_all_models_result(kw["text"])
+            side_effect=lambda text, **kw: _fake_all_models_result(text)
         )
         
         manager.translate_with_best_model(text="Hello", source_lang="en", target_lang="fr", use_cache=False)
@@ -73,7 +73,7 @@ class TestTranslationCache:
     def test_cache_isolated_between_documents(self):
         manager = _make_manager()
         manager.translate_with_all_models = MagicMock(
-            side_effect=lambda *a, **kw: _fake_all_models_result(kw["text"])
+            side_effect=lambda text, **kw: _fake_all_models_result(text)
         )
         
         # Simulate document 1
