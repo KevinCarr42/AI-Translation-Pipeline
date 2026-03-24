@@ -194,7 +194,7 @@ def _extract_non_run_elements(paragraph):
 
 
 def _chunk_and_translate(source_text, translation_manager, source_lang, target_lang, use_find_replace, idx, use_cache, preferential_dict, chunk_by):
-    chunks, chunk_metadata = split_into_chunks(source_text, chunk_by)
+    chunks, chunk_metadata = split_into_chunks(source_text, chunk_by=chunk_by)
     translated_chunks = []
     
     for i, chunk in enumerate(chunks, idx):
@@ -315,9 +315,10 @@ def _translate_paragraph(
             if not group_text.strip():
                 continue
             translated_segment = _chunk_and_translate(
-                group_text, translation_manager, source_lang, target_lang,
-                use_find_replace, idx, use_cache, preferential_dict=preferential_dict,
-                chunk_by=chunk_by
+                source_text=group_text, translation_manager=translation_manager,
+                source_lang=source_lang, target_lang=target_lang,
+                use_find_replace=use_find_replace, idx=idx, use_cache=use_cache,
+                preferential_dict=preferential_dict, chunk_by=chunk_by
             )
             group[0].text = normalize_apostrophes(translated_segment)
             for run in group[1:]:
@@ -326,9 +327,10 @@ def _translate_paragraph(
         full_text = paragraph.text
         if full_text and full_text.strip():
             translated_text = _chunk_and_translate(
-                full_text, translation_manager, source_lang, target_lang,
-                use_find_replace, idx, use_cache, preferential_dict=preferential_dict,
-                chunk_by=chunk_by
+                source_text=full_text, translation_manager=translation_manager,
+                source_lang=source_lang, target_lang=target_lang,
+                use_find_replace=use_find_replace, idx=idx, use_cache=use_cache,
+                preferential_dict=preferential_dict, chunk_by=chunk_by
             )
             normalized = normalize_apostrophes(translated_text)
             runs = paragraph.runs
@@ -407,8 +409,9 @@ def _translate_table_cell(
         elif len(stripped) >= config.TABLE_TRANSLATION_CONFIG.get("min_cell_length_for_ai", 20):
             for paragraph in cell.paragraphs:
                 idx = _translate_paragraph(
-                    paragraph, translation_manager, source_lang, target_lang,
-                    use_find_replace, idx, use_cache=use_cache,
+                    paragraph, translation_manager, source_lang=source_lang,
+                    target_lang=target_lang, use_find_replace=use_find_replace,
+                    idx=idx, use_cache=use_cache,
                     formatting_records=formatting_records,
                     preferential_dict=preferential_dict,
                     chunk_by=chunk_by, location=location
@@ -526,15 +529,20 @@ def translate_word_document(
     for element, location, elem_type in _iter_document_elements(document):
         if elem_type == "paragraph":
             idx = _translate_paragraph(
-                element, translation_manager, source_lang, target_lang,
-                use_find_replace, idx, use_cache, formatting_records,
-                preferential_dict, chunk_by, location
+                element, translation_manager, source_lang=source_lang,
+                target_lang=target_lang, use_find_replace=use_find_replace,
+                idx=idx, use_cache=use_cache, formatting_records=formatting_records,
+                preferential_dict=preferential_dict, chunk_by=chunk_by,
+                location=location
             )
         elif elem_type == "cell":
             idx = _translate_table_cell(
-                element, translation_manager, source_lang, target_lang,
-                use_find_replace, idx, use_cache, formatting_records,
-                preferential_dict, table_translations_dict, chunk_by, location
+                element, translation_manager, source_lang=source_lang,
+                target_lang=target_lang, use_find_replace=use_find_replace,
+                idx=idx, use_cache=use_cache, formatting_records=formatting_records,
+                preferential_dict=preferential_dict,
+                table_translations_dict=table_translations_dict,
+                chunk_by=chunk_by, location=location
             )
     
     _set_proofing_language(document, target_lang)

@@ -32,7 +32,7 @@ def translate_txt_document(
     with open(input_text_file, 'r', encoding='utf-8') as f:
         text = f.read()
     
-    chunks, chunk_metadata = split_into_chunks(text, chunk_by)
+    chunks, chunk_metadata = split_into_chunks(text, chunk_by=chunk_by)
     
     if not translation_manager:
         translation_manager = create_translator(

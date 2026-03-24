@@ -302,7 +302,7 @@ class TranslationManager:
         for name in model_names:
             config = self.all_models[name]
             model_instance = config['cls'](**config.get('params', {}))
-            _ = model_instance.translate_text("Test", "en", "fr")
+            _ = model_instance.translate_text("Test", input_language="en", target_language="fr")
             self.loaded_models[name] = model_instance
     
     def translate_with_retries(self, model, text, source_lang, target_lang,
@@ -331,7 +331,7 @@ class TranslationManager:
             generation_kwargs = {**base_kwargs, **params}
             
             translated = model.translate_text(
-                text, source_lang, target_lang, generation_kwargs
+                text, input_language=source_lang, target_language=target_lang, generation_kwargs=generation_kwargs
             )
             
             if self.debug and retry_log is not None and token_mapping:
@@ -431,19 +431,21 @@ class TranslationManager:
         
         if use_find_replace:
             preprocessed_text, token_mapping = apply_preferential_translations(
-                text, source_lang, target_lang, preferential_dict if preferential_dict is not None else config.PREFERENTIAL_JSON_PATH
+                source_text=text, source_language=source_lang, target_language=target_lang,
+                translations_file=preferential_dict if preferential_dict is not None else config.PREFERENTIAL_JSON_PATH
             )
             
             translated_with_tokens, retry_attempts, retry_params = self.translate_with_retries(
                 model, preprocessed_text, source_lang, target_lang,
-                token_mapping, generation_kwargs, model_name, idx, single_attempt
+                token_mapping=token_mapping, base_generation_kwargs=generation_kwargs,
+                model_name=model_name, idx=idx, single_attempt=single_attempt
             )
             
             if translated_with_tokens and self.is_valid_translation(
                     translated_with_tokens, preprocessed_text, token_mapping
             ):
                 translated_text = reverse_preferential_translations(
-                    translated_with_tokens, token_mapping
+                    translated_text=translated_with_tokens, token_mapping=token_mapping
                 )
                 if translated_text is None:
                     find_replace_error = True
@@ -457,7 +459,7 @@ class TranslationManager:
                         "error_type": "reverse_translation_validation_failed",
                     }
                     translated_text = model.translate_text(
-                        text, source_lang, target_lang, generation_kwargs
+                        text, input_language=source_lang, target_language=target_lang, generation_kwargs=generation_kwargs
                     )
             else:
                 find_replace_error = True
@@ -470,14 +472,14 @@ class TranslationManager:
                     "final_retry_params": retry_params,
                 }
                 translated_text = model.translate_text(
-                    text, source_lang, target_lang, generation_kwargs
+                    text, input_language=source_lang, target_language=target_lang, generation_kwargs=generation_kwargs
                 )
         else:
             preprocessed_text = None
             translated_with_tokens = None
             token_mapping = None
             translated_text = model.translate_text(
-                text, source_lang, target_lang, generation_kwargs
+                text, input_language=source_lang, target_language=target_lang, generation_kwargs=generation_kwargs
             )
         
         token_prefix_error = self.check_token_prefix_error(translated_text, text)
@@ -539,9 +541,10 @@ class TranslationManager:
         
         for model_name in model_names:
             result = self.translate_single(
-                text, model_name, source_lang, target_lang,
-                use_find_replace, generation_kwargs, idx, target_text, debug,
-                single_attempt, preferential_dict=preferential_dict
+                text, model_name, source_lang=source_lang, target_lang=target_lang,
+                use_find_replace=use_find_replace, generation_kwargs=generation_kwargs,
+                idx=idx, target_text=target_text, debug=debug,
+                single_attempt=single_attempt, preferential_dict=preferential_dict
             )
             all_results[model_name] = result
             
@@ -571,11 +574,19 @@ class TranslationManager:
         
         return all_results
     
-    def translate_with_best_model(self, *args, use_cache=True, **kwargs):
-        text = args[0] if args else kwargs.get("text")
+    def translate_with_best_model(self, text, source_lang="en", target_lang="fr",
+                                  use_find_replace=True, generation_kwargs=None,
+                                  idx=None, target_text=None, debug=False,
+                                  single_attempt=False, preferential_dict=None,
+                                  use_cache=True):
         if use_cache and text in self.translation_cache:
             return self.translation_cache[text]
-        result = self.translate_with_all_models(*args, **kwargs)["best_model"]
+        result = self.translate_with_all_models(
+            text, source_lang=source_lang, target_lang=target_lang,
+            use_find_replace=use_find_replace, generation_kwargs=generation_kwargs,
+            idx=idx, target_text=target_text, debug=debug,
+            single_attempt=single_attempt, preferential_dict=preferential_dict
+        )["best_model"]
         if use_cache:
             self.translation_cache[text] = result
         return result
