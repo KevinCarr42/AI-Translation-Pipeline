@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import tempfile
 
 import pytest
@@ -20,6 +21,21 @@ class MockTranslator:
         return {"translated_text": f"[TR:{text}]"}
 
 
+class PeriodDroppingMockTranslator(MockTranslator):
+    # Only drops the trailing period after the number, not the abbreviation
+    # period in "Fig." — realistic model behavior.
+    _LABEL_PERIOD_RE = re.compile(
+        r'(\b(?:Figure|Fig\.?|Table|Tableau)\s*\d+)\.',
+        re.IGNORECASE,
+    )
+    
+    def translate_with_best_model(self, text, source_lang, target_lang, use_find_replace, idx, **kwargs):
+        self.call_count += 1
+        self.source_texts.append(text)
+        mangled = self._LABEL_PERIOD_RE.sub(r'\1', text)
+        return {"translated_text": f"[TR:{mangled}]"}
+
+
 @pytest.fixture
 def mock_translator():
     return MockTranslator()
@@ -30,7 +46,7 @@ def fixture_dir():
     return FIXTURE_DIR
 
 
-def run_word_translation(fixture_name, source_lang, mock=None):
+def run_word_translation(fixture_name, source_lang, mock=None, use_find_replace=False):
     fixture_path = os.path.join(FIXTURE_DIR, fixture_name)
     temp = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
     temp.close()
@@ -43,7 +59,7 @@ def run_word_translation(fixture_name, source_lang, mock=None):
         input_docx_file=fixture_path,
         output_docx_file=output_path,
         source_lang=source_lang,
-        use_find_replace=False,
+        use_find_replace=use_find_replace,
         translation_manager=mock,
         preserve_json_notes=True
     )

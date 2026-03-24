@@ -1,7 +1,26 @@
 import re
 
 _PROTECTED_LABEL_PATTERN = re.compile(r'\b(Figure|Fig|Table|Tableau)\.?\s*\d+\.?', re.IGNORECASE)
+_LABEL_PREFIX_RE = re.compile(r'^((?:Figure|Fig|Table|Tableau)\.?\s*\d+)\.\s+', re.IGNORECASE)
 _PLACEHOLDER = '\x00'
+
+
+def split_label_prefix(text):
+    m = _LABEL_PREFIX_RE.match(text)
+    if not m:
+        return None, text
+    label = m.group(1) + '.'
+    rest = text[m.end():]
+    return label, rest
+
+
+def ensure_label_period(translated_label):
+    m = _PROTECTED_LABEL_PATTERN.search(translated_label)
+    if m and not m.group(0).endswith('.'):
+        return translated_label[:m.end()] + '.' + translated_label[m.end():]
+    if not m and not translated_label.rstrip().endswith('.'):
+        return translated_label.rstrip() + '.'
+    return translated_label
 
 
 def normalize_apostrophes(text):

@@ -13,6 +13,7 @@ from scitrans import config
 from scitrans.translate.models import create_translator
 from scitrans.translate.utils import normalize_apostrophes
 from scitrans.translate.utils import split_into_chunks, reassemble_sentences, reassemble_paragraphs
+from scitrans.translate.utils import split_label_prefix, ensure_label_period
 from scitrans.translate.word_formatting import FormattedRun
 from scitrans.translate.word_formatting import apply_formatting_rules, RuleRegistry
 from scitrans.translate.word_notes import add_formatting_notes, extract_hyperlink_notes, write_notes_json, json_to_word_tables
@@ -201,15 +202,37 @@ def _chunk_and_translate(source_text, translation_manager, source_lang, target_l
             translated_chunks.append('')
             continue
         
-        result = translation_manager.translate_with_best_model(
-            text=chunk,
-            source_lang=source_lang,
-            target_lang=target_lang,
-            use_find_replace=use_find_replace,
-            idx=i,
-            use_cache=use_cache
-        )
-        translated_chunks.append(result.get("translated_text", chunk))
+        label, rest = split_label_prefix(chunk)
+        if label and rest.strip():
+            label_result = translation_manager.translate_with_best_model(
+                text=label,
+                source_lang=source_lang,
+                target_lang=target_lang,
+                use_find_replace=use_find_replace,
+                idx=i,
+                use_cache=use_cache
+            )
+            rest_result = translation_manager.translate_with_best_model(
+                text=rest,
+                source_lang=source_lang,
+                target_lang=target_lang,
+                use_find_replace=use_find_replace,
+                idx=i,
+                use_cache=use_cache
+            )
+            translated_label = ensure_label_period(label_result.get("translated_text", label))
+            translated_rest = rest_result.get("translated_text", rest)
+            translated_chunks.append(translated_label + ' ' + translated_rest.lstrip())
+        else:
+            result = translation_manager.translate_with_best_model(
+                text=chunk,
+                source_lang=source_lang,
+                target_lang=target_lang,
+                use_find_replace=use_find_replace,
+                idx=i,
+                use_cache=use_cache
+            )
+            translated_chunks.append(result.get("translated_text", chunk))
     
     if chunk_by == "paragraphs":
         return reassemble_paragraphs(translated_chunks, chunk_metadata)
@@ -458,7 +481,7 @@ def _set_proofing_language(document, target_lang):
 
 def translate_word_document(
         input_docx_file, output_docx_file=None, source_lang="en", chunk_by="sentences",
-        models_to_use=None, use_find_replace=True, use_finetuned=True,
+        models_to_use=None, use_find_replace=False, use_finetuned=True,
         translation_manager=None, include_timestamp=True, use_cache=True,
         preserve_json_notes=False
 ):

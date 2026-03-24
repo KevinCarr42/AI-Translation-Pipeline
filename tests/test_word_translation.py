@@ -13,7 +13,7 @@ from scitrans.translate.word_document import translate_word_document, _translate
 from scitrans.translate.word_notes import write_notes_json
 from scitrans.translate.utils import split_by_sentences
 from scitrans.translate.models import create_translator
-from tests.conftest import MockTranslator
+from tests.conftest import MockTranslator, PeriodDroppingMockTranslator
 
 
 # ---------------------------------------------------------------------------
@@ -177,7 +177,8 @@ def test_spacing_between_runs(real_translator, fixture_path, tmp_path):
 # Unit tests (mock translator, fast)
 # ---------------------------------------------------------------------------
 
-def test_long_paragraph_chunking():
+@pytest.mark.parametrize("use_find_replace", [True, False], ids=["find_replace_on", "find_replace_off"])
+def test_long_paragraph_chunking(use_find_replace):
     mock = MockTranslator()
     long_text = "This is a test sentence. " * 30  # ~750 chars
     
@@ -186,13 +187,14 @@ def test_long_paragraph_chunking():
     para.add_run(long_text.strip())
     original_length = len(long_text.strip())
     
-    _translate_paragraph(para, mock, "en", "fr", False, 1)
+    _translate_paragraph(para, mock, "en", "fr", use_find_replace, 1)
     
     assert len(para.text) >= original_length, (
         f"Long paragraph truncated: {len(para.text)} < {original_length}"
     )
 
 
+@pytest.mark.parametrize("use_find_replace", [True, False], ids=["find_replace_on", "find_replace_off"])
 @pytest.mark.parametrize("build_fn, expected_link_text", [
     (
             lambda doc: (
@@ -220,7 +222,7 @@ def test_long_paragraph_chunking():
             'the official page',
     ),
 ], ids=['link_start', 'link_middle', 'link_end'])
-def test_hyperlink_in_paragraph(build_fn, expected_link_text, tmp_path):
+def test_hyperlink_in_paragraph(build_fn, expected_link_text, use_find_replace, tmp_path):
     mock = MockTranslator()
     input_path = str(tmp_path / 'input.docx')
     output_path = str(tmp_path / 'output.docx')
@@ -235,7 +237,7 @@ def test_hyperlink_in_paragraph(build_fn, expected_link_text, tmp_path):
         input_docx_file=input_path,
         output_docx_file=output_path,
         source_lang="en",
-        use_find_replace=False,
+        use_find_replace=use_find_replace,
         translation_manager=mock
     )
     
@@ -282,7 +284,8 @@ def test_split_by_sentences(input_text, expected):
     assert result == expected
 
 
-def test_hyperlink_stripping_and_records(tmp_path):
+@pytest.mark.parametrize("use_find_replace", [True, False], ids=["find_replace_on", "find_replace_off"])
+def test_hyperlink_stripping_and_records(use_find_replace, tmp_path):
     mock = MockTranslator()
     
     # --- Paragraph WITH hyperlink ---
@@ -298,7 +301,7 @@ def test_hyperlink_stripping_and_records(tmp_path):
     para = doc.paragraphs[0]
     
     formatting_records = []
-    _translate_paragraph(para, mock, 'en', 'fr', False, 1, formatting_records=formatting_records)
+    _translate_paragraph(para, mock, 'en', 'fr', use_find_replace, 1, formatting_records=formatting_records)
     
     # No w:hyperlink elements should remain
     assert len(para._element.findall(ns.qn('w:hyperlink'))) == 0, \
@@ -317,7 +320,7 @@ def test_hyperlink_stripping_and_records(tmp_path):
     para2 = doc2.add_paragraph()
     para2.add_run('Plain text without any links.')
     
-    _translate_paragraph(para2, mock, 'en', 'fr', False, 1, formatting_records=[])
+    _translate_paragraph(para2, mock, 'en', 'fr', use_find_replace, 1, formatting_records=[])
     
     any_cyan = any(
         run.font.highlight_color == WD_COLOR_INDEX.TURQUOISE
@@ -348,11 +351,12 @@ def test_write_formatting_notes(tmp_path):
     assert any('https://example.com' in n['detail'] for n in first['notes'])
 
 
+@pytest.mark.parametrize("use_find_replace", [True, False], ids=["find_replace_on", "find_replace_off"])
 @pytest.mark.parametrize("source_lang, expected_locale", [
     ('en', 'fr-CA'),
     ('fr', 'en-CA'),
 ], ids=['en_to_fr', 'fr_to_en'])
-def test_proofing_language_set(source_lang, expected_locale, tmp_path):
+def test_proofing_language_set(source_lang, expected_locale, use_find_replace, tmp_path):
     mock = MockTranslator()
     input_path = str(tmp_path / 'input.docx')
     output_path = str(tmp_path / 'output.docx')
@@ -365,7 +369,7 @@ def test_proofing_language_set(source_lang, expected_locale, tmp_path):
         input_docx_file=input_path,
         output_docx_file=output_path,
         source_lang=source_lang,
-        use_find_replace=False,
+        use_find_replace=use_find_replace,
         translation_manager=mock
     )
     
@@ -380,3 +384,91 @@ def test_proofing_language_set(source_lang, expected_locale, tmp_path):
         assert lang is not None, "rPr missing w:lang element"
         val = lang.get(ns.qn('w:val'))
         assert val == expected_locale, f"Expected '{expected_locale}', got '{val}'"
+
+
+# ---------------------------------------------------------------------------
+# Figure / Table label period preservation (expected to FAIL until fix)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("input_text, expected_label", [
+    ("Figure 1. Map showing the study area.", "Figure 1."),
+    ("Table 1. Summary of results from the survey.", "Table 1."),
+    ("Fig. 3. Distribution of species across regions.", "Fig. 3."),
+    ("Tableau 2. Les résultats montrent la distribution.", "Tableau 2."),
+], ids=["figure", "table", "fig_abbrev", "tableau"])
+def test_figure_table_period_preserved(input_text, expected_label, tmp_path):
+    mock = PeriodDroppingMockTranslator()
+    input_path = str(tmp_path / 'input.docx')
+    output_path = str(tmp_path / 'output.docx')
+    
+    doc = Document()
+    doc.add_paragraph(input_text)
+    doc.save(input_path)
+    
+    translate_word_document(
+        input_docx_file=input_path,
+        output_docx_file=output_path,
+        source_lang="en",
+        use_find_replace=False,
+        translation_manager=mock
+    )
+    
+    output_doc = Document(output_path)
+    output_text = output_doc.paragraphs[0].text
+    
+    assert expected_label in output_text, (
+        f"Period stripped from '{expected_label}' in: {output_text}"
+    )
+
+
+def test_figure_label_period_preserved_multisentence(tmp_path):
+    mock = PeriodDroppingMockTranslator()
+    input_path = str(tmp_path / 'input.docx')
+    output_path = str(tmp_path / 'output.docx')
+    
+    doc = Document()
+    doc.add_paragraph("Figure 1. Map showing the study area. Data was collected in 2024.")
+    doc.save(input_path)
+    
+    translate_word_document(
+        input_docx_file=input_path,
+        output_docx_file=output_path,
+        source_lang="en",
+        use_find_replace=False,
+        translation_manager=mock
+    )
+    
+    output_doc = Document(output_path)
+    output_text = output_doc.paragraphs[0].text
+    
+    assert "Figure 1." in output_text, (
+        f"Period stripped from 'Figure 1.' in multi-sentence text: {output_text}"
+    )
+
+
+def test_table_label_period_preserved_in_table_cell(tmp_path):
+    mock = PeriodDroppingMockTranslator()
+    input_path = str(tmp_path / 'input.docx')
+    output_path = str(tmp_path / 'output.docx')
+    
+    doc = Document()
+    table = doc.add_table(rows=1, cols=1)
+    cell = table.rows[0].cells[0]
+    cell.text = "Table 2. Observed counts by region and year."
+    
+    doc.save(input_path)
+    
+    translate_word_document(
+        input_docx_file=input_path,
+        output_docx_file=output_path,
+        source_lang="en",
+        use_find_replace=False,
+        translation_manager=mock
+    )
+    
+    output_doc = Document(output_path)
+    cell_text = output_doc.tables[0].rows[0].cells[0].text
+    
+    assert "Table 2." in cell_text, (
+        f"Period stripped from 'Table 2.' in table cell: {cell_text}"
+    )
