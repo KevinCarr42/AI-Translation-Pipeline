@@ -2,6 +2,8 @@ import argparse
 import re
 import sys
 
+from pathlib import Path
+
 import docx
 
 from scitrans.config import PREFERENTIAL_JSON_PATH

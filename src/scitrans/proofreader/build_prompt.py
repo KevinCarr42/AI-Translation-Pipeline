@@ -1,4 +1,3 @@
-import subprocess
 from pathlib import Path
 
 from scitrans.config import PREFERENTIAL_JSON_PATH, PROOFREADING_DIR
@@ -32,11 +31,3 @@ def build_prompt(filename, review_path=None, source_lang=None):
             if len(source_term) >= MIN_LENGTH and len(target_term) >= MIN_LENGTH:
                 prompt += f"- {source_term} -> {target_term}\n"
     return prompt
-
-
-if __name__ == '__main__':
-    filename = "1466_fr.docx"
-    review_path = Path(PROOFREADING_DIR) / "1466_fr"
-    prompt_text = build_prompt(filename, review_path)
-    print(prompt_text)
-    subprocess.run("clip", input=prompt_text.encode('utf-8'), check=True)
