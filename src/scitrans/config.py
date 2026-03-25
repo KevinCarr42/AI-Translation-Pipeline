@@ -6,6 +6,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 EXTERNAL_DATA_DIR = USER_DIR / "Documents/Repositories/AI/Data"
 INTERNAL_DATA_DIR = PROJECT_ROOT / "data"
 TRANSLATED_TEXT_DIR = INTERNAL_DATA_DIR / "_TRANSLATED_DOCUMENTS"
+PROOFREADING_DIR = INTERNAL_DATA_DIR / "_PROOFREADING"
 
 # starting data
 PARSED_DOCS_DIR = EXTERNAL_DATA_DIR / "ParsedPublications"
@@ -19,9 +20,10 @@ MATCHED_DATA_WITH_FEATURES = EXTERNAL_DATA_DIR / "pipeline_df_with_features.pick
 TRAINING_DATA_OUTPUT = EXTERNAL_DATA_DIR / "pipeline_training_data.jsonl"
 TESTING_DATA_OUTPUT = EXTERNAL_DATA_DIR / "pipeline_testing_data.jsonl"
 
-# translations folders
+# translations data folders
 PREFERENTIAL_JSON_PATH = INTERNAL_DATA_DIR / "preferential_translations.json"
 PRETRAINED_MODELS_FOLDER = EXTERNAL_DATA_DIR / "pretrained_models"
+PROOFREADER_MODELS_FOLDER = EXTERNAL_DATA_DIR / "proofreader_models"
 MODEL_OUTPUT_DIR = EXTERNAL_DATA_DIR / "finetuning_outputs"
 MERGED_MODEL_DIR = EXTERNAL_DATA_DIR / "finetuning_merged"
 

@@ -230,8 +230,8 @@
     "count": 30
   },
   {
-    "en": "Terrestrial*",
-    "fr": "Terrestre*",
+    "en": "Terrestrial",
+    "fr": "Terrestre",
     "count": 29
   },
   {
@@ -1820,13 +1820,13 @@
     "count": 2
   },
   {
-    "en": "NSAR**",
-    "fr": "RESN**",
+    "en": "NSAR",
+    "fr": "RESN",
     "count": 2
   },
   {
-    "en": "SSAR**",
-    "fr": "RESS**",
+    "en": "SSAR",
+    "fr": "RESS",
     "count": 2
   },
   {

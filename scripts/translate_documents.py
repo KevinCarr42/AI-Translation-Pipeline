@@ -49,7 +49,7 @@ if __name__ == '__main__':
                 output_docx_file=None,
                 source_lang=source_lang,
                 models_to_use=None,
-                use_find_replace=True,
+                use_find_replace=False,  # FIXME: don't use this unless this module is improved
                 use_finetuned=None,
                 translation_manager=translation_manager,
                 include_timestamp=False,
@@ -62,7 +62,7 @@ if __name__ == '__main__':
                 source_lang=source_lang,
                 chunk_by="sentences",
                 models_to_use=None,
-                use_find_replace=True,
+                use_find_replace=False,  # FIXME: don't use this unless this module is improved
                 use_finetuned=None,
                 translation_manager=translation_manager,
                 single_attempt=False,

@@ -5,6 +5,7 @@
 *.pytest_cache/
 *_BACKUP/
 *_REVIEW_PREP/
+*_PROOFREADING/
 *_TRANSLATED_DOCUMENTS/
 *__pycache__*
 *image_replacing_script_tests

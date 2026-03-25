@@ -44,8 +44,8 @@ def replace_images(doc1_path, doc2_path, output_path):
 
 if __name__ == '__main__':
     files = [
-        ("1432_en_260323", "1432_en_translated.docx"),
-        ("1466_fr_260323", "1466_fr_translated.docx"),
+        ("1432_en_260324", "1432_en_translated.docx"),
+        ("1466_fr_260324", "1466_fr_translated.docx"),
     ]
     
     for file_folder, file_name in files:
@@ -54,6 +54,6 @@ if __name__ == '__main__':
         
         file_to_replace = root / file_name
         file_to_replace_from = root / file_name.replace(".docx", "_TB.docx")
-        updated_file = root / file_name.replace(".docx", "_AI.docx")
+        updated_file = root / file_name.replace(".docx", "_img_swapped.docx")
         
         replace_images(file_to_replace, file_to_replace_from, updated_file)
