@@ -11967,10 +11967,10 @@
         "fr_formatted": "MSRL"
       },
       {
-        "english": "Terrestrial*",
-        "french": "Terrestre*",
-        "en_formatted": "Terrestrial*",
-        "fr_formatted": "Terrestre*"
+        "english": "Terrestrial",
+        "french": "Terrestre",
+        "en_formatted": "Terrestrial",
+        "fr_formatted": "Terrestre"
       },
       {
         "english": "DINOFLAGELLATES",
@@ -13517,16 +13517,16 @@
         "fr_formatted": "VIP"
       },
       {
-        "english": "NSAR**",
-        "french": "RESN**",
-        "en_formatted": "NSAR**",
-        "fr_formatted": "RESN**"
+        "english": "NSAR",
+        "french": "RESN",
+        "en_formatted": "NSAR",
+        "fr_formatted": "RESN"
       },
       {
-        "english": "SSAR**",
-        "french": "RESS**",
-        "en_formatted": "SSAR**",
-        "fr_formatted": "RESS**"
+        "english": "SSAR",
+        "french": "RESS",
+        "en_formatted": "SSAR",
+        "fr_formatted": "RESS"
       },
       {
         "english": "AIC",

@@ -15,17 +15,18 @@ def _resolve(path):
 
 
 def run_fix_formatting(input_path, output_path, source_path=None,
-                       lang=None, source_lang=None):
+                       lang=None, source_lang=None, track_changes=False):
     input_path = _resolve(input_path)
     output_path = _resolve(output_path)
     if source_path is not None:
         source_path = _resolve(source_path)
-    
+
     result = fix_formatting(
         input_path, output_path,
         lang=lang,
         source_lang=source_lang,
         source_path=source_path,
+        track_changes=track_changes,
     )
     print(f'Done: {result["glossary_replacements"]} glossary replacements, '
           f'{result["punctuation_fixes"]} punctuation fixes ({result["lang"]} rules)')
@@ -58,10 +59,10 @@ if __name__ == '__main__':
     input_path = folder_path / "1432_en_translated.docx"
     output_path = folder_path / "1432_en_translated_FIXED.docx"
     source_path = folder_path / "1432_en.docx"
-    
+
     run_fix_formatting(
         input_path=input_path,
         output_path=output_path,
         source_path=source_path,
+        track_changes=False,
     )
-    

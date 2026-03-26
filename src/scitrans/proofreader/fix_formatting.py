@@ -1,10 +1,12 @@
 import argparse
 import re
 import sys
-
+from copy import deepcopy
+from datetime import datetime, timezone
 from pathlib import Path
 
 import docx
+from lxml import etree
 
 from scitrans.config import PREFERENTIAL_JSON_PATH
 from scitrans.proofreader.glossary import (
@@ -88,7 +90,73 @@ def apply_rules(text, rules):
     return result
 
 
-def apply_punctuation_rules(doc, rules):
+def _get_run_text(run_elem):
+    return ''.join(t.text or '' for t in run_elem.findall(f'{W}t'))
+
+
+def _tracked_replace(run_elem, old_text, new_text, change_id, author, date):
+    parent = run_elem.getparent()
+    idx = list(parent).index(run_elem)
+    rpr = run_elem.find(f'{W}rPr')
+    
+    del_elem = etree.SubElement(parent, f'{W}del')
+    del_elem.set(f'{W}id', str(change_id))
+    del_elem.set(f'{W}author', author)
+    del_elem.set(f'{W}date', date)
+    del_run = etree.SubElement(del_elem, f'{W}r')
+    if rpr is not None:
+        del_run.append(deepcopy(rpr))
+    del_t = etree.SubElement(del_run, f'{W}delText')
+    del_t.set(XML_SPACE, 'preserve')
+    del_t.text = old_text
+    
+    ins_elem = etree.SubElement(parent, f'{W}ins')
+    ins_elem.set(f'{W}id', str(change_id + 1))
+    ins_elem.set(f'{W}author', author)
+    ins_elem.set(f'{W}date', date)
+    ins_run = etree.SubElement(ins_elem, f'{W}r')
+    if rpr is not None:
+        ins_run.append(deepcopy(rpr))
+    ins_t = etree.SubElement(ins_run, f'{W}t')
+    ins_t.set(XML_SPACE, 'preserve')
+    ins_t.text = new_text
+    
+    # Move del and ins to the run's position, then remove the original run
+    parent.remove(del_elem)
+    parent.insert(idx, del_elem)
+    parent.remove(ins_elem)
+    parent.insert(idx + 1, ins_elem)
+    parent.remove(run_elem)
+
+
+def apply_punctuation_rules(doc, rules, track_changes=False, change_id=100,
+                            author='AI Formatting', date=None):
+    if track_changes and date is None:
+        date = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    
+    if track_changes:
+        # Collect (t_elem, parent_run) tuples upfront — holding references
+        # prevents Python from garbage-collecting lxml proxies and reusing
+        # id() values across loop iterations.
+        runs = []
+        seen = set()
+        for t_elem in iter_text_elements(doc):
+            run_elem = t_elem.getparent()
+            run_id = id(run_elem)
+            if run_id not in seen:
+                seen.add(run_id)
+                runs.append(run_elem)
+        
+        count = 0
+        for run_elem in runs:
+            old = _get_run_text(run_elem)
+            new = apply_rules(old, rules)
+            if new != old:
+                _tracked_replace(run_elem, old, new, change_id, author, date)
+                change_id += 2
+                count += 1
+        return count, change_id
+    
     count = 0
     for t_elem in iter_text_elements(doc):
         old = t_elem.text
@@ -100,7 +168,11 @@ def apply_punctuation_rules(doc, rules):
     return count
 
 
-def apply_glossary_replacements(doc, sub_glossary):
+def apply_glossary_replacements(doc, sub_glossary, track_changes=False, change_id=100,
+                                author='AI Formatting', date=None):
+    if track_changes and date is None:
+        date = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    
     # Sort by key length descending so longer matches take priority
     # (e.g. "Shrimp Fishing Area" before "Shrimp")
     sorted_terms = sorted(sub_glossary.items(), key=lambda x: len(x[0]), reverse=True)
@@ -110,6 +182,29 @@ def apply_glossary_replacements(doc, sub_glossary):
     for source_term, target_term in sorted_terms:
         pattern = re.compile(rf'\b{re.escape(source_term)}\b')
         compiled.append((pattern, target_term))
+    
+    if track_changes:
+        # Collect unique runs upfront — see apply_punctuation_rules comment
+        runs = []
+        seen = set()
+        for t_elem in iter_text_elements(doc):
+            run_elem = t_elem.getparent()
+            run_id = id(run_elem)
+            if run_id not in seen:
+                seen.add(run_id)
+                runs.append(run_elem)
+        
+        count = 0
+        for run_elem in runs:
+            old = _get_run_text(run_elem)
+            new = old
+            for pattern, target_term in compiled:
+                new = pattern.sub(target_term, new)
+            if new != old:
+                _tracked_replace(run_elem, old, new, change_id, author, date)
+                change_id += 2
+                count += 1
+        return count, change_id
     
     count = 0
     for t_elem in iter_text_elements(doc):
@@ -128,7 +223,8 @@ MIN_TERM_LENGTH = 3
 
 
 def fix_formatting(input_path, output_path, lang=None, source_lang=None,
-                   source_path=None, glossary_path=None, use_glossary=True):
+                   source_path=None, glossary_path=None, use_glossary=True,
+                   track_changes=False):
     doc = docx.Document(input_path)
     
     if not lang:
@@ -158,12 +254,22 @@ def fix_formatting(input_path, output_path, lang=None, source_lang=None,
         sub_glossary = build_sub_glossary(source_text, glossary)
         sub_glossary = {k: v for k, v in sub_glossary.items() if len(k) >= MIN_TERM_LENGTH}
     
+    change_id = 100
+    
     # Apply glossary replacements first, then punctuation rules
     glossary_count = 0
     if sub_glossary:
-        glossary_count = apply_glossary_replacements(doc, sub_glossary)
+        if track_changes:
+            glossary_count, change_id = apply_glossary_replacements(
+                doc, sub_glossary, track_changes=True, change_id=change_id)
+        else:
+            glossary_count = apply_glossary_replacements(doc, sub_glossary)
     
-    punctuation_count = apply_punctuation_rules(doc, rules)
+    if track_changes:
+        punctuation_count, change_id = apply_punctuation_rules(
+            doc, rules, track_changes=True, change_id=change_id)
+    else:
+        punctuation_count = apply_punctuation_rules(doc, rules)
     
     doc.save(output_path)
     return {
