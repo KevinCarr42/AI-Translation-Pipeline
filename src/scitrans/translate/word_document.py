@@ -16,7 +16,7 @@ from scitrans.translate.utils import split_into_chunks, reassemble_sentences, re
 from scitrans.translate.utils import split_label_prefix, ensure_label_period
 from scitrans.translate.word_formatting import FormattedRun
 from scitrans.translate.word_formatting import apply_formatting_rules, RuleRegistry
-from scitrans.translate.word_notes import add_formatting_notes, extract_hyperlink_notes, write_notes_json, json_to_word_tables
+from scitrans.translate.word_notes import add_formatting_notes, extract_hyperlink_notes, write_notes_json, json_to_word_tables, _filter_notes
 from scitrans.translate.word_formatting import is_numeric, convert_numeric, parse_formatted_string
 from scitrans.rules_based_replacements.token_utils import get_translation_value, normalize_translations
 
@@ -345,7 +345,9 @@ def _translate_paragraph(
     
     apply_formatting_rules(paragraph, formatting_records, source_text, location=location, detected=detected)
     
-    has_fmt_notes = (len(formatting_records) if formatting_records is not None else 0) > records_before
+    has_fmt_notes = False
+    if formatting_records is not None and len(formatting_records) > records_before:
+        has_fmt_notes = bool(_filter_notes(formatting_records[records_before:]))
     
     if has_hl or has_fmt_notes:
         color = WD_COLOR_INDEX.TURQUOISE
