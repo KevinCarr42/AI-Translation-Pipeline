@@ -1,7 +1,7 @@
 import subprocess
 from pathlib import Path
 
-from scitrans.config import PROJECT_ROOT
+from scitrans.config import PROJECT_ROOT, PROOFREADING_DIR
 from scitrans.proofreader.apply_review import main as apply_review
 from scitrans.proofreader.build_prompt import build_prompt
 from scitrans.proofreader.fix_formatting import fix_formatting
@@ -53,16 +53,16 @@ def run_build_prompt(filename, review_path=None, source_lang=None, copy_to_clipb
 
 
 if __name__ == '__main__':
-    # run_build_prompt("1432_en.docx", review_path=Path("EXAMPLES"))
+    run_build_prompt("1432_en.docx", review_path=PROOFREADING_DIR / "1432_en_2")
     
-    folder_path = Path("EXAMPLES")
-    input_path = folder_path / "1432_en_translated.docx"
-    output_path = folder_path / "1432_en_translated_FIXED.docx"
-    source_path = folder_path / "1432_en.docx"
-
-    run_fix_formatting(
-        input_path=input_path,
-        output_path=output_path,
-        source_path=source_path,
-        track_changes=False,
-    )
+    # folder_path = Path("EXAMPLES")
+    # input_path = folder_path / "1432_en_translated.docx"
+    # output_path = folder_path / "1432_en_translated_FIXED.docx"
+    # source_path = folder_path / "1432_en.docx"
+    #
+    # run_fix_formatting(
+    #     input_path=input_path,
+    #     output_path=output_path,
+    #     source_path=source_path,
+    #     track_changes=False,
+    # )
