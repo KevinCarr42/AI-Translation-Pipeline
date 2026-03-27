@@ -135,18 +135,19 @@ def step3_prepare(prev_checkpoint, original_path):
     translated_text = extract_text_with_ids(clean_path)
     
     system_prompt = _load_prompt('proofreading.md')
+    response_path = output_path.with_name('_step3_response.json')
     full_prompt = (
         f'{system_prompt}\n\n---\n\n'
         f'## Original document\n\n{original_text}\n\n'
-        f'## Translated document\n\n{translated_text}'
+        f'## Translated document\n\n{translated_text}\n\n'
+        f'---\n\n'
+        f'Save your JSON response to: {response_path}'
     )
-    
+
     prompt_path = output_path.with_name('_step3_prompt.md')
     _save_prompt_file(full_prompt, prompt_path)
-    response_path = output_path.with_name('_step3_response.json')
-    print(f'\n  >> Paste this prompt into Claude, then save the JSON response to:')
-    print(f'     {response_path}')
-    print(f'  >> Then re-run with: --step 3')
+    print(f'\n  >> Paste this prompt into Claude Code.')
+    print(f'     Response will be saved to: {response_path}')
     return clean_path, output_path, response_path
 
 
@@ -189,18 +190,19 @@ def step4_prepare(prev_checkpoint, checklist):
     
     system_prompt = _load_prompt('lexical_constraints.md')
     checklist_json = json.dumps(checklist, ensure_ascii=False, indent=2)
+    response_path = output_path.with_name('_step4_response.json')
     full_prompt = (
         f'{system_prompt}\n\n---\n\n'
         f'## Translated document\n\n{translated_text}\n\n'
-        f'## Lexical constraint checklist\n\n```json\n{checklist_json}\n```'
+        f'## Lexical constraint checklist\n\n```json\n{checklist_json}\n```\n\n'
+        f'---\n\n'
+        f'Save your JSON response to: {response_path}'
     )
-    
+
     prompt_path = output_path.with_name('_step4_prompt.md')
     _save_prompt_file(full_prompt, prompt_path)
-    response_path = output_path.with_name('_step4_response.json')
-    print(f'\n  >> Paste this prompt into Claude, then save the JSON response to:')
-    print(f'     {response_path}')
-    print(f'  >> Then re-run with: --step 4')
+    print(f'\n  >> Paste this prompt into Claude Code.')
+    print(f'     Response will be saved to: {response_path}')
     return clean_path, output_path, response_path
 
 
@@ -254,15 +256,19 @@ def step5_prepare(prev_checkpoint):
     translated_text = extract_text_with_ids(grammar_input)
     
     system_prompt = _load_prompt('grammar_review.md')
-    full_prompt = f'{system_prompt}\n\n---\n\n## Translated document\n\n{translated_text}'
-    
+    response_path = output_path.with_name('_step5_response.json')
+    full_prompt = (
+        f'{system_prompt}\n\n---\n\n'
+        f'## Translated document\n\n{translated_text}\n\n'
+        f'---\n\n'
+        f'Save your JSON response to: {response_path}'
+    )
+
     prompt_path = output_path.with_name('_step5_prompt.md')
     _save_prompt_file(full_prompt, prompt_path)
-    response_path = output_path.with_name('_step5_response.json')
     grammar_input.unlink(missing_ok=True)
-    print(f'\n  >> Paste this prompt into Claude, then save the JSON response to:')
-    print(f'     {response_path}')
-    print(f'  >> Then re-run with: --step 5')
+    print(f'\n  >> Paste this prompt into Claude Code.')
+    print(f'     Response will be saved to: {response_path}')
     return clean_path, fmt_path, output_path, response_path
 
 
