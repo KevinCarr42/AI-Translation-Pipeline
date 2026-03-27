@@ -143,7 +143,7 @@ def step3_prepare(prev_checkpoint, original_path):
         f'---\n\n'
         f'Save your JSON response to: {response_path}'
     )
-
+    
     prompt_path = output_path.with_name('_step3_prompt.md')
     _save_prompt_file(full_prompt, prompt_path)
     print(f'\n  >> Paste this prompt into Claude Code.')
@@ -198,7 +198,7 @@ def step4_prepare(prev_checkpoint, checklist):
         f'---\n\n'
         f'Save your JSON response to: {response_path}'
     )
-
+    
     prompt_path = output_path.with_name('_step4_prompt.md')
     _save_prompt_file(full_prompt, prompt_path)
     print(f'\n  >> Paste this prompt into Claude Code.')
@@ -263,7 +263,7 @@ def step5_prepare(prev_checkpoint):
         f'---\n\n'
         f'Save your JSON response to: {response_path}'
     )
-
+    
     prompt_path = output_path.with_name('_step5_prompt.md')
     _save_prompt_file(full_prompt, prompt_path)
     grammar_input.unlink(missing_ok=True)
