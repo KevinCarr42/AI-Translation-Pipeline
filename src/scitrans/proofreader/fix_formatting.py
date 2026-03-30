@@ -74,13 +74,27 @@ def is_in_deletion(node):
     return False
 
 
+def _iter_xml_parts(doc):
+    yield doc.element.body
+    seen = set()
+    for section in doc.sections:
+        for attr in ('header', 'first_page_header', 'even_page_header',
+                      'footer', 'first_page_footer', 'even_page_footer'):
+            hf = getattr(section, attr)
+            if id(hf._element) in seen or hf.is_linked_to_previous:
+                continue
+            seen.add(id(hf._element))
+            yield hf._element
+
+
 def iter_text_elements(doc):
-    for t_elem in doc.element.body.iter(f'{W}t'):
-        if is_in_deletion(t_elem.getparent()):
-            continue
-        if not (t_elem.text or ''):
-            continue
-        yield t_elem
+    for part in _iter_xml_parts(doc):
+        for t_elem in part.iter(f'{W}t'):
+            if is_in_deletion(t_elem.getparent()):
+                continue
+            if not (t_elem.text or ''):
+                continue
+            yield t_elem
 
 
 def apply_rules(text, rules):

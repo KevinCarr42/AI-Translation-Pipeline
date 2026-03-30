@@ -533,3 +533,37 @@ class TestBuildLocationMaps:
         _, _, hf_map = build_location_maps(doc)
         for loc_id in hf_map:
             assert f'[{loc_id}]' in extracted
+
+
+# ── fix_formatting header/footer support ────────────────────────────────
+
+class TestFixFormattingHeaderFooter:
+
+    def test_punctuation_rules_applied_to_header(self, tmp_path):
+        from scitrans.proofreader.fix_formatting import fix_formatting
+        # French rule: space before colon
+        path = _create_docx_with_header(
+            tmp_path / 'input.docx', ['Body text'], 'Titre: valeur')
+        output = tmp_path / 'output.docx'
+        fix_formatting(str(path), str(output), lang='fr', use_glossary=False)
+        doc = docx.Document(str(output))
+        header_text = doc.sections[0].header.paragraphs[0].text
+        assert '\u00a0:' in header_text
+
+    def test_glossary_replacements_applied_to_header(self, tmp_path):
+        from scitrans.proofreader.fix_formatting import fix_formatting
+        glossary_path = _create_glossary_json(tmp_path / 'glossary.json')
+        # Create source doc with "DFO" so it appears in sub_glossary
+        source_path = _create_simple_docx(
+            tmp_path / 'source.docx', paragraphs=['DFO report'])
+        # Create translated doc with "DFO" in the header
+        path = _create_docx_with_header(
+            tmp_path / 'input.docx', ['Rapport'], 'DFO Region')
+        output = tmp_path / 'output.docx'
+        fix_formatting(
+            str(path), str(output), lang='fr',
+            source_lang='en', source_path=str(source_path),
+            glossary_path=str(glossary_path), use_glossary=True)
+        doc = docx.Document(str(output))
+        header_text = doc.sections[0].header.paragraphs[0].text
+        assert 'MPO' in header_text
