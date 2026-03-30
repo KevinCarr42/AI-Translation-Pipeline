@@ -71,7 +71,16 @@ def load_glossary(filepath, categories=None, source_lang=None):
 
 
 def extract_text(filepath):
-    return "\n".join([p.text for p in docx.Document(filepath).paragraphs])
+    doc = docx.Document(filepath)
+    parts = [p.text for p in doc.paragraphs]
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                parts.append(cell.text)
+    from scitrans.proofreader.extract_text import _iter_header_footer_paragraphs
+    for _, para in _iter_header_footer_paragraphs(doc):
+        parts.append(para.text)
+    return "\n".join(parts)
 
 
 def build_sub_glossary(text, glossary):

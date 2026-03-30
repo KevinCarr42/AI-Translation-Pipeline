@@ -104,9 +104,14 @@ def apply_tracked_change(para_elem, error_text, suggested_fix, change_id,
     if norm_idx == -1:
         return False
 
+    # Warn if error_text matches multiple times — we take the first occurrence
+    if norm_full.find(norm_error, norm_idx + 1) != -1:
+        snippet = error_text[:40] + '...' if len(error_text) > 40 else error_text
+        print(f'  WARN: Multiple matches for "{snippet}" — using first occurrence')
+
     idx = omap[norm_idx]
     end_idx = omap[norm_idx + len(norm_error)]
-    
+
     # Map character positions to runs
     pos = 0
     affected = []
