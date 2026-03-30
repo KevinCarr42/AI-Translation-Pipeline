@@ -22,6 +22,7 @@ def _iter_header_footer_paragraphs(document):
                 continue
             seen_ids.add(id(hf._element))
             
+            # Walk direct paragraphs and paragraphs inside tables
             for paragraph in hf.paragraphs:
                 if not paragraph.text.strip():
                     continue
@@ -31,6 +32,18 @@ def _iter_header_footer_paragraphs(document):
                 else:
                     yield f'F{footer_idx}', paragraph
                     footer_idx += 1
+            for table in hf.tables:
+                for row in table.rows:
+                    for cell in row.cells:
+                        for paragraph in cell.paragraphs:
+                            if not paragraph.text.strip():
+                                continue
+                            if prefix == 'H':
+                                yield f'H{header_idx}', paragraph
+                                header_idx += 1
+                            else:
+                                yield f'F{footer_idx}', paragraph
+                                footer_idx += 1
 
 
 def extract_text_with_ids(filepath):
