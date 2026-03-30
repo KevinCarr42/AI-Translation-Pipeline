@@ -10,6 +10,7 @@ from scitrans.proofreader.accept_changes import (
     accept_all_changes, _accept_insertions, _accept_deletions,
     W_NS, W,
 )
+from scitrans.proofreader.apply_review import apply_tracked_change
 from scitrans.proofreader.lexical_checklist import (
     lexical_constraint_checklist, save_checklist,
 )
@@ -413,7 +414,80 @@ class TestLoadResponseJson:
         fenced = f'  ```json\n{json.dumps(data)}\n```  '
         response_path = tmp_path / 'response.json'
         response_path.write_text(fenced, encoding='utf-8')
-        
+
         result = _load_response_json(str(response_path))
-        
+
         assert result == data
+
+
+# ── apply_tracked_change ────────────────────────────────────────────────
+
+def _make_para_with_runs(texts):
+    p = etree.Element(f'{{{W_NS}}}p')
+    for text in texts:
+        r = etree.SubElement(p, f'{{{W_NS}}}r')
+        t = etree.SubElement(r, f'{{{W_NS}}}t')
+        t.set('{http://www.w3.org/XML/1998/namespace}space', 'preserve')
+        t.text = text
+    return p
+
+
+def _get_del_text(para):
+    for dt in para.iter(f'{{{W_NS}}}delText'):
+        return dt.text
+    return None
+
+
+def _get_ins_text(para):
+    for t in para.iter(f'{{{W_NS}}}ins'):
+        for run_t in t.iter(f'{{{W_NS}}}t'):
+            return run_t.text
+    return None
+
+
+DATE = '2026-01-01T00:00:00Z'
+
+
+class TestApplyTrackedChange:
+
+    def test_exact_match(self):
+        p = _make_para_with_runs(['Hello world'])
+        result = apply_tracked_change(p, 'world', 'terre', 100, date=DATE)
+        assert result is True
+        assert _get_del_text(p) == 'world'
+        assert _get_ins_text(p) == 'terre'
+
+    def test_nbsp_normalized(self):
+        p = _make_para_with_runs(['non\u00a0breaking text'])
+        result = apply_tracked_change(p, 'non breaking', 'sans coupure', 100, date=DATE)
+        assert result is True
+        assert _get_ins_text(p) == 'sans coupure'
+
+    def test_multi_space_normalized(self):
+        p = _make_para_with_runs(['double  space here'])
+        result = apply_tracked_change(p, 'double space', 'espace double', 100, date=DATE)
+        assert result is True
+        assert _get_ins_text(p) == 'espace double'
+
+    def test_smart_quotes_normalized(self):
+        p = _make_para_with_runs(['\u201cquoted\u201d text'])
+        result = apply_tracked_change(p, '"quoted" text', 'texte cit\u00e9', 100, date=DATE)
+        assert result is True
+
+    def test_del_text_uses_original_chars(self):
+        p = _make_para_with_runs(['a\u00a0b c'])
+        result = apply_tracked_change(p, 'a b', 'x y', 100, date=DATE)
+        assert result is True
+        # delText must contain the original NBSP, not a regular space
+        assert _get_del_text(p) == 'a\u00a0b'
+
+    def test_no_match_returns_false(self):
+        p = _make_para_with_runs(['Hello world'])
+        result = apply_tracked_change(p, 'not here', 'replacement', 100, date=DATE)
+        assert result is False
+
+    def test_combined_normalizations(self):
+        p = _make_para_with_runs(['\u201chello\u201d\u00a0world'])
+        result = apply_tracked_change(p, '"hello" world', 'remplacement', 100, date=DATE)
+        assert result is True
+        assert _get_del_text(p) == '\u201chello\u201d\u00a0world'

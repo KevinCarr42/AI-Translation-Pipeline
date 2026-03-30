@@ -1,5 +1,6 @@
 import json
 import sys
+import unicodedata
 from copy import deepcopy
 from datetime import datetime, timezone
 
@@ -9,6 +10,33 @@ from lxml import etree
 W_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
 W = f'{{{W_NS}}}'
 XML_SPACE = '{http://www.w3.org/XML/1998/namespace}space'
+
+_SMART_QUOTES = {
+    '\u201c': '"', '\u201d': '"',
+    '\u2018': "'", '\u2019': "'",
+}
+
+
+def _normalize_with_map(text):
+    result = []
+    omap = []
+    prev_was_space = False
+    for i, ch in enumerate(text):
+        ch = _SMART_QUOTES.get(ch, ch)
+        if unicodedata.category(ch) == 'Zs' or ch in ('\u00a0', '\ufeff'):
+            ch = ' '
+        if ch == ' ' and prev_was_space:
+            continue
+        omap.append(i)
+        result.append(ch)
+        prev_was_space = (ch == ' ')
+    omap.append(len(text))
+    return ''.join(result), omap
+
+
+def _normalize(text):
+    normalized, _ = _normalize_with_map(text)
+    return normalized
 
 
 def get_paragraph_text(para_elem):
@@ -70,11 +98,14 @@ def apply_tracked_change(para_elem, error_text, suggested_fix, change_id,
         return False
     
     full_text = ''.join(t for _, t in runs)
-    idx = full_text.find(error_text)
-    if idx == -1:
+    norm_full, omap = _normalize_with_map(full_text)
+    norm_error = _normalize(error_text)
+    norm_idx = norm_full.find(norm_error)
+    if norm_idx == -1:
         return False
-    
-    end_idx = idx + len(error_text)
+
+    idx = omap[norm_idx]
+    end_idx = omap[norm_idx + len(norm_error)]
     
     # Map character positions to runs
     pos = 0
@@ -117,7 +148,7 @@ def apply_tracked_change(para_elem, error_text, suggested_fix, change_id,
         del_run.append(deepcopy(rpr))
     del_t = etree.SubElement(del_run, f'{W}delText')
     del_t.set(XML_SPACE, 'preserve')
-    del_t.text = error_text
+    del_t.text = full_text[idx:end_idx]
     new_elements.append(del_elem)
     
     # <w:ins> element
