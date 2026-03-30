@@ -9,7 +9,7 @@ from scitrans.proofreader.accept_changes import accept_all_changes
 from scitrans.proofreader.apply_review import main as apply_review
 from scitrans.proofreader.extract_text import extract_text_with_ids
 from scitrans.proofreader.fix_formatting import fix_formatting
-from scitrans.proofreader.glossary import detect_language_from_path
+from scitrans.proofreader.glossary import detect_language_from_path, load_glossary
 from scitrans.proofreader.lexical_checklist import (
     lexical_constraint_checklist, save_checklist,
 )
@@ -47,6 +47,27 @@ def _save_prompt_file(prompt_text, output_path):
     subprocess.run('clip', input=prompt_text.encode('utf-8'), check=False)
     print(f'  Prompt saved to: {output_path}')
     print(f'  Prompt copied to clipboard.')
+
+
+def _build_acronym_reference(source_lang):
+    from scitrans.config import PREFERENTIAL_JSON_PATH
+    glossary = load_glossary(PREFERENTIAL_JSON_PATH, categories=["acronym"],
+                             source_lang=source_lang)
+    if not glossary:
+        return ''
+    target_lang = 'fr' if source_lang == 'en' else 'en'
+    lines = [
+        '## Acronym Reference',
+        '',
+        f'Use these exact {target_lang.upper()} acronym forms in your corrections. '
+        'Do not add or remove accents.',
+        '',
+        f'| {source_lang.upper()} | {target_lang.upper()} |',
+        '|---|---|',
+    ]
+    for src, tgt in sorted(glossary.items()):
+        lines.append(f'| {src} | {tgt} |')
+    return '\n'.join(lines)
 
 
 def _load_response_json(response_path):
@@ -121,28 +142,29 @@ def step2_fix_formatting(translated_path, original_path, source_lang=None):
 
 # ── Step 3: Proofread — prepare prompt or apply response ─────────────────
 
-def step3_prepare(prev_checkpoint, original_path):
+def step3_prepare(prev_checkpoint, original_path, source_lang=None):
     print('\n=== Step 3: Preparing proofreading prompt ===')
     output_path = _make_checkpoint_path(prev_checkpoint, '_proofreading')
-    
+
     # Accept previous track changes into a clean temp file
     clean_path = output_path.with_name('_step3_clean.docx')
     changes = accept_all_changes(prev_checkpoint, clean_path)
     print(f'  Accepted {sum(changes.values())} previous track changes.')
-    
+
     # Extract text from both documents
     original_text = extract_text_with_ids(original_path)
     translated_text = extract_text_with_ids(clean_path)
-    
+
     system_prompt = _load_prompt('proofreading.md')
+    acronym_ref = _build_acronym_reference(source_lang) if source_lang else ''
     response_path = output_path.with_name('_step3_response.json')
-    full_prompt = (
-        f'{system_prompt}\n\n---\n\n'
-        f'## Original document\n\n{original_text}\n\n'
-        f'## Translated document\n\n{translated_text}\n\n'
-        f'---\n\n'
-        f'Save your JSON response to: {response_path}'
-    )
+    parts = [system_prompt]
+    if acronym_ref:
+        parts.append(acronym_ref)
+    parts.append(f'---\n\n## Original document\n\n{original_text}')
+    parts.append(f'## Translated document\n\n{translated_text}')
+    parts.append(f'---\n\nSave your JSON response to: {response_path}')
+    full_prompt = '\n\n'.join(parts)
     
     prompt_path = output_path.with_name('_step3_prompt.md')
     _save_prompt_file(full_prompt, prompt_path)
@@ -232,14 +254,14 @@ def step4_apply(prev_checkpoint, checklist):
 
 # ── Step 5: Final pass — prepare prompt or apply response ────────────────
 
-def step5_prepare(prev_checkpoint):
+def step5_prepare(prev_checkpoint, source_lang=None):
     print('\n=== Step 5: Preparing final pass ===')
     output_path = _make_checkpoint_path(prev_checkpoint, '_recommended_updates')
-    
+
     clean_path = output_path.with_name('_step5_clean.docx')
     changes = accept_all_changes(prev_checkpoint, clean_path)
     print(f'  Accepted {sum(changes.values())} previous track changes.')
-    
+
     # Run fix_formatting WITHOUT glossary (punctuation only), with track changes
     fmt_path = output_path.with_name('_step5_fmt.docx')
     result = fix_formatting(
@@ -248,21 +270,22 @@ def step5_prepare(prev_checkpoint):
         track_changes=True,
     )
     print(f'  {result["punctuation_fixes"]} punctuation fixes ({result["lang"]} rules)')
-    
+
     # Accept formatting changes so the LLM sees clean text for grammar review
     grammar_input = output_path.with_name('_step5_grammar_input.docx')
     accept_all_changes(fmt_path, grammar_input)
-    
+
     translated_text = extract_text_with_ids(grammar_input)
-    
+
     system_prompt = _load_prompt('grammar_review.md')
+    acronym_ref = _build_acronym_reference(source_lang) if source_lang else ''
     response_path = output_path.with_name('_step5_response.json')
-    full_prompt = (
-        f'{system_prompt}\n\n---\n\n'
-        f'## Translated document\n\n{translated_text}\n\n'
-        f'---\n\n'
-        f'Save your JSON response to: {response_path}'
-    )
+    parts = [system_prompt]
+    if acronym_ref:
+        parts.append(acronym_ref)
+    parts.append(f'---\n\n## Translated document\n\n{translated_text}')
+    parts.append(f'---\n\nSave your JSON response to: {response_path}')
+    full_prompt = '\n\n'.join(parts)
     
     prompt_path = output_path.with_name('_step5_prompt.md')
     _save_prompt_file(full_prompt, prompt_path)
@@ -361,7 +384,7 @@ def run_pipeline(original_filename, review_dir=None, source_lang=None, step=None
     
     if step is None or step == '2':
         # After step 2, prepare step 3 prompt
-        step3_prepare(fix_fmt_path, original_path)
+        step3_prepare(fix_fmt_path, original_path, source_lang=source_lang)
         if step is None:
             print('\n--- Pipeline paused. Complete the LLM step above, then re-run with --step 3 ---')
         return
@@ -387,7 +410,7 @@ def run_pipeline(original_filename, review_dir=None, source_lang=None, step=None
         else:
             checklist, _ = step1_lexical_checklist(original_path, source_lang=source_lang)
         step4_apply(proofread_path, checklist)
-        step5_prepare(lexical_path)
+        step5_prepare(lexical_path, source_lang=source_lang)
         print('\n--- Complete the LLM step above, then re-run with --step 5 ---')
         return
     
