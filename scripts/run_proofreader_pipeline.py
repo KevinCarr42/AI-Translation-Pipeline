@@ -106,6 +106,21 @@ def _apply_errors_to_doc(errors, input_path, output_path):
     return result
 
 
+def _log_step(log_path, step, data):
+    from datetime import datetime, timezone
+    entries = []
+    if log_path.exists():
+        with open(log_path, 'r', encoding='utf-8') as f:
+            entries = json.load(f)
+    entries.append({
+        'step': step,
+        'timestamp': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+        **data,
+    })
+    with open(log_path, 'w', encoding='utf-8') as f:
+        json.dump(entries, f, ensure_ascii=False, indent=2)
+
+
 def _get_base_stem(translated_path):
     stem = translated_path.stem
     for suffix in STEP_SUFFIXES:
@@ -134,7 +149,7 @@ def step1_lexical_checklist(original_path, source_lang=None):
 def step2_fix_formatting(translated_path, original_path, source_lang=None):
     print('\n=== Step 2: Fix formatting (with glossary replacements) ===')
     output_path = _make_checkpoint_path(translated_path, '_fix_formatting')
-    
+
     result = fix_formatting(
         translated_path, output_path,
         source_lang=source_lang,
@@ -145,7 +160,7 @@ def step2_fix_formatting(translated_path, original_path, source_lang=None):
     print(f'  {result["glossary_replacements"]} glossary replacements, '
           f'{result["punctuation_fixes"]} punctuation fixes ({result["lang"]} rules)')
     print(f'  Saved to: {output_path}')
-    return output_path
+    return output_path, result
 
 
 # ── Step 3: Proofread — prepare prompt or apply response ─────────────────
@@ -194,16 +209,16 @@ def step3_apply(prev_checkpoint, original_path):
     
     errors = _load_response_json(response_path)
     print(f'  Loaded {len(errors)} errors from response.')
-    
+
     if not clean_path.exists():
         # Re-create clean file if missing
         changes = accept_all_changes(prev_checkpoint, clean_path)
         print(f'  Re-accepted {sum(changes.values())} previous track changes.')
-    
-    _apply_errors_to_doc(errors, clean_path, output_path)
+
+    result = _apply_errors_to_doc(errors, clean_path, output_path)
     clean_path.unlink(missing_ok=True)
     print(f'  Saved to: {output_path}')
-    return output_path
+    return output_path, {'flagged': len(errors), **result}
 
 
 # ── Step 4: Lexical constraints — prepare prompt or apply response ───────
@@ -266,15 +281,15 @@ def step4_apply(prev_checkpoint, checklist):
     
     errors = _load_response_json(response_path)
     print(f'  Loaded {len(errors)} terminology corrections from response.')
-    
+
     if not clean_path.exists():
         changes = accept_all_changes(prev_checkpoint, clean_path)
         print(f'  Re-accepted {sum(changes.values())} previous track changes.')
-    
-    _apply_errors_to_doc(errors, clean_path, output_path)
+
+    result = _apply_errors_to_doc(errors, clean_path, output_path)
     clean_path.unlink(missing_ok=True)
     print(f'  Saved to: {output_path}')
-    return output_path
+    return output_path, {'flagged': len(errors), **result}
 
 
 # ── Step 5: Final pass — prepare prompt or apply response ────────────────
@@ -346,14 +361,14 @@ def step5_apply(prev_checkpoint):
     
     errors = _load_response_json(response_path)
     print(f'  Loaded {len(errors)} grammar corrections from response.')
-    
+
     # Apply grammar fixes on top of the formatting tracked changes
-    _apply_errors_to_doc(errors, fmt_path, output_path)
-    
+    result = _apply_errors_to_doc(errors, fmt_path, output_path)
+
     clean_path.unlink(missing_ok=True)
     fmt_path.unlink(missing_ok=True)
     print(f'  Saved to: {output_path}')
-    return output_path
+    return output_path, {'flagged': len(errors), **result}
 
 
 # ── Pipeline orchestrator ────────────────────────────────────────────────
@@ -386,37 +401,47 @@ def _resolve_paths(original_filename, review_dir, source_lang):
 def run_pipeline(original_filename, review_dir=None, source_lang=None, step=None):
     original_path, translated_path, source_lang = _resolve_paths(
         original_filename, review_dir, source_lang)
-    
+
     print(f'Pipeline for: {original_filename}')
     print(f'  Original:   {original_path}')
     print(f'  Translated: {translated_path}')
     print(f'  Source language: {source_lang}')
-    
+
     # Determine checkpoint paths for resuming
     fix_fmt_path = _make_checkpoint_path(translated_path, '_fix_formatting')
     proofread_path = _make_checkpoint_path(translated_path, '_proofreading')
     lexical_path = _make_checkpoint_path(translated_path, '_lexical_constraints')
-    
+
     # Load or build checklist
     checklist_path = original_path.with_name(original_path.stem + '_lexical_checklist.json')
-    
+
+    base_stem = _get_base_stem(translated_path)
+    log_path = translated_path.parent / f'{base_stem}_pipeline_log.json'
+
     # ── Run all deterministic steps (1-2) if no specific step requested ──
     if step is None or step == '1':
         checklist, checklist_path = step1_lexical_checklist(original_path, source_lang=source_lang)
-    
+        _log_step(log_path, 'step1_lexical_checklist', {
+            'checklist_count': len(checklist),
+        })
+
     if step is None or step == '2':
-        step2_fix_formatting(translated_path, original_path, source_lang=source_lang)
-    
+        _, fmt_result = step2_fix_formatting(translated_path, original_path, source_lang=source_lang)
+        _log_step(log_path, 'step2_fix_formatting', fmt_result)
+
     if step is None or step == '2':
         # After step 2, prepare step 3 prompt
         step3_prepare(fix_fmt_path, original_path, source_lang=source_lang)
         if step is None:
             print('\n--- Pipeline paused. Complete the LLM step above, then re-run with --step 3 ---')
         return
-    
+
     # ── Step 3: apply response, then prepare step 4 ──
     if step == '3':
-        step3_apply(fix_fmt_path, original_path)
+        _, step3_result = step3_apply(fix_fmt_path, original_path)
+        _log_step(log_path, 'step3_proofreading', {
+            k: v for k, v in step3_result.items() if k != 'skipped_items'
+        })
         # Load checklist for step 4
         if checklist_path.exists():
             with open(checklist_path, 'r', encoding='utf-8') as f:
@@ -426,7 +451,7 @@ def run_pipeline(original_filename, review_dir=None, source_lang=None, step=None
         step4_prepare(proofread_path, checklist)
         print('\n--- Complete the LLM step above, then re-run with --step 4 ---')
         return
-    
+
     # ── Step 4: apply response, then prepare step 5 ──
     if step == '4':
         if checklist_path.exists():
@@ -434,16 +459,23 @@ def run_pipeline(original_filename, review_dir=None, source_lang=None, step=None
                 checklist = json.load(f)
         else:
             checklist, _ = step1_lexical_checklist(original_path, source_lang=source_lang)
-        step4_apply(proofread_path, checklist)
+        _, step4_result = step4_apply(proofread_path, checklist)
+        _log_step(log_path, 'step4_lexical_constraints', {
+            k: v for k, v in step4_result.items() if k != 'skipped_items'
+        })
         step5_prepare(lexical_path, source_lang=source_lang)
         print('\n--- Complete the LLM step above, then re-run with --step 5 ---')
         return
-    
+
     # ── Step 5: apply response ──
     if step == '5':
-        final_path = step5_apply(lexical_path)
+        final_path, step5_result = step5_apply(lexical_path)
+        _log_step(log_path, 'step5_grammar', {
+            k: v for k, v in step5_result.items() if k != 'skipped_items'
+        })
         print(f'\n=== Pipeline complete ===')
         print(f'  Final output: {final_path}')
+        print(f'  Pipeline log: {log_path}')
         return final_path
 
 
