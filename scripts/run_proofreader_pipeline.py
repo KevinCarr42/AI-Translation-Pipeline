@@ -7,7 +7,7 @@ from pathlib import Path
 from scitrans.config import PROOFREADING_DIR
 from scitrans.proofreader.accept_changes import accept_all_changes
 from scitrans.proofreader.apply_review import main as apply_review
-from scitrans.proofreader.extract_text import extract_text_with_ids
+from scitrans.proofreader.extract_text import extract_text_with_ids, extract_locations
 from scitrans.proofreader.fix_formatting import fix_formatting
 from scitrans.proofreader.glossary import detect_language_from_path, load_glossary
 from scitrans.proofreader.lexical_checklist import (
@@ -208,18 +208,35 @@ def step3_apply(prev_checkpoint, original_path):
 
 # ── Step 4: Lexical constraints — prepare prompt or apply response ───────
 
+def _filter_checklist(checklist, location_texts):
+    import re
+    filtered = []
+    for item in checklist:
+        text = location_texts.get(item['location'], '')
+        preferred = item['preferred_translation']
+        if not re.search(rf'\b{re.escape(preferred)}\b', text, re.IGNORECASE):
+            filtered.append(item)
+    return filtered
+
+
 def step4_prepare(prev_checkpoint, checklist):
     print('\n=== Step 4: Preparing lexical constraint prompt ===')
     output_path = _make_checkpoint_path(prev_checkpoint, '_lexical_constraints')
-    
+
     clean_path = output_path.with_name('_step4_clean.docx')
     changes = accept_all_changes(prev_checkpoint, clean_path)
     print(f'  Accepted {sum(changes.values())} previous track changes.')
-    
+
     translated_text = extract_text_with_ids(clean_path)
-    
+
+    # Pre-filter: only include checklist items where the preferred term is missing
+    location_texts = dict(extract_locations(str(clean_path)))
+    filtered = _filter_checklist(checklist, location_texts)
+    print(f'  Checklist: {len(checklist)} total, {len(filtered)} need verification '
+          f'({len(checklist) - len(filtered)} already correct)')
+
     system_prompt = _load_prompt('lexical_constraints.md')
-    checklist_json = json.dumps(checklist, ensure_ascii=False, indent=2)
+    checklist_json = json.dumps(filtered, ensure_ascii=False, indent=2)
     response_path = output_path.with_name('_step4_response.json')
     full_prompt = (
         f'{system_prompt}\n\n---\n\n'
