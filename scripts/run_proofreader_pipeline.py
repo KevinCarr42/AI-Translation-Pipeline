@@ -87,15 +87,23 @@ def _apply_errors_to_doc(errors, input_path, output_path):
     if not errors:
         shutil.copy2(input_path, output_path)
         print(f'  No errors found, copied as-is.')
-        return 0
-    
+        return {'applied': 0, 'skipped': 0, 'skipped_items': []}
+
     # Save errors to a JSON file for apply_review
     review_path = output_path.with_suffix('.json')
     with open(review_path, 'w', encoding='utf-8') as f:
         json.dump(errors, f, ensure_ascii=False, indent=2)
-    
-    apply_review(input_path, review_path, output_path)
-    return len(errors)
+
+    result = apply_review(input_path, review_path, output_path)
+
+    # Save skipped items alongside the step output for analysis
+    if result['skipped_items']:
+        skipped_path = output_path.with_name(output_path.stem + '_skipped.json')
+        with open(skipped_path, 'w', encoding='utf-8') as f:
+            json.dump(result['skipped_items'], f, ensure_ascii=False, indent=2)
+        print(f'  Skipped items saved to: {skipped_path}')
+
+    return result
 
 
 def _get_base_stem(translated_path):

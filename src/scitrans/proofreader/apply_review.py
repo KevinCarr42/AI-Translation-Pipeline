@@ -211,24 +211,26 @@ def build_location_maps(doc):
 def main(translated_path, review_path, output_path):
     with open(review_path, 'r', encoding='utf-8') as f:
         errors = json.load(f)
-    
+
     doc = docx.Document(translated_path)
     para_map, table_map, hf_map = build_location_maps(doc)
-    
+
     change_id = 100
     applied = 0
     skipped = 0
+    skipped_items = []
     date = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-    
+
     for error in errors:
         location = error['location']
         error_text = error.get('error_text', '')
         suggested_fix = error.get('suggested_fix', '')
-        
+
         if not error_text or not suggested_fix or error_text == suggested_fix:
             skipped += 1
+            skipped_items.append({**error, 'skip_reason': 'empty or no-op'})
             continue
-        
+
         para_elems = []
         if location in para_map:
             para_elems = [para_map[location]]
@@ -239,8 +241,9 @@ def main(translated_path, review_path, output_path):
         else:
             print(f'  SKIP: Location {location} not found in document')
             skipped += 1
+            skipped_items.append({**error, 'skip_reason': 'location not found'})
             continue
-        
+
         success = False
         for para_elem in para_elems:
             if apply_tracked_change(para_elem, error_text, suggested_fix,
@@ -248,17 +251,19 @@ def main(translated_path, review_path, output_path):
                 success = True
                 change_id += 2
                 break
-        
+
         if success:
             applied += 1
         else:
             snippet = error_text[:60] + '...' if len(error_text) > 60 else error_text
             print(f'  SKIP: Could not match text in {location}: "{snippet}"')
             skipped += 1
-    
+            skipped_items.append({**error, 'skip_reason': 'text not found'})
+
     doc.save(output_path)
     print(f'\nDone: {applied} changes applied, {skipped} skipped')
     print(f'Saved to: {output_path}')
+    return {'applied': applied, 'skipped': skipped, 'skipped_items': skipped_items}
 
 
 if __name__ == '__main__':
