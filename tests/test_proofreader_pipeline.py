@@ -10,7 +10,7 @@ from scitrans.proofreader.accept_changes import (
     accept_all_changes, _accept_insertions, _accept_deletions,
     W_NS, W,
 )
-from scitrans.proofreader.apply_review import apply_tracked_change
+from scitrans.proofreader.apply_review import apply_tracked_change, build_location_maps
 from scitrans.proofreader.lexical_checklist import (
     lexical_constraint_checklist, save_checklist,
 )
@@ -491,3 +491,45 @@ class TestApplyTrackedChange:
         result = apply_tracked_change(p, '"hello" world', 'remplacement', 100, date=DATE)
         assert result is True
         assert _get_del_text(p) == '\u201chello\u201d\u00a0world'
+
+
+# ── build_location_maps (header/footer support) ────────────────────────
+
+def _create_docx_with_header(path, paragraphs, header_text):
+    doc = docx.Document()
+    for text in paragraphs:
+        doc.add_paragraph(text)
+    section = doc.sections[0]
+    section.different_first_page_header_footer = False
+    header_para = section.header.paragraphs[0]
+    header_para.text = header_text
+    doc.save(str(path))
+    return path
+
+
+class TestBuildLocationMaps:
+
+    def test_para_map(self, tmp_path):
+        path = _create_docx_with_header(
+            tmp_path / 'test.docx', ['Hello world'], 'My Header')
+        doc = docx.Document(str(path))
+        para_map, table_map, hf_map = build_location_maps(doc)
+        assert 'P0' in para_map
+
+    def test_hf_map_has_header(self, tmp_path):
+        path = _create_docx_with_header(
+            tmp_path / 'test.docx', ['Body text'], 'Header Content')
+        doc = docx.Document(str(path))
+        para_map, table_map, hf_map = build_location_maps(doc)
+        assert 'H0' in hf_map
+
+    def test_hf_map_ids_match_extract_text(self, tmp_path):
+        path = _create_docx_with_header(
+            tmp_path / 'test.docx', ['Body text'], 'Header Content')
+        # Verify that extract_text and build_location_maps assign the same IDs
+        from scitrans.proofreader.extract_text import extract_text_with_ids
+        extracted = extract_text_with_ids(str(path))
+        doc = docx.Document(str(path))
+        _, _, hf_map = build_location_maps(doc)
+        for loc_id in hf_map:
+            assert f'[{loc_id}]' in extracted

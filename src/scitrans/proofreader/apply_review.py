@@ -181,10 +181,12 @@ def apply_tracked_change(para_elem, error_text, suggested_fix, change_id,
 
 
 def build_location_maps(doc):
+    from scitrans.proofreader.extract_text import _iter_header_footer_paragraphs
+
     para_map = {}
     for i, p in enumerate(doc.paragraphs):
         para_map[f'P{i}'] = p._element
-    
+
     table_map = {}
     for t_idx, table in enumerate(doc.tables):
         for r_idx, row in enumerate(table.rows):
@@ -198,8 +200,12 @@ def build_location_maps(doc):
                     if elem_id not in seen:
                         seen.add(elem_id)
                         table_map[key].append(p._element)
-    
-    return para_map, table_map
+
+    hf_map = {}
+    for loc_id, para in _iter_header_footer_paragraphs(doc):
+        hf_map[loc_id] = para._element
+
+    return para_map, table_map, hf_map
 
 
 def main(translated_path, review_path, output_path):
@@ -207,7 +213,7 @@ def main(translated_path, review_path, output_path):
         errors = json.load(f)
     
     doc = docx.Document(translated_path)
-    para_map, table_map = build_location_maps(doc)
+    para_map, table_map, hf_map = build_location_maps(doc)
     
     change_id = 100
     applied = 0
@@ -228,6 +234,8 @@ def main(translated_path, review_path, output_path):
             para_elems = [para_map[location]]
         elif location in table_map:
             para_elems = table_map[location]
+        elif location in hf_map:
+            para_elems = [hf_map[location]]
         else:
             print(f'  SKIP: Location {location} not found in document')
             skipped += 1

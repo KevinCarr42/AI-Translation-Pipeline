@@ -26,10 +26,10 @@ def _iter_header_footer_paragraphs(document):
                 if not paragraph.text.strip():
                     continue
                 if prefix == 'H':
-                    yield f'H{header_idx}', paragraph.text
+                    yield f'H{header_idx}', paragraph
                     header_idx += 1
                 else:
-                    yield f'F{footer_idx}', paragraph.text
+                    yield f'F{footer_idx}', paragraph
                     footer_idx += 1
 
 
@@ -49,8 +49,8 @@ def extract_text_with_ids(filepath):
             lines.append(f'[T{t_idx}-R{r_idx}] ' + ' | '.join(cells))
     
     # Headers and footers
-    for loc_id, text in _iter_header_footer_paragraphs(doc):
-        lines.append(f'[{loc_id}] {text}')
+    for loc_id, para in _iter_header_footer_paragraphs(doc):
+        lines.append(f'[{loc_id}] {para.text}')
     
     return '\n'.join(lines)
 
@@ -68,7 +68,7 @@ def extract_locations(filepath):
             cells = [c.text for c in row.cells]
             locations.append((f'T{t_idx}-R{r_idx}', ' | '.join(cells)))
     
-    for loc_id, text in _iter_header_footer_paragraphs(doc):
-        locations.append((loc_id, text))
+    for loc_id, para in _iter_header_footer_paragraphs(doc):
+        locations.append((loc_id, para.text))
     
     return locations
