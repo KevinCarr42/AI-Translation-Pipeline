@@ -44,8 +44,8 @@ def replace_images(doc1_path, doc2_path, output_path):
 
 if __name__ == '__main__':
     files = [
-        ("1432_en_260324", "1432_en_translated.docx"),
-        ("1466_fr_260324", "1466_fr_translated.docx"),
+        ("1432_en_no_ft_proofv2", "1432_en_translated.docx"),
+        # ("1466_fr_260324", "1466_fr_translated.docx"),
     ]
     
     for file_folder, file_name in files:

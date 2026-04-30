@@ -13,7 +13,7 @@ if __name__ == '__main__':
         start_time = time.time()
         print(f"Start time: {time.ctime(start_time)}")
     
-    use_finetuned = True  # TODO: try without and see
+    use_finetuned = False  # FIXME: maybe don't use this without re-finetuning?
     
     file_list = (
         ("1432_en.docx", "en"),

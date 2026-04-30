@@ -125,23 +125,31 @@ def create_sentences(text_fr, text_en):
     return sentences_fr, sentences_en
 
 
-def create_similarity_matrix(sentences_fr, sentences_en, sentence_encoder, device):
-    max_batch_size = 512  # 1024 gives out of memory error
+def create_similarity_matrix(sentences_fr, sentences_en, sentence_encoder, device, k=4):
+    # Note: Margin-based scoring to eliminate the "hubness" effect
     
     embeddings_fr = sentence_encoder.encode(
         sentences_fr,
         convert_to_tensor=True,
-        batch_size=min(max_batch_size, len(sentences_fr)),
-        device=device
+        device=device,
+        batch_size=512
     )
     embeddings_en = sentence_encoder.encode(
         sentences_en,
         convert_to_tensor=True,
-        batch_size=min(max_batch_size, len(sentences_fr)),
-        device=device
+        device=device,
+        batch_size=512
     )
     
-    return util.pytorch_cos_sim(embeddings_fr, embeddings_en)
+    embeddings_fr = torch.nn.functional.normalize(embeddings_fr, p=2, dim=1)
+    embeddings_en = torch.nn.functional.normalize(embeddings_en, p=2, dim=1)
+    
+    sim_matrix = torch.matmul(embeddings_fr, embeddings_en.T)
+    
+    nn_fr = torch.topk(sim_matrix, k, dim=1).values.mean(dim=1, keepdim=True)
+    nn_en = torch.topk(sim_matrix, k, dim=0).values.mean(dim=0, keepdim=True)
+    
+    return sim_matrix / (nn_fr + nn_en)
 
 
 def align_sentences(sim_matrix):

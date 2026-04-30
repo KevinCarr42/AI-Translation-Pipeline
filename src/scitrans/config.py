@@ -11,6 +11,7 @@ PROOFREADING_DIR = INTERNAL_DATA_DIR / "_PROOFREADING"
 # starting data
 PARSED_DOCS_DIR = EXTERNAL_DATA_DIR / "ParsedPublications"
 CORRELATION_CSV_PATH = EXTERNAL_DATA_DIR / "fr_eng_correlation_data.csv"
+TRANSLATED_DOCX_PUBLICATIONS_PATH = EXTERNAL_DATA_DIR / "DocxPublications"
 
 # calculated data
 MATCHED_DATA = EXTERNAL_DATA_DIR / "pipeline_matched_data_wo_linebreaks.pickle"
@@ -19,6 +20,12 @@ MATCHED_DATA_WITH_FEATURES = EXTERNAL_DATA_DIR / "pipeline_df_with_features.pick
 # training and testing data
 TRAINING_DATA_OUTPUT = EXTERNAL_DATA_DIR / "pipeline_training_data.jsonl"
 TESTING_DATA_OUTPUT = EXTERNAL_DATA_DIR / "pipeline_testing_data.jsonl"
+
+# word doc training data
+WORDDOC_MATCHED_DATA = EXTERNAL_DATA_DIR / "worddoc_matched_data.pickle"
+WORDDOC_MATCHED_DATA_WITH_FEATURES = EXTERNAL_DATA_DIR / "worddoc_df_with_features.pickle"
+WORDDOC_FINAL_DATA = EXTERNAL_DATA_DIR / "worddoc_final_df.pickle"
+WORDDOC_TRAINING_DATA = EXTERNAL_DATA_DIR / "worddoc_training_data.jsonl"
 
 # translations data folders
 PREFERENTIAL_JSON_PATH = INTERNAL_DATA_DIR / "preferential_translations.json"
