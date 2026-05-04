@@ -26,6 +26,7 @@ WORDDOC_MATCHED_DATA = EXTERNAL_DATA_DIR / "worddoc_matched_data.pickle"
 WORDDOC_MATCHED_DATA_WITH_FEATURES = EXTERNAL_DATA_DIR / "worddoc_df_with_features.pickle"
 WORDDOC_FINAL_DATA = EXTERNAL_DATA_DIR / "worddoc_final_df.pickle"
 WORDDOC_TRAINING_DATA = EXTERNAL_DATA_DIR / "worddoc_training_data.jsonl"
+WORDDOC_MATCH_LOG = EXTERNAL_DATA_DIR / "worddoc_match_log.json"
 
 # translations data folders
 PREFERENTIAL_JSON_PATH = INTERNAL_DATA_DIR / "preferential_translations.json"
