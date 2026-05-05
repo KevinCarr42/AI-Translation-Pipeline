@@ -22,7 +22,6 @@ from scitrans.create_training_data.language_classifier.language_classifier impor
 from scitrans.create_training_data.match_languages import (
     align_sentences,
     clean_text,
-    create_similarity_matrix,
     split_text,
 )
 from scitrans.helpers.helpers import print_timing
@@ -120,52 +119,101 @@ def extract_paragraphs_from_docx(docx_path):
     return paragraphs
 
 
-def _paragraphs_to_sentences(docx_path):
-    sentences = []
-    for paragraph_text in extract_paragraphs_from_docx(docx_path):
-        cleaned = clean_text(paragraph_text)
-        if not cleaned:
-            continue
-        for sentence in split_text(cleaned):
-            if 10 <= len(sentence) <= 500:
-                sentences.append(sentence)
-    return sentences
+def _extract_clean_paragraphs(docx_path):
+    paragraphs = []
+    for raw_paragraph in extract_paragraphs_from_docx(docx_path):
+        cleaned = clean_text(raw_paragraph)
+        if len(cleaned) >= 30:
+            paragraphs.append(cleaned)
+    return paragraphs
+
+
+def _split_paragraph_to_sentences(paragraph_text):
+    return [s for s in split_text(paragraph_text) if 10 <= len(s) <= 500]
+
+
+def _similarity_matrix(texts_fr, texts_en, sentence_encoder, device, use_margin):
+    # Margin scoring (sim / (mean_topk_fr + mean_topk_en)) helps suppress hubness on large
+    # candidate pools (paragraph-level alignment across a whole doc). Inside an aligned
+    # paragraph pair the candidate set is tiny (often <5 sentences each), so margin scoring
+    # just compresses the dynamic range and we use raw cosine instead.
+    embeddings_fr = sentence_encoder.encode(texts_fr, convert_to_tensor=True, device=device, batch_size=512)
+    embeddings_en = sentence_encoder.encode(texts_en, convert_to_tensor=True, device=device, batch_size=512)
+    embeddings_fr = torch.nn.functional.normalize(embeddings_fr, p=2, dim=1)
+    embeddings_en = torch.nn.functional.normalize(embeddings_en, p=2, dim=1)
+    sim_matrix = torch.matmul(embeddings_fr, embeddings_en.T)
+    
+    if not use_margin:
+        return sim_matrix
+    
+    k = min(4, sim_matrix.shape[0], sim_matrix.shape[1])
+    if k < 2:
+        return sim_matrix
+    
+    nn_fr = torch.topk(sim_matrix, k, dim=1).values.mean(dim=1, keepdim=True)
+    nn_en = torch.topk(sim_matrix, k, dim=0).values.mean(dim=0, keepdim=True)
+    return sim_matrix / (nn_fr + nn_en)
 
 
 def docx_to_aligned_rows(fr_path, en_path, document_name, sentence_encoder, device, region=None, is_erratum=False):
-    sentences_fr = _paragraphs_to_sentences(fr_path)
-    sentences_en = _paragraphs_to_sentences(en_path)
+    paragraphs_fr = _extract_clean_paragraphs(fr_path)
+    paragraphs_en = _extract_clean_paragraphs(en_path)
+    
+    sentences_fr_per_para = [_split_paragraph_to_sentences(p) for p in paragraphs_fr]
+    sentences_en_per_para = [_split_paragraph_to_sentences(p) for p in paragraphs_en]
+    total_sentences_fr = sum(len(s) for s in sentences_fr_per_para)
+    total_sentences_en = sum(len(s) for s in sentences_en_per_para)
     
     stats = {
         "document_name": document_name,
         "region": region,
         "is_erratum": is_erratum,
-        "n_sentences_fr": len(sentences_fr),
-        "n_sentences_en": len(sentences_en),
-        "n_aligned": 0,
-        "pct_matched_fr": 0.0,
-        "pct_matched_en": 0.0,
+        "n_paragraphs_fr": len(paragraphs_fr),
+        "n_paragraphs_en": len(paragraphs_en),
+        "n_paragraphs_aligned": 0,
+        "pct_paragraphs_matched_fr": 0.0,
+        "pct_paragraphs_matched_en": 0.0,
+        "n_sentences_fr": total_sentences_fr,
+        "n_sentences_en": total_sentences_en,
+        "n_sentences_aligned": 0,
+        "pct_sentences_matched_fr": 0.0,
+        "pct_sentences_matched_en": 0.0,
         "similarity_mean": None,
         "similarity_min": None,
         "similarity_max": None,
     }
     
-    if not sentences_fr or not sentences_en:
+    if not paragraphs_fr or not paragraphs_en:
         return [], stats
     
-    similarity_matrix = create_similarity_matrix(sentences_fr, sentences_en, sentence_encoder, device)
-    aligned_pairs = align_sentences(similarity_matrix)
+    # Stage A: paragraph-level monotonic DP alignment (margin scoring at this scale).
+    paragraph_sim = _similarity_matrix(paragraphs_fr, paragraphs_en, sentence_encoder, device, use_margin=True)
+    paragraph_pairs = align_sentences(paragraph_sim)
+    stats["n_paragraphs_aligned"] = len(paragraph_pairs)
+    stats["pct_paragraphs_matched_fr"] = round(100 * len(paragraph_pairs) / len(paragraphs_fr), 1)
+    stats["pct_paragraphs_matched_en"] = round(100 * len(paragraph_pairs) / len(paragraphs_en), 1)
     
-    rows = [
-        (document_name, sentences_fr[i], sentences_en[j], round(score, 3))
-        for i, j, score in aligned_pairs
-    ]
+    # Stage B: per-paragraph-pair sentence DP using raw cosine (small matrices).
+    rows = []
+    scores = []
+    for i, j, _ in paragraph_pairs:
+        sentences_fr = sentences_fr_per_para[i]
+        sentences_en = sentences_en_per_para[j]
+        if not sentences_fr or not sentences_en:
+            continue
+        sentence_sim = _similarity_matrix(sentences_fr, sentences_en, sentence_encoder, device, use_margin=False)
+        sentence_pairs = align_sentences(sentence_sim)
+        for si, sj, score in sentence_pairs:
+            rows.append((document_name, sentences_fr[si], sentences_en[sj], round(score, 3)))
+            scores.append(score)
     
-    if aligned_pairs:
-        scores = [s for _, _, s in aligned_pairs]
-        stats["n_aligned"] = len(aligned_pairs)
-        stats["pct_matched_fr"] = round(100 * len(aligned_pairs) / len(sentences_fr), 1)
-        stats["pct_matched_en"] = round(100 * len(aligned_pairs) / len(sentences_en), 1)
+    stats["n_sentences_aligned"] = len(rows)
+    if total_sentences_fr:
+        stats["pct_sentences_matched_fr"] = round(100 * len(rows) / total_sentences_fr, 1)
+    if total_sentences_en:
+        stats["pct_sentences_matched_en"] = round(100 * len(rows) / total_sentences_en, 1)
+    
+    if scores:
         stats["similarity_mean"] = round(sum(scores) / len(scores), 3)
         stats["similarity_min"] = round(min(scores), 3)
         stats["similarity_max"] = round(max(scores), 3)
@@ -212,19 +260,27 @@ def create_matched_data_docx():
 
 
 def _write_match_log(per_doc_stats):
-    sorted_stats = sorted(per_doc_stats, key=lambda s: s["pct_matched_fr"])
+    sorted_stats = sorted(per_doc_stats, key=lambda s: s["pct_sentences_matched_fr"])
     
-    total_fr = sum(s["n_sentences_fr"] for s in per_doc_stats)
-    total_en = sum(s["n_sentences_en"] for s in per_doc_stats)
-    total_aligned = sum(s["n_aligned"] for s in per_doc_stats)
+    total_paragraphs_fr = sum(s["n_paragraphs_fr"] for s in per_doc_stats)
+    total_paragraphs_en = sum(s["n_paragraphs_en"] for s in per_doc_stats)
+    total_paragraphs_aligned = sum(s["n_paragraphs_aligned"] for s in per_doc_stats)
+    total_sentences_fr = sum(s["n_sentences_fr"] for s in per_doc_stats)
+    total_sentences_en = sum(s["n_sentences_en"] for s in per_doc_stats)
+    total_sentences_aligned = sum(s["n_sentences_aligned"] for s in per_doc_stats)
     
     summary = {
         "n_documents": len(per_doc_stats),
-        "total_sentences_fr": total_fr,
-        "total_sentences_en": total_en,
-        "total_aligned": total_aligned,
-        "overall_pct_matched_fr": round(100 * total_aligned / total_fr, 1) if total_fr else 0.0,
-        "overall_pct_matched_en": round(100 * total_aligned / total_en, 1) if total_en else 0.0,
+        "total_paragraphs_fr": total_paragraphs_fr,
+        "total_paragraphs_en": total_paragraphs_en,
+        "total_paragraphs_aligned": total_paragraphs_aligned,
+        "overall_pct_paragraphs_matched_fr": round(100 * total_paragraphs_aligned / total_paragraphs_fr, 1) if total_paragraphs_fr else 0.0,
+        "overall_pct_paragraphs_matched_en": round(100 * total_paragraphs_aligned / total_paragraphs_en, 1) if total_paragraphs_en else 0.0,
+        "total_sentences_fr": total_sentences_fr,
+        "total_sentences_en": total_sentences_en,
+        "total_sentences_aligned": total_sentences_aligned,
+        "overall_pct_sentences_matched_fr": round(100 * total_sentences_aligned / total_sentences_fr, 1) if total_sentences_fr else 0.0,
+        "overall_pct_sentences_matched_en": round(100 * total_sentences_aligned / total_sentences_en, 1) if total_sentences_en else 0.0,
     }
     
     payload = {"summary": summary, "documents": sorted_stats}
@@ -362,13 +418,6 @@ def exclude_for_word_doc_training_data(df):
 
 
 def create_word_doc_training_data_pipeline():
-    # TODO: still need to control for:
-    #  untranslated text (references etc)
-    #  names, references, etc
-    
-    # TODO:
-    #  consider making a helper function that can summarize each df rows/cols, n excluded, etc - basic stats
-    
     df = create_matched_data_docx()
     df = add_features_docx(df)
     df = add_exclusion_columns(df)
