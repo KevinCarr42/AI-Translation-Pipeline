@@ -41,9 +41,9 @@ def get_json_file_link(parsed_docs_folder, pdf_filename):
 
 
 _EXEMPTIONS = {
-    'al', 'apr', 'assn', 'aug', 'ave', 'avr', 'blvd', 'bros', 'ca', 'cf', 'ch', 'cit', 'co', 'col', 'corp', 'dec',
-    'dept', 'dr', 'ed', 'eds', 'eg', 'et', 'etc', 'feb', 'fig', 'figs', 'ft', 'gen', 'gov', 'govt', 'hon', 'ibid',
-    'ie', 'inc', 'intl', 'jan', 'janv', 'jr', 'juil', 'jul', 'jun', 'loc', 'lt', 'ltd', 'mar', 'me', 'mgr', 'misc',
+    'al', 'apr', 'approx', 'assn', 'aug', 'ave', 'avr', 'blvd', 'bros', 'ca', 'cf', 'ch', 'cit', 'co', 'col', 'corp', 'dec',
+    'dept', 'dr', 'ed', 'eds', 'eg', 'env', 'et', 'etc', 'feb', 'fig', 'figs', 'ft', 'gen', 'gov', 'govt', 'hon', 'ibid',
+    'ie', 'inc', 'intl', 'jan', 'janv', 'jr', 'juil', 'jul', 'jun', 'loc', 'lt', 'ltd', 'm', 'mar', 'me', 'mgr', 'misc',
     'mlle', 'mme', 'mr', 'mrs', 'ms', 'mt', 'natl', 'no', 'nos', 'nov', 'oct', 'op', 'pg', 'pgs', 'pp', 'pr',
     'prof', 'rd', 'rev', 'sec', 'sep', 'sept', 'seq', 'sr', 'st', 'ste', 'viz', 'vol', 'vols', 'vs'
 }
@@ -51,11 +51,30 @@ _EXEMPT_PATTERN = re.compile(
     r'\b(' + '|'.join(re.escape(e) for e in sorted(_EXEMPTIONS, key=len, reverse=True)) + r')\.\s',
     re.IGNORECASE
 )
+# Multi-token abbreviations with internal whitespace or hyphens (e.g. "p. ex.", "a.m.",
+# "c.-\u00E0-d."). Listed explicitly because _EXEMPT_PATTERN only handles single-token forms.
+_MULTI_TOKEN_ABBREVIATION_PATTERN = re.compile(
+    r'p\.\s*ex\.|'
+    r'a\.\s*m\.|'
+    r'p\.\s*m\.|'
+    r'p\.\s*r\.\s*a\.|'
+    r'c\.-?[a\u00E0]-?d\.|'
+    r'n\.\s*b\.|'
+    r'p\.\s*s\.',
+    re.IGNORECASE
+)
+# Hyphenated/dotted uppercase acronyms (e.g. "U.S.A.", "B.C.", "P.E.I.", "C.-B.", "I.-P.-\u00C9.").
+# Requires two or more letter-period pairs, optionally hyphen-separated.
+_HYPHENATED_ACRONYM_PATTERN = re.compile(
+    r'\b[A-Z]\.(?:-?[A-Z\u00C0-\u00D6\u00D8-\u00DE]\.)+'
+)
 _SPLIT_PATTERN = re.compile(r'([.?!]["\'\u00BB\u201D\u2019]*)\s+')
 
 
 def split_text(text):
-    protected = _EXEMPT_PATTERN.sub(lambda m: m.group().replace('.', '\x00'), text)
+    protected = _MULTI_TOKEN_ABBREVIATION_PATTERN.sub(lambda m: m.group().replace('.', '\x00'), text)
+    protected = _HYPHENATED_ACRONYM_PATTERN.sub(lambda m: m.group().replace('.', '\x00'), protected)
+    protected = _EXEMPT_PATTERN.sub(lambda m: m.group().replace('.', '\x00'), protected)
     parts = _SPLIT_PATTERN.split(protected)
     sentences = []
     for i in range(0, len(parts) - 1, 2):
