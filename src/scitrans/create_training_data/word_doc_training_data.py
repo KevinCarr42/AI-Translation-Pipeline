@@ -31,6 +31,7 @@ from scitrans.translate.word_document import _iter_document_elements
 _ERRATUM_RE = re.compile(r'[\s\-\(\[]*erratum[\s\-\)\]]*', re.IGNORECASE)
 _LANG_RE = re.compile(r'\b(english|french)\b', re.IGNORECASE)
 _NUMBER_RE = re.compile(r'\b\d+(?:[.,]\d+)*\b')
+_PARAGRAPH_MARKER = "###PARAGRAPH_BREAK_MARKER###"
 
 
 def _normalise_filename(stem):
@@ -155,14 +156,87 @@ def _similarity_matrix(texts_fr, texts_en, sentence_encoder, device, use_margin)
     return sim_matrix / (nn_fr + nn_en)
 
 
+def _flatten_with_markers(paragraphs):
+    # Append _PARAGRAPH_MARKER after every non-empty paragraph. The DP scores marker->marker
+    # at cosine 1.0 (identical text -> identical embedding), so the highest-weight path is
+    # forced to step through paragraph boundaries — preventing alignments from drifting
+    # across paragraphs when the two docs have differing structure.
+    sentences = []
+    is_marker = []
+    sentence_to_paragraph = []
+    for para_idx, paragraph in enumerate(paragraphs):
+        para_sentences = _split_paragraph_to_sentences(paragraph)
+        if not para_sentences:
+            continue
+        for sentence in para_sentences:
+            sentences.append(sentence)
+            is_marker.append(False)
+            sentence_to_paragraph.append(para_idx)
+        sentences.append(_PARAGRAPH_MARKER)
+        is_marker.append(True)
+        sentence_to_paragraph.append(para_idx)
+    return sentences, is_marker, sentence_to_paragraph
+
+
+def _refine_with_concatenation(aligned_pairs, sentences_fr, sentences_en, is_marker_fr, is_marker_en, sentence_encoder, device, threshold=0.7, max_gap=4, max_chars=800):
+    # Between every consecutive pair of DP anchors, take the unaligned chunks on each side,
+    # concatenate them, and check raw-cosine similarity. If above threshold, emit a single
+    # row covering the concatenated text. Skip gaps that contain a paragraph marker —
+    # those are paragraph boundaries we don't want to glue across.
+    n_fr = len(sentences_fr)
+    n_en = len(sentences_en)
+    anchors = [(-1, -1)] + [(i, j) for i, j, _ in aligned_pairs] + [(n_fr, n_en)]
+    
+    fr_blocks = []
+    en_blocks = []
+    spans = []
+    for k in range(len(anchors) - 1):
+        fr_start = anchors[k][0] + 1
+        fr_end = anchors[k + 1][0]
+        en_start = anchors[k][1] + 1
+        en_end = anchors[k + 1][1]
+        if fr_start >= fr_end or en_start >= en_end:
+            continue
+        if fr_end - fr_start > max_gap or en_end - en_start > max_gap:
+            continue
+        if any(is_marker_fr[idx] for idx in range(fr_start, fr_end)):
+            continue
+        if any(is_marker_en[idx] for idx in range(en_start, en_end)):
+            continue
+        fr_text = ' '.join(sentences_fr[fr_start:fr_end])
+        en_text = ' '.join(sentences_en[en_start:en_end])
+        if len(fr_text) > max_chars or len(en_text) > max_chars:
+            continue
+        fr_blocks.append(fr_text)
+        en_blocks.append(en_text)
+        spans.append((fr_start, fr_end, en_start, en_end))
+    
+    if not fr_blocks:
+        return []
+    
+    embeddings_fr = sentence_encoder.encode(fr_blocks, convert_to_tensor=True, device=device, batch_size=512)
+    embeddings_en = sentence_encoder.encode(en_blocks, convert_to_tensor=True, device=device, batch_size=512)
+    embeddings_fr = torch.nn.functional.normalize(embeddings_fr, p=2, dim=1)
+    embeddings_en = torch.nn.functional.normalize(embeddings_en, p=2, dim=1)
+    diag_scores = (embeddings_fr * embeddings_en).sum(dim=1).cpu().tolist()
+    
+    refined = []
+    for idx, (fr_start, fr_end, en_start, en_end) in enumerate(spans):
+        score = float(diag_scores[idx])
+        if score >= threshold:
+            refined.append((fr_start, fr_end, en_start, en_end, fr_blocks[idx], en_blocks[idx], score))
+    return refined
+
+
 def docx_to_aligned_rows(fr_path, en_path, document_name, sentence_encoder, device, region=None, is_erratum=False):
     paragraphs_fr = _extract_clean_paragraphs(fr_path)
     paragraphs_en = _extract_clean_paragraphs(en_path)
     
-    sentences_fr_per_para = [_split_paragraph_to_sentences(p) for p in paragraphs_fr]
-    sentences_en_per_para = [_split_paragraph_to_sentences(p) for p in paragraphs_en]
-    total_sentences_fr = sum(len(s) for s in sentences_fr_per_para)
-    total_sentences_en = sum(len(s) for s in sentences_en_per_para)
+    sentences_fr, is_marker_fr, sentence_to_paragraph_fr = _flatten_with_markers(paragraphs_fr)
+    sentences_en, is_marker_en, sentence_to_paragraph_en = _flatten_with_markers(paragraphs_en)
+    
+    n_real_fr = sum(1 for m in is_marker_fr if not m)
+    n_real_en = sum(1 for m in is_marker_en if not m)
     
     stats = {
         "document_name": document_name,
@@ -170,11 +244,12 @@ def docx_to_aligned_rows(fr_path, en_path, document_name, sentence_encoder, devi
         "is_erratum": is_erratum,
         "n_paragraphs_fr": len(paragraphs_fr),
         "n_paragraphs_en": len(paragraphs_en),
-        "n_paragraphs_aligned": 0,
+        "n_paragraphs_aligned_fr": 0,
+        "n_paragraphs_aligned_en": 0,
         "pct_paragraphs_matched_fr": 0.0,
         "pct_paragraphs_matched_en": 0.0,
-        "n_sentences_fr": total_sentences_fr,
-        "n_sentences_en": total_sentences_en,
+        "n_sentences_fr": n_real_fr,
+        "n_sentences_en": n_real_en,
         "n_sentences_aligned": 0,
         "pct_sentences_matched_fr": 0.0,
         "pct_sentences_matched_en": 0.0,
@@ -183,35 +258,48 @@ def docx_to_aligned_rows(fr_path, en_path, document_name, sentence_encoder, devi
         "similarity_max": None,
     }
     
-    if not paragraphs_fr or not paragraphs_en:
+    if not sentences_fr or not sentences_en:
         return [], stats
     
-    # Stage A: paragraph-level monotonic DP alignment (margin scoring at this scale).
-    paragraph_sim = _similarity_matrix(paragraphs_fr, paragraphs_en, sentence_encoder, device, use_margin=True)
-    paragraph_pairs = align_sentences(paragraph_sim)
-    stats["n_paragraphs_aligned"] = len(paragraph_pairs)
-    stats["pct_paragraphs_matched_fr"] = round(100 * len(paragraph_pairs) / len(paragraphs_fr), 1)
-    stats["pct_paragraphs_matched_en"] = round(100 * len(paragraph_pairs) / len(paragraphs_en), 1)
+    # Whole-document monotonic DP on raw-cosine matrix; markers anchor the path to paragraph
+    # boundaries (option 2 with paragraph-marker anchors).
+    sim_matrix = _similarity_matrix(sentences_fr, sentences_en, sentence_encoder, device, use_margin=False)
+    aligned_pairs = align_sentences(sim_matrix)
     
-    # Stage B: per-paragraph-pair sentence DP using raw cosine (small matrices).
+    refined = _refine_with_concatenation(
+        aligned_pairs, sentences_fr, sentences_en, is_marker_fr, is_marker_en, sentence_encoder, device
+    )
+    
     rows = []
-    scores = []
-    for i, j, _ in paragraph_pairs:
-        sentences_fr = sentences_fr_per_para[i]
-        sentences_en = sentences_en_per_para[j]
-        if not sentences_fr or not sentences_en:
+    consumed_fr = set()
+    consumed_en = set()
+    for i, j, score in aligned_pairs:
+        if is_marker_fr[i] or is_marker_en[j]:
             continue
-        sentence_sim = _similarity_matrix(sentences_fr, sentences_en, sentence_encoder, device, use_margin=False)
-        sentence_pairs = align_sentences(sentence_sim)
-        for si, sj, score in sentence_pairs:
-            rows.append((document_name, sentences_fr[si], sentences_en[sj], round(score, 3)))
-            scores.append(score)
+        rows.append((document_name, sentences_fr[i], sentences_en[j], round(score, 3)))
+        consumed_fr.add(i)
+        consumed_en.add(j)
+    
+    for fr_start, fr_end, en_start, en_end, fr_text, en_text, score in refined:
+        rows.append((document_name, fr_text, en_text, round(score, 3)))
+        consumed_fr.update(range(fr_start, fr_end))
+        consumed_en.update(range(en_start, en_end))
+    
+    aligned_paragraphs_fr = {sentence_to_paragraph_fr[i] for i in consumed_fr}
+    aligned_paragraphs_en = {sentence_to_paragraph_en[j] for j in consumed_en}
+    scores = [r[3] for r in rows]
     
     stats["n_sentences_aligned"] = len(rows)
-    if total_sentences_fr:
-        stats["pct_sentences_matched_fr"] = round(100 * len(rows) / total_sentences_fr, 1)
-    if total_sentences_en:
-        stats["pct_sentences_matched_en"] = round(100 * len(rows) / total_sentences_en, 1)
+    if n_real_fr:
+        stats["pct_sentences_matched_fr"] = round(100 * len(consumed_fr) / n_real_fr, 1)
+    if n_real_en:
+        stats["pct_sentences_matched_en"] = round(100 * len(consumed_en) / n_real_en, 1)
+    stats["n_paragraphs_aligned_fr"] = len(aligned_paragraphs_fr)
+    stats["n_paragraphs_aligned_en"] = len(aligned_paragraphs_en)
+    if paragraphs_fr:
+        stats["pct_paragraphs_matched_fr"] = round(100 * len(aligned_paragraphs_fr) / len(paragraphs_fr), 1)
+    if paragraphs_en:
+        stats["pct_paragraphs_matched_en"] = round(100 * len(aligned_paragraphs_en) / len(paragraphs_en), 1)
     
     if scores:
         stats["similarity_mean"] = round(sum(scores) / len(scores), 3)
@@ -264,7 +352,8 @@ def _write_match_log(per_doc_stats):
     
     total_paragraphs_fr = sum(s["n_paragraphs_fr"] for s in per_doc_stats)
     total_paragraphs_en = sum(s["n_paragraphs_en"] for s in per_doc_stats)
-    total_paragraphs_aligned = sum(s["n_paragraphs_aligned"] for s in per_doc_stats)
+    total_paragraphs_aligned_fr = sum(s["n_paragraphs_aligned_fr"] for s in per_doc_stats)
+    total_paragraphs_aligned_en = sum(s["n_paragraphs_aligned_en"] for s in per_doc_stats)
     total_sentences_fr = sum(s["n_sentences_fr"] for s in per_doc_stats)
     total_sentences_en = sum(s["n_sentences_en"] for s in per_doc_stats)
     total_sentences_aligned = sum(s["n_sentences_aligned"] for s in per_doc_stats)
@@ -273,9 +362,10 @@ def _write_match_log(per_doc_stats):
         "n_documents": len(per_doc_stats),
         "total_paragraphs_fr": total_paragraphs_fr,
         "total_paragraphs_en": total_paragraphs_en,
-        "total_paragraphs_aligned": total_paragraphs_aligned,
-        "overall_pct_paragraphs_matched_fr": round(100 * total_paragraphs_aligned / total_paragraphs_fr, 1) if total_paragraphs_fr else 0.0,
-        "overall_pct_paragraphs_matched_en": round(100 * total_paragraphs_aligned / total_paragraphs_en, 1) if total_paragraphs_en else 0.0,
+        "total_paragraphs_aligned_fr": total_paragraphs_aligned_fr,
+        "total_paragraphs_aligned_en": total_paragraphs_aligned_en,
+        "overall_pct_paragraphs_matched_fr": round(100 * total_paragraphs_aligned_fr / total_paragraphs_fr, 1) if total_paragraphs_fr else 0.0,
+        "overall_pct_paragraphs_matched_en": round(100 * total_paragraphs_aligned_en / total_paragraphs_en, 1) if total_paragraphs_en else 0.0,
         "total_sentences_fr": total_sentences_fr,
         "total_sentences_en": total_sentences_en,
         "total_sentences_aligned": total_sentences_aligned,
