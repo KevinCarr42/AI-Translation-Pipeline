@@ -12,7 +12,6 @@ from scitrans import config
 from scitrans.create_training_data.add_features import add_all_features
 from scitrans.create_training_data.create_training_data import (
     add_dates_column,
-    add_exclusion_columns,
     add_figref_column,
     add_periods_to_all_sentences,
     add_too_short_column,
@@ -379,6 +378,30 @@ def _write_match_log(per_doc_stats):
     print(f"wrote match log to {config.WORDDOC_MATCH_LOG}")
 
 
+def _load_exclusion_thresholds():
+    if not os.path.exists(config.WORDDOC_EXCLUSION_THRESHOLDS):
+        raise FileNotFoundError(
+            f"missing {config.WORDDOC_EXCLUSION_THRESHOLDS}. "
+            f"run scripts/calculate_docx_exclusion_thresholds.py first."
+        )
+    with open(config.WORDDOC_EXCLUSION_THRESHOLDS, "r", encoding="utf-8") as f:
+        payload = json.load(f)
+    return payload["thresholds"]
+
+
+@print_timing("add docx ratio exclusion columns")
+def add_docx_ratio_exclusion_columns(df):
+    # Docx-calibrated bounds: log-space mean +/- 2 stdev per ratio. The PDF pipeline's tiered
+    # bounds in create_training_data.add_exclusion_columns were too tight for the cleaner docx
+    # text (e.g., ~99% of rows fell outside len_ratio s1 bounds), so we use docx-derived
+    # cutoffs from data/worddoc_exclusion_thresholds.json instead.
+    thresholds = _load_exclusion_thresholds()
+    for column, stats in thresholds.items():
+        col_name = f"exclude_{column}"
+        df[col_name] = ~df[column].between(stats["lower"], stats["upper"])
+    return df
+
+
 @print_timing("add docx features")
 def add_features_docx(df):
     if os.path.exists(config.WORDDOC_MATCHED_DATA_WITH_FEATURES):
@@ -390,20 +413,35 @@ def add_features_docx(df):
     return df
 
 
-def _build_compiled_glossary(glossary_path):
-    en_glossary = load_glossary(glossary_path, source_lang="en")
-    fr_glossary = load_glossary(glossary_path, source_lang="fr")
-    
-    en_compiled = [
-        (re.compile(rf'\b{re.escape(src)}\b', re.IGNORECASE),
-         re.compile(rf'\b{re.escape(tgt)}\b', re.IGNORECASE))
-        for src, tgt in en_glossary.items() if len(src) >= 2
-    ]
-    fr_compiled = [
-        (re.compile(rf'\b{re.escape(src)}\b', re.IGNORECASE),
-         re.compile(rf'\b{re.escape(tgt)}\b', re.IGNORECASE))
-        for src, tgt in fr_glossary.items() if len(src) >= 2
-    ]
+_LEXICAL_CONSTRAINT_CATEGORIES = ("nomenclature", "taxon", "acronym", "table")
+_CASE_SENSITIVE_CATEGORIES = {"acronym", "table"}
+
+
+def _compile_pair(src, tgt, case_sensitive):
+    flags = 0 if case_sensitive else re.IGNORECASE
+    return (re.compile(rf'\b{re.escape(src)}\b', flags),
+            re.compile(rf'\b{re.escape(tgt)}\b', flags))
+
+
+def _build_compiled_glossary(glossary_path, categories=_LEXICAL_CONSTRAINT_CATEGORIES):
+    # Build per-category. Acronym and table entries are short uppercase abbreviations that collide
+    # disastrously with French articles ('DE', 'ET', 'AU', 'ON' etc.) under case-insensitive
+    # matching, so those categories run case-sensitive. Nomenclature/taxon stay case-insensitive
+    # so capitalisation at sentence start doesn't suppress matches.
+    en_compiled = []
+    fr_compiled = []
+    for category in categories:
+        case_sensitive = category in _CASE_SENSITIVE_CATEGORIES
+        en_glossary = load_glossary(glossary_path, categories=[category], source_lang="en")
+        fr_glossary = load_glossary(glossary_path, categories=[category], source_lang="fr")
+        en_compiled.extend(
+            _compile_pair(src, tgt, case_sensitive)
+            for src, tgt in en_glossary.items() if len(src) >= 2
+        )
+        fr_compiled.extend(
+            _compile_pair(src, tgt, case_sensitive)
+            for src, tgt in fr_glossary.items() if len(src) >= 2
+        )
     return en_compiled, fr_compiled
 
 
@@ -421,8 +459,10 @@ def _row_has_unmatched_constraint(en_text, fr_text, en_compiled, fr_compiled):
 def add_lexical_constraint_column(df, glossary_path=None):
     # Core motivator of the project: bureau translations sometimes use non-preferred terminology,
     # so any row whose source-language text contains a glossary term but whose target-language
-    # text doesn't contain the preferred translation gets excluded. Current method is whole-word
-    # case-insensitive regex on each (src, tgt) pair.
+    # text doesn't contain the preferred translation gets excluded. Whole-word match per (src, tgt);
+    # nomenclature/taxon are case-insensitive, acronym/table are case-sensitive (avoids 'DE'/'ET'/
+    # 'AU' acronyms colliding with French articles). 'site' is excluded — 2.4k geographic-name
+    # entries that rarely appear and produce more noise than signal.
     # FUTURE WORK:
     #  1. Lookup is brittle for inflected forms (e.g. plurals, conjugations). Could move to
     #     lemma- or stem-based matching, or a tokenized full-text-search index, so "stocks" matches
@@ -473,11 +513,10 @@ def add_wrong_language_column(df):
 
 @print_timing("exclude rows for training data")
 def exclude_for_word_doc_training_data(df):
-    # exclude_low_similarity is intentionally omitted here. add_exclusion_columns() applies a
-    # 0.85 cutoff calibrated for raw cosine, but match_languages.create_similarity_matrix is now
-    # margin-based (sim / (mean_topk_fr + mean_topk_en)) and runs on cleaner DOCX text, so the
-    # distribution is compressed (median ~0.74, 95th percentile ~0.86). align_sentences() already
-    # floors at 0.7 at the matrix level, which is doing the real work. Revisit if scoring changes.
+    # exclude_low_similarity is intentionally omitted: align_sentences() already floors at 0.7 at
+    # the matrix level, which is doing the real work. Ratio bounds are now docx-calibrated
+    # (log-space +/- 2 stdev) via add_docx_ratio_exclusion_columns instead of the PDF-tiered
+    # bounds in create_training_data.add_exclusion_columns.
     other_exclusion_columns = [
         'exclude_len_ratio',
         'exclude_verb_ratio',
@@ -510,7 +549,7 @@ def exclude_for_word_doc_training_data(df):
 def create_word_doc_training_data_pipeline():
     df = create_matched_data_docx()
     df = add_features_docx(df)
-    df = add_exclusion_columns(df)
+    df = add_docx_ratio_exclusion_columns(df)
     df = add_figref_column(df)
     df = add_too_short_column(df)
     df = add_dates_column(df)

@@ -1,0 +1,50 @@
+{
+  "n_stdev": 2.0,
+  "thresholds": {
+    "len_ratio": {
+      "lower": 0.8191,
+      "upper": 1.6204,
+      "mean": 1.1697,
+      "std": 0.2241,
+      "log_mean": 0.1416,
+      "log_std": 0.1705,
+      "n_rows": 154869
+    },
+    "verb_ratio": {
+      "lower": 0.4793,
+      "upper": 2.1613,
+      "mean": 1.0949,
+      "std": 0.4687,
+      "log_mean": 0.0176,
+      "log_std": 0.3766,
+      "n_rows": 154869
+    },
+    "noun_ratio": {
+      "lower": 0.4563,
+      "upper": 3.7985,
+      "mean": 1.539,
+      "std": 1.1149,
+      "log_mean": 0.275,
+      "log_std": 0.5298,
+      "n_rows": 154869
+    },
+    "entity_ratio": {
+      "lower": 0.2378,
+      "upper": 2.4115,
+      "mean": 0.8887,
+      "std": 0.5358,
+      "log_mean": -0.2781,
+      "log_std": 0.5792,
+      "n_rows": 154869
+    },
+    "clause_ratio": {
+      "lower": 0.5611,
+      "upper": 1.8682,
+      "mean": 1.0772,
+      "std": 0.4258,
+      "log_mean": 0.0235,
+      "log_std": 0.3007,
+      "n_rows": 154869
+    }
+  }
+}

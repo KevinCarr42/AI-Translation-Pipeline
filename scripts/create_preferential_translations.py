@@ -32,6 +32,18 @@ def clean(value):
     return None
 
 
+# TODO: filter out over-specific nomenclature entries that produce false positives in the
+# unmatched_lexical_constraints check (word_doc_training_data.add_lexical_constraint_column).
+# The shape of the bad entries: a generic English headword maps to a specific French phrase
+# that's only correct in a narrower context. Examples manually removed from
+# preferential_translations.json on 2026-05-05:
+#   - 'stock' -> 'évaluation des stocks' (only correct for 'stock assessment')
+#   - 'survey' -> 'relevé portuaire'     (way too specific — most surveys aren't 'portuaire')
+#   - 'impact' -> 'répercussion potentielle' (one of several valid translations)
+# Heuristic for an automated filter: drop any entry where the French translation is at least
+# ~2x the word-count of the English headword and the headword is a single very common word.
+# These removals must be re-applied each time the JSON is regenerated from the spreadsheet —
+# the upstream spreadsheet is owned by another team, so we can't fix them at source today.
 def extract_technical_terms(file_path):
     df = pd.read_excel(file_path, sheet_name="Technical Terms")
     
